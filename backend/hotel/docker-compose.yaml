@@ -1,0 +1,44 @@
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    container_name: QLKS_postgres
+    env_file:
+      - ../.env
+    environment:
+      POSTGRES_DB: QLKS_db
+      POSTGRES_USER: QLKS_user
+      POSTGRES_PASSWORD: QLKS_password
+      TZ: UTC
+    ports:
+      - "${POSTGRES_HOST_PORT:-5434}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U QLKS_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    container_name:  QLKS_redis
+    ports:
+      - "${REDIS_HOST_PORT:-6379}:6379"
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
