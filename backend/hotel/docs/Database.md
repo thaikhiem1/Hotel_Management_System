@@ -1,4 +1,4 @@
-```sql
+````sql
 Table NhanVien {
   IdNV int [pk, increment]
   TenNV varchar(100) [not null]
@@ -60,7 +60,7 @@ Table CTDP {
   SoNguoi int [not null]
   NgayCheckIn date [not null]
   NgayCheckOut date [not null]
-  TrangThaiDatPhong int [not null] -- 0: Đã đặt, 1: Đang thuê
+  TrangThaiDatPhong int [not null] -- 0: Đã đặt, 1: Đang thuê, 2. Đang dọn dẹp
   DonGia decimal(18,2) [not null]
   ThanhTien decimal(18,2) [not null]
 }
@@ -128,3 +128,4 @@ Ref: CTDV.IdDV > DichVu.IdDV
 Ref: HoaDon.IdNV > NhanVien.IdNV
 Ref: HoaDon.IdPT - PhieuThue.IdPT
 ```sql
+````

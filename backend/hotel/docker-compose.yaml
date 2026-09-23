@@ -6,7 +6,7 @@ services:
     env_file:
       - ../.env
     environment:
-      POSTGRES_DB: QLKS
+      POSTGRES_DB: QLKS_database
       POSTGRES_USER: QLKS_user
       POSTGRES_PASSWORD: QLKS_password
       TZ: UTC

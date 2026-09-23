@@ -1,6 +1,13 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 const Header = ({ sidebarWidth = 384 }) => {
+  const [time, setTime] = useState(new Date());
+  useEffect(()=>{
+    const timer = setInterval(() => {
+        setTime(new Date())
+    }, 1000);
+    return () => clearInterval(timer)
+  }, []);
   return (
     <header 
       style={{ left: `${sidebarWidth}px` }}
@@ -23,7 +30,9 @@ const Header = ({ sidebarWidth = 384 }) => {
             schedule
           </span>
           <span className="font-label-md text-label-md tracking-wider text-on-surface">
-            {new Date().toLocaleTimeString('vi-VN')} • GMT+7
+            {time.toLocaleTimeString('vi-VN',{
+              hour12: false
+            })} • GMT+7
           </span>
         </div>
       </div>

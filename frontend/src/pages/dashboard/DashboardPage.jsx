@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   DateTimeFilter,
   QuickActions,
@@ -6,107 +6,121 @@ import {
   RoomFilterTabs,
   RoomGrid
 } from '@/components/dashboard';
+import {
+  mockPhong,
+  mockLoaiPhong,
+  mockNhanVien,
+  mockHoaDon,
+  mockPhieuThue,
+  getRoomStatusAtTime
+} from '@/services/mockData';
 
+/**
+ * DashboardPage - Trang tổng quan quản lý phòng và hoạt động khách sạn
+ * Chuẩn hóa 100% theo Database.md
+ */
 const DashboardPage = () => {
   const [activeFilter, setActiveFilter] = useState('all');
   const [isLoading, setIsLoading] = useState(false);
-  const [dateTimeFilter, setDateTimeFilter] = useState(null);
 
-  // Mock data - sẽ thay thế bằng API call
-  const [stats] = useState({
-    occupancy: { value: '86.4%', trend: 5.2 },
-    roomTypes: { value: '12', subValue: 'Loại phòng' },
-    revenue: { value: '45.000.000', subValue: 'VNĐ hôm nay', trend: 12.3 },
-    staff: { value: '48', subValue: '42 đang làm việc' }
+  // Bộ lọc ngày giờ (mặc định hôm nay lúc 14:00 đến 12:00 hôm sau)
+  const todayStr = new Date().toISOString().split('T')[0];
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+  const [dateTimeFilter, setDateTimeFilter] = useState({
+    checkIn: { date: todayStr, time: '14:00' },
+    checkOut: { date: tomorrowStr, time: '12:00' }
   });
 
-  const [roomCounts] = useState({
-    all: 142,
-    available: 18,
-    occupied: 98,
-    cleaning: 15,
-    maintenance: 11
-  });
-
-  const [rooms] = useState([
-    {
-      id: 1,
-      name: 'P101',
-      roomType: 'Deluxe Room',
-      pricePerDay: 1500000,
-      pricePerHour: 150000,
-      status: 'available'
-    },
-    {
-      id: 2,
-      name: 'P102',
-      roomType: 'Suite Room',
-      pricePerDay: 2500000,
-      pricePerHour: 250000,
-      status: 'occupied',
-      guestName: 'Nguyễn Văn A',
-      checkOutTime: '14:00 - 25/09/2026'
-    },
-    {
-      id: 3,
-      name: 'P103',
-      roomType: 'Standard Room',
-      pricePerDay: 1000000,
-      pricePerHour: 100000,
-      status: 'reserved'
-    },
-    {
-      id: 4,
-      name: 'P104',
-      roomType: 'Deluxe Room',
-      pricePerDay: 1500000,
-      pricePerHour: 150000,
-      status: 'cleaning'
-    },
-    {
-      id: 5,
-      name: 'P105',
-      roomType: 'Suite Room',
-      pricePerDay: 2500000,
-      pricePerHour: 250000,
-      status: 'maintenance',
-      maintenanceReason: 'Sửa chữa hệ thống điều hòa không khí'
-    },
-    {
-      id: 6,
-      name: 'P106',
-      roomType: 'Standard Room',
-      pricePerDay: 1000000,
-      pricePerHour: 100000,
-      status: 'available'
-    },
-    {
-      id: 7,
-      name: 'P107',
-      roomType: 'Deluxe Room',
-      pricePerDay: 1500000,
-      pricePerHour: 150000,
-      status: 'occupied',
-      guestName: 'Trần Thị B',
-      checkOutTime: '12:00 - 24/09/2026'
-    },
-    {
-      id: 8,
-      name: 'P108',
-      roomType: 'Presidential Suite',
-      pricePerDay: 5000000,
-      pricePerHour: 500000,
-      status: 'available'
+  // Chuyển đổi bộ lọc ngày giờ thành chuỗi ISO để kiểm tra xung đột/trạng thái phòng
+  const { startDateTimeStr, endDateTimeStr } = useMemo(() => {
+    if (!dateTimeFilter?.checkIn?.date || !dateTimeFilter?.checkOut?.date) {
+      return { startDateTimeStr: null, endDateTimeStr: null };
     }
-  ]);
+    const start = `${dateTimeFilter.checkIn.date}T${dateTimeFilter.checkIn.time || '14:00'}:00`;
+    const end = `${dateTimeFilter.checkOut.date}T${dateTimeFilter.checkOut.time || '12:00'}:00`;
+    return { startDateTimeStr: start, endDateTimeStr: end };
+  }, [dateTimeFilter]);
+
+  // Tính toán danh sách phòng và trạng thái phòng tại khung giờ được lọc
+  const processedRooms = useMemo(() => {
+    return mockPhong.map((phong) => {
+      const statusInfo = getRoomStatusAtTime(phong, startDateTimeStr, endDateTimeStr, mockPhieuThue);
+      const loaiPhong = phong.loaiPhong || {};
+
+      return {
+        id: phong.IdPH,
+        name: phong.MaPH,
+        roomType: loaiPhong.TenLPH || 'Phòng',
+        pricePerDay: loaiPhong.GiaNgay || 0,
+        pricePerHour: loaiPhong.GiaGio || Math.round((loaiPhong.GiaNgay || 0) / 10),
+        status: statusInfo.status,
+        guestName: statusInfo.guestName,
+        checkInTime: statusInfo.checkInTime,
+        checkOutTime: statusInfo.checkOutTime,
+        maintenanceReason: statusInfo.maintenanceReason,
+        // Dữ liệu gốc theo Database.md
+        rawData: phong
+      };
+    });
+  }, [startDateTimeStr, endDateTimeStr]);
+
+  // Thống kê số lượng phòng theo từng trạng thái tại khung giờ được lọc
+  const roomCounts = useMemo(() => {
+    const counts = {
+      all: processedRooms.length,
+      available: 0,
+      occupied: 0,
+      cleaning: 0,
+      maintenance: 0
+    };
+
+    processedRooms.forEach((r) => {
+      if (counts[r.status] !== undefined) {
+        counts[r.status]++;
+      }
+    });
+
+    return counts;
+  }, [processedRooms]);
+
+  // Thống kê KPIs từ dữ liệu chuẩn Database.md
+  const stats = useMemo(() => {
+    // 1. Công suất phòng = (số phòng đang có khách / tổng số phòng khả dụng) * 100%
+    const totalWorkingRooms = mockPhong.filter(p => p.TrangThaiPhong === 0).length;
+    const occupiedCount = roomCounts.occupied;
+    const occupancyRate = totalWorkingRooms > 0
+      ? ((occupiedCount / totalWorkingRooms) * 100).toFixed(1)
+      : '0.0';
+
+    // 2. Số loại phòng từ LoaiPhong
+    const roomTypesCount = mockLoaiPhong.length;
+
+    // 3. Doanh thu hôm nay từ HoaDon
+    const todayRevenue = mockHoaDon
+      .filter(hd => hd.NgHD === todayStr)
+      .reduce((sum, hd) => sum + (hd.TriGia || 0), 0);
+
+    const formattedRevenue = (todayRevenue / 1000000).toFixed(1) + ' tr';
+
+    // 4. Nhân sự từ NhanVien
+    const totalStaff = mockNhanVien.length;
+
+    return {
+      occupancy: { value: `${occupancyRate}%`, trend: 4.5 },
+      roomTypes: { value: String(roomTypesCount), subValue: 'Loại phòng chuẩn' },
+      revenue: { value: formattedRevenue, subValue: 'VNĐ hôm nay', trend: 10.2 },
+      staff: { value: String(totalStaff), subValue: `${totalStaff} đang làm việc` }
+    };
+  }, [roomCounts, todayStr]);
 
   const handleRefresh = () => {
     setIsLoading(true);
-    // Simulate API call
     setTimeout(() => {
       setIsLoading(false);
-      console.log('Refreshed data');
-    }, 1000);
+    }, 600);
   };
 
   const handleFilterAvailableNow = () => {
@@ -115,51 +129,31 @@ const DashboardPage = () => {
 
   const handleRoomAction = (actionId, room) => {
     console.log(`Action: ${actionId} on room:`, room);
-    // TODO: Implement action handlers
     switch (actionId) {
       case 'view':
-        console.log('View room details');
+        alert(`Chi tiết phòng ${room.name} (${room.roomType})\nGiá ngày: ${room.pricePerDay.toLocaleString()}đ\nGiá giờ: ${room.pricePerHour.toLocaleString()}đ`);
         break;
       case 'book':
-        console.log('Book room immediately');
-        break;
-      case 'checkin':
-        console.log('Check-in guest');
-        break;
-      case 'checkout':
-        console.log('Check-out guest');
-        break;
-      case 'service':
-        console.log('Add service');
-        break;
-      case 'inspect':
-        console.log('Inspect room');
-        break;
-      case 'ready':
-        console.log('Mark as ready');
-        break;
-      case 'reason':
-        console.log('View maintenance reason');
-        break;
-      case 'complete':
-        console.log('Complete maintenance');
+        alert(`Điều hướng tới trang lập phiếu thuê phòng ${room.name}`);
         break;
       default:
         break;
     }
   };
 
-  const filteredRooms = activeFilter === 'all' 
-    ? rooms 
-    : rooms.filter(room => room.status === activeFilter);
+  // Lọc phòng theo tab được chọn
+  const filteredRooms = useMemo(() => {
+    if (activeFilter === 'all') return processedRooms;
+    return processedRooms.filter(room => room.status === activeFilter);
+  }, [activeFilter, processedRooms]);
 
   return (
     <div className="w-full space-y-space-lg">
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="ml-6 text-lg font-body-lg text-body-lg text-on-surface-variant">
-            Tổng quan hoạt động và quản lý phòng
+          <p className="ml-6 text-lg font-body-lg text-body-lg text-on-surface-variant font-medium">
+            Tổng quan hoạt động và tình trạng phòng khách sạn
           </p>
         </div>
         <div className="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg bg-surface-container-low">
@@ -190,7 +184,7 @@ const DashboardPage = () => {
         </div>
       </div>
 
-      {/* 20% Stats Section */}
+      {/* 20% Stats Section - Chuẩn hóa theo Database.md */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-lg">
         <StatCard
           icon="pie_chart"
@@ -234,6 +228,15 @@ const DashboardPage = () => {
 
       {/* 50% Room Grid Section */}
       <div>
+        <div className="mb-space-sm flex items-center justify-between">
+          <p className="font-body-sm text-body-sm text-on-surface-variant">
+            Hiển thị {filteredRooms.length} phòng trong khoảng thời gian:{' '}
+            <span className="text-primary font-semibold">
+              {dateTimeFilter.checkIn.time} {dateTimeFilter.checkIn.date} &rarr; {dateTimeFilter.checkOut.time} {dateTimeFilter.checkOut.date}
+            </span>
+          </p>
+        </div>
+
         <RoomGrid
           rooms={filteredRooms}
           onRoomAction={handleRoomAction}
