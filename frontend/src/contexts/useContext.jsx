@@ -1,0 +1,1 @@
+/* Xử lý những giá trị hay dùng xuyên suốt trong website */

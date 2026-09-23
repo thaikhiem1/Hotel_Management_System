@@ -1,0 +1,10 @@
+export { default as DashboardPage } from './DashboardPage';
+export { default as LapPhieuThuePage } from './LapPhieuThuePage';
+export { default as QuanLyPhongPage } from './QuanLyPhongPage';
+export { default as QuanLyLoaiPhongPage } from './QuanLyLoaiPhongPage';
+export { default as QuanLyKhachHangPage } from './QuanLyKhachHangPage';
+export { default as QuanLyPhieuThuePage } from './QuanLyPhieuThuePage';
+export { default as QuanLyHoaDonPage } from './QuanLyHoaDonPage';
+export { default as QuanLyDichVuPage } from './QuanLyDichVuPage';
+export { default as QuanLyNhanVienPage } from './QuanLyNhanVienPage';
+export { default as BaoCaoThongKePage } from './BaoCaoThongKePage';

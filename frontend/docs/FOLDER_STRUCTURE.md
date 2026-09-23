@@ -16,12 +16,12 @@ src/
 ├── contexts/        # Shared React Context providers
 ├── hooks/           # Custom React hooks
 ├── pages/           # Screen-level page components
-├── router/          # Client-side route configuration
+├── routes/          # Client-side route configuration
 ├── services/        # Backend API integration
 ├── utils/           # Reusable utility/helper functions
 ├── App.jsx          # Main application component
 ├── main.jsx         # Application entry point
-└── index.css        # Global CSS and Tailwind CSS configuration
+└── styles: index.css, App.css        # Global CSS and Tailwind CSS configuration
 ```
 
 ### Folder Description
@@ -35,7 +35,7 @@ src/
 * `contexts/` - Quản lý các state dùng chung bằng React Context.
 * `hooks/` - Chứa các Custom Hook để tái sử dụng logic xử lý.
 * `pages/` - Chứa các trang chính của hệ thống như Dashboard, quản lý phòng, loại phòng, khách hàng, hóa đơn, dịch vụ,...
-* `router/` - Cấu hình các route và điều hướng giữa các trang.
+* `routes/` - Cấu hình các route và điều hướng giữa các trang.
 * `services/` - Chứa logic gọi và xử lý dữ liệu từ Backend API.
 * `utils/` - Chứa các hàm tiện ích dùng chung.
 * `App.jsx` - Component gốc của ứng dụng.
