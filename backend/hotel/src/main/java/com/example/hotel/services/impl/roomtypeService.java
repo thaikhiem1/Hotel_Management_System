@@ -36,7 +36,7 @@ public class roomtypeService implements IRoomtypeService {
 
     @Override
     public List<RoomTypeResponse> GetAll() {
-        return _roomtypeRepositoty.findAll().stream()
+        return _roomtypeRepositoty.findAllByOrderByIdLPHAsc().stream()
                 .map(_roomTypeMapper::toRoomTypeResponse)
                 .toList();
     }
