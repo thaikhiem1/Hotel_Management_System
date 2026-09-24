@@ -1,52 +1,66 @@
-import React from 'react';
-import GenericDeleteDialog from '@/components/shared/GenericDeleteDialog';
+import React from "react";
+import GenericDeleteDialog from "@/components/shared/GenericDeleteDialog";
 
 /**
  * RoomTypeDeleteDialog - Dialog xác nhận xóa loại phòng
  * Wrapper của GenericDeleteDialog với data mapping cho Loại Phòng
- * 
+ *
  * Props:
  * - isOpen: Boolean - Trạng thái mở/đóng dialog
  * - onClose: Function - Callback khi đóng dialog
  * - onConfirm: Function - Callback khi xác nhận xóa
  * - roomTypeData: Object - Dữ liệu loại phòng cần xóa
  * - isLoading: Boolean - Trạng thái loading
- * 
+ *
  * TODO: AUTHORIZATION
  * - Chỉ Admin (Role 0) mới được phép xóa loại phòng
- * 
+ *
  * TODO: API INTEGRATION
  * - Trước khi xóa, cần kiểm tra xem có phòng nào đang sử dụng loại phòng này không
  * - Gọi API GET /api/phong/count-by-type/{IdLPH}
  * - Nếu có phòng đang sử dụng, hiển thị cảnh báo và không cho phép xóa
  */
-const RoomTypeDeleteDialog = ({ isOpen, onClose, onConfirm, roomTypeData, isLoading }) => {
+const RoomTypeDeleteDialog = ({
+  isOpen,
+  onClose,
+  onConfirm,
+  roomTypeData,
+  isLoading,
+}) => {
   if (!roomTypeData) return null;
 
   /**
    * Format số tiền theo định dạng Việt Nam
    */
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
     }).format(amount);
   };
 
   // Map room type data to generic dialog format
   const itemDetails = [
-    { label: 'Tên loại phòng', value: roomTypeData.TenLPH, highlight: true },
-    { label: 'Số giường', value: roomTypeData.SoGiuong, highlight: false },
-    { label: 'Số người tối đa', value: roomTypeData.SoNguoiToiDa, highlight: false },
-    { label: 'Giá ngày', value: formatCurrency(roomTypeData.GiaNgay), highlight: false },
+    { label: "Tên loại phòng", value: roomTypeData.TenLPH, highlight: true },
+    { label: "Số giường", value: roomTypeData.SoGiuong, highlight: false },
+    {
+      label: "Số người tối đa",
+      value: roomTypeData.SoNguoiToiDa,
+      highlight: false,
+    },
+    {
+      label: "Giá ngày",
+      value: formatCurrency(roomTypeData.GiaNgay),
+      highlight: false,
+    },
   ];
 
   // Add price per hour if exists
   if (roomTypeData.GiaGio) {
-    itemDetails.push({ 
-      label: 'Giá giờ', 
-      value: formatCurrency(roomTypeData.GiaGio), 
-      highlight: false 
+    itemDetails.push({
+      label: "Giá giờ",
+      value: formatCurrency(roomTypeData.GiaGio),
+      highlight: false,
     });
   }
 

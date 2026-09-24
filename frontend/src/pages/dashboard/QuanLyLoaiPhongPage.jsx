@@ -1,8 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import RoomTypeTable from '@/components/room-type-management/RoomTypeTable';
 import RoomTypeFormDialog from '@/components/room-type-management/RoomTypeFormDialog';
 import RoomTypeDeleteDialog from '@/components/room-type-management/RoomTypeDeleteDialog';
-import { mockLoaiPhong } from '@/services/mockData';
+import { roomTypeAPI } from '@/services/api';
+import { showSuccess, showError, handleApiError } from '@/utils/notification';
 
 /**
  * QuanLyLoaiPhongPage - Trang quản lý loại phòng
@@ -19,8 +20,8 @@ import { mockLoaiPhong } from '@/services/mockData';
  * }
  */
 const QuanLyLoaiPhongPage = () => {
-  // State quản lý dữ liệu loại phòng (sẽ được thay thế bằng API call)
-  const [roomTypes, setRoomTypes] = useState(mockLoaiPhong);
+  // State quản lý dữ liệu loại phòng từ API
+  const [roomTypes, setRoomTypes] = useState([]);
   
   // State quản lý dialog
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
@@ -36,6 +37,44 @@ const QuanLyLoaiPhongPage = () => {
   
   // State loading
   const [isLoading, setIsLoading] = useState(false);
+  
+  /**
+   * useEffect - Load dữ liệu loại phòng khi component mount
+   * API: GET /api/roomtype
+   */
+  useEffect(() => {
+    fetchRoomTypes();
+  }, []);
+  
+  /**
+   * Fetch danh sách loại phòng từ API
+   */
+  const fetchRoomTypes = async () => {
+    setIsLoading(true);
+    try {
+      // Gọi API lấy danh sách loại phòng
+      const data = await roomTypeAPI.getAll();
+      
+      // Map dữ liệu từ backend sang frontend format
+      // Backend: IdLPH, TenLPH, SoGiuong, SoNguoiToiDa, GiaNgay, GiaGio
+      const mappedData = data.map(item => ({
+        IdLPH: item.IdLPH,
+        TenLPH: item.TenLPH,
+        SoGiuong: item.SoGiuong,
+        SoNguoiToiDa: item.SoNguoiToiDa,
+        GiaNgay: item.GiaNgay,
+        GiaGio: item.GiaGio
+      }));
+      
+      setRoomTypes(mappedData);
+      console.log('Loaded room types:', mappedData.length);
+    } catch (error) {
+      console.error('Error fetching room types:', error);
+      handleApiError(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Tính toán phân trang
   const paginatedRoomTypes = useMemo(() => {
@@ -95,53 +134,50 @@ const QuanLyLoaiPhongPage = () => {
    * Xử lý submit form (thêm mới hoặc cập nhật)
    * @param {Object} roomTypeData - Dữ liệu loại phòng từ form
    * 
-   * TODO: API INTEGRATION
-   * - Nếu editMode === 'add': Gọi POST /api/loai-phong
-   * - Nếu editMode === 'edit': Gọi PUT /api/loai-phong/{IdLPH}
-   * - Xử lý response và cập nhật state
-   * - Hiển thị thông báo thành công/thất bại
+   * API INTEGRATION:
+   * - Nếu editMode === 'add': Gọi POST /api/roomtype
+   * - Nếu editMode === 'edit': Gọi PUT /api/roomtype/{IdLPH}
    * 
    * TODO: AUTHORIZATION
-   * - Kiểm tra quyền trước khi cho phép thêm/sửa
-   * - Role 0 (Admin) và Role 2 (Quản lý) có quyền thêm/sửa loại phòng
-   * - Role 1 (Lễ tân) chỉ xem, không được sửa/xóa
+   * - Role 0 (Admin) và Role 2 (Quản lý) có quyền thêm/sửa
+   * - Role 1 (Lễ tân) chỉ xem
    */
   const handleSubmitForm = async (roomTypeData) => {
     setIsLoading(true);
     
     try {
-      // TODO: Replace with actual API call
-      // const response = editMode === 'add' 
-      //   ? await fetch('/api/loai-phong', { method: 'POST', body: JSON.stringify(roomTypeData) })
-      //   : await fetch(`/api/loai-phong/${selectedRoomType.IdLPH}`, { method: 'PUT', body: JSON.stringify(roomTypeData) });
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-
       if (editMode === 'add') {
-        // Thêm mới - Mock logic
-        const newRoomType = {
-          ...roomTypeData,
-          IdLPH: roomTypes.length + 1
-        };
-        setRoomTypes([...roomTypes, newRoomType]);
+        // Thêm mới - Gọi API POST
+        const response = await roomTypeAPI.create(roomTypeData);
+        
+        // Thêm vào danh sách
+        setRoomTypes([...roomTypes, response]);
+        
+        // Hiển thị thông báo thành công
+        showSuccess('Thêm loại phòng thành công!');
       } else {
-        // Cập nhật - Mock logic
+        // Cập nhật - Gọi API PUT
+        const response = await roomTypeAPI.update(selectedRoomType.IdLPH, roomTypeData);
+        
+        // Cập nhật danh sách
         setRoomTypes(roomTypes.map(rt => 
-          rt.IdLPH === selectedRoomType.IdLPH 
-            ? { ...rt, ...roomTypeData }
-            : rt
+          rt.IdLPH === selectedRoomType.IdLPH ? response : rt
         ));
+        
+        // Hiển thị thông báo thành công
+        showSuccess('Cập nhật loại phòng thành công!');
       }
 
+      // Đóng dialog và reset
       setIsFormDialogOpen(false);
       setSelectedRoomType(null);
       
-      // TODO: Show success notification
-      console.log(`${editMode === 'add' ? 'Thêm' : 'Cập nhật'} loại phòng thành công!`);
+      // Refresh lại danh sách từ server
+      await fetchRoomTypes();
+      
     } catch (error) {
-      // TODO: Show error notification
       console.error('Error submitting room type:', error);
+      handleApiError(error);
     } finally {
       setIsLoading(false);
     }
@@ -150,41 +186,42 @@ const QuanLyLoaiPhongPage = () => {
   /**
    * Xử lý xác nhận xóa loại phòng
    * 
-   * TODO: API INTEGRATION
-   * - Gọi DELETE /api/loai-phong/{IdLPH}
-   * - Xử lý response và cập nhật state
-   * - Hiển thị thông báo thành công/thất bại
+   * API INTEGRATION:
+   * - Gọi DELETE /api/roomtype/{IdLPH}
    * 
    * TODO: AUTHORIZATION
-   * - Chỉ Admin (Role 0) mới được phép xóa loại phòng
-   * - Kiểm tra có phòng nào đang sử dụng loại phòng này không trước khi xóa
+   * - Chỉ Admin (Role 0) mới được phép xóa
+   * - Kiểm tra có phòng nào đang sử dụng loại phòng này không
    */
   const handleConfirmDelete = async () => {
     setIsLoading(true);
     
     try {
-      // TODO: Replace with actual API call
-      // await fetch(`/api/loai-phong/${selectedRoomType.IdLPH}`, { method: 'DELETE' });
+      // Gọi API DELETE
+      await roomTypeAPI.delete(selectedRoomType.IdLPH);
       
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Mock logic
+      // Xóa khỏi danh sách
       setRoomTypes(roomTypes.filter(rt => rt.IdLPH !== selectedRoomType.IdLPH));
+      
+      // Đóng dialog
       setIsDeleteDialogOpen(false);
       setSelectedRoomType(null);
       
-      // Điều chỉnh trang nếu trang hiện tại không còn dữ liệu
+      // Điều chỉnh trang nếu cần
       const newTotalPages = Math.ceil((roomTypes.length - 1) / itemsPerPage);
       if (currentPage > newTotalPages && newTotalPages > 0) {
         setCurrentPage(newTotalPages);
       }
       
-      // TODO: Show success notification
-      console.log('Xóa loại phòng thành công!');
+      // Hiển thị thông báo thành công
+      showSuccess('Xóa loại phòng thành công!');
+      
+      // Refresh lại danh sách từ server
+      await fetchRoomTypes();
+      
     } catch (error) {
-      // TODO: Show error notification
       console.error('Error deleting room type:', error);
+      handleApiError(error);
     } finally {
       setIsLoading(false);
     }
@@ -212,10 +249,10 @@ const QuanLyLoaiPhongPage = () => {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-headline-lg text-headline-lg text-on-surface">
+          <h1 className="text-lg font-headline-lg text-headline-lg text-on-surface">
             Quản lý loại phòng
           </h1>
-          <p className="mt-space-xs font-body-md text-body-md text-on-surface-variant">
+          <p className="text-lg mt-space-xs font-body-md text-body-md text-on-surface-variant">
             Quản lý các loại phòng, giá cả và thông tin chi tiết
           </p>
         </div>
@@ -242,10 +279,10 @@ const QuanLyLoaiPhongPage = () => {
               category
             </span>
             <div>
-              <p className="font-label-sm text-label-sm text-on-surface-variant">
+              <p className="text-lg font-label-sm text-label-sm text-on-surface-variant">
                 Tổng loại phòng
               </p>
-              <p className="font-headline-md text-headline-md text-on-surface">
+              <p className="text-lg font-headline-md text-headline-md text-on-surface">
                 {stats.total}
               </p>
             </div>
@@ -258,10 +295,10 @@ const QuanLyLoaiPhongPage = () => {
               payments
             </span>
             <div>
-              <p className="font-label-sm text-label-sm text-on-surface-variant">
+              <p className="text-lg font-label-sm text-label-sm text-on-surface-variant">
                 Giá TB/ngày
               </p>
-              <p className="font-headline-md text-headline-md text-on-surface">
+              <p className="text-lg font-headline-md text-headline-md text-on-surface">
                 {formatCurrency(stats.avgPrice)}
               </p>
             </div>
@@ -274,10 +311,10 @@ const QuanLyLoaiPhongPage = () => {
               group
             </span>
             <div>
-              <p className="font-label-sm text-label-sm text-on-surface-variant">
+              <p className="text-lg font-label-sm text-label-sm text-on-surface-variant">
                 Sức chứa tối đa
               </p>
-              <p className="font-headline-md text-headline-md text-on-surface">
+              <p className="text-lg font-headline-md text-headline-md text-on-surface">
                 {stats.maxCapacity} người
               </p>
             </div>

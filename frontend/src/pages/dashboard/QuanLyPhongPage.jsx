@@ -1,8 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect , useMemo } from 'react';
 import RoomTable from '@/components/room-management/RoomTable';
 import RoomFormDialog from '@/components/room-management/RoomFormDialog';
 import DeleteConfirmDialog from '@/components/room-management/DeleteConfirmDialog';
-import { mockPhong, mockLoaiPhong } from '@/services/mockData';
+import { roomAPI, roomTypeAPI } from '@/services/api';
+import { showSuccess, handleApiError } from '@/utils/notification';
 
 /**
  * QuanLyPhongPage - Trang quản lý phòng
@@ -19,7 +20,7 @@ import { mockPhong, mockLoaiPhong } from '@/services/mockData';
  */
 const QuanLyPhongPage = () => {
   // State quản lý dữ liệu phòng (sẽ được thay thế bằng API call)
-  const [rooms, setRooms] = useState(mockPhong);
+  const [rooms, setRooms] = useState([]);
   
   // State quản lý dialog
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
@@ -28,6 +29,8 @@ const QuanLyPhongPage = () => {
   // State quản lý chế độ thêm/sửa và phòng được chọn
   const [editMode, setEditMode] = useState('add'); // 'add' | 'edit'
   const [selectedRoom, setSelectedRoom] = useState(null);
+  // State quản lý danh sách loại phòng
+  const [roomtype, setRoomTypes] = useState([]);
   
   // State phân trang
   const [currentPage, setCurrentPage] = useState(1);
@@ -35,18 +38,62 @@ const QuanLyPhongPage = () => {
   
   // State loading
   const [isLoading, setIsLoading] = useState(false);
+ useEffect(() => {
+    fetchRooms();
+    fetchRoomTypes();
+  }, []);
+  
+  /**
+   * Fetch danh sách phòng từ API
+   */
+  const fetchRooms = async () => {
+    setIsLoading(true);
+    try {
+      // Gọi API lấy danh sách phòng
+      const data = await roomAPI.getAll();
+      // Map dữ liệu từ backend sang frontend format
+      // Backend: IdPH, MaPH, TenLPH, GiaNgay, GiaGio, TrangThai, GhiChu
+      const mappedData = data.map(item => ({
+        IdPH: item.IdPH,
+        MaPH: item.MaPH,
+        IdLPH: item.IdLPH,
+        TenLPH: item.TenLPH,
+        GiaNgay: item.GiaNgay,
+        GiaGio: item.GiaGio,
+        TrangThaiPhong: item.TrangThaiPhong,
+        GhiChu: item.GhiChu,
+      }));
+      setRooms(mappedData);
+      console.log('Loaded rooms :', mappedData.length);
+    } catch (error) {
+      console.error('Error fetching room :', error);
+      handleApiError(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  /**
+   * Fetch danh sách loại phòng từ API
+   */
+  const fetchRoomTypes = async () => {
+    try {
+      const data = await roomTypeAPI.getAll();
+      setRoomTypes(data);
+      console.log('Loaded room types:', data.length);
+    } catch (error) {
+      console.error('Error fetching room types:', error);
+      handleApiError(error);
+    }
+  };
+  
   // Tính toán phân trang
   const paginatedRooms = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     return rooms.slice(startIndex, endIndex);
   }, [rooms, currentPage, itemsPerPage]);
-
   const totalPages = Math.ceil(rooms.length / itemsPerPage);
-
-  // ============ HANDLERS ============
-
   /**
    * Mở dialog thêm phòng mới
    */
@@ -55,12 +102,13 @@ const QuanLyPhongPage = () => {
     setSelectedRoom(null);
     setIsFormDialogOpen(true);
   };
-
   /**
    * Mở dialog sửa phòng với dữ liệu được binding từ dòng được chọn
    * @param {Object} room - Đối tượng phòng được chọn
    */
   const handleEdit = (room) => {
+    console.log("ROOM ĐƯỢC CHỌN:", room);
+    console.log("ID PHÒNG:", room.IdPH);
     setEditMode('edit');
     setSelectedRoom(room);
     setIsFormDialogOpen(true);
@@ -78,60 +126,39 @@ const QuanLyPhongPage = () => {
   /**
    * Xử lý submit form (thêm mới hoặc cập nhật)
    * @param {Object} roomData - Dữ liệu phòng từ form
-   * 
-   * TODO: API INTEGRATION
-   * - Nếu editMode === 'add': Gọi POST /api/phong
-   * - Nếu editMode === 'edit': Gọi PUT /api/phong/{IdPH}
-   * - Xử lý response và cập nhật state
-   * - Hiển thị thông báo thành công/thất bại
-   * 
-   * TODO: AUTHORIZATION
-   * - Kiểm tra quyền trước khi cho phép thêm/sửa
-   * - Role 0 (Admin) và Role 2 (Quản lý) có quyền thêm/sửa phòng
-   * - Role 1 (Lễ tân) chỉ xem, không được sửa/xóa
    */
   const handleSubmitForm = async (roomData) => {
-    setIsLoading(true);
-    
+    console.log("EDIT MODE:", editMode);
+    console.log("SELECTED ROOM:", selectedRoom);
+    console.log("ID:", selectedRoom?.IdPH);
+    console.log("ROOM DATA:", roomData);
+    setIsLoading(true);    
     try {
-      // TODO: Replace with actual API call
-      // const response = editMode === 'add' 
-      //   ? await fetch('/api/phong', { method: 'POST', body: JSON.stringify(roomData) })
-      //   : await fetch(`/api/phong/${selectedRoom.IdPH}`, { method: 'PUT', body: JSON.stringify(roomData) });
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-
       if (editMode === 'add') {
-        // Thêm mới - Mock logic
-        const newRoom = {
-          ...roomData,
-          IdPH: rooms.length + 1,
-          loaiPhong: mockLoaiPhong.find(lp => lp.IdLPH === roomData.IdLPH)
-        };
-        setRooms([...rooms, newRoom]);
+        // Gọi API thêm mới
+        const newRoom = await roomAPI.create(roomData);
+        // Reload lại danh sách phòng sau khi thêm thành công
+        await fetchRooms();
+        showSuccess("Thêm phòng mới thành công");
+        console.log('Thêm phòng thành công:', newRoom);
       } else {
-        // Cập nhật - Mock logic
-        setRooms(rooms.map(room => 
-          room.IdPH === selectedRoom.IdPH 
-            ? { ...room, ...roomData, loaiPhong: mockLoaiPhong.find(lp => lp.IdLPH === roomData.IdLPH) }
-            : room
-        ));
+        // Gọi API cập nhật
+        const updatedRoom = await roomAPI.update(selectedRoom.IdPH, roomData);
+        // Reload lại danh sách phòng sau khi cập nhật thành công
+        await fetchRooms();
+        showSuccess("Cập nhật phòng thành công");
+        console.log('Cập nhật phòng thành công:', updatedRoom);
       }
-
+      
       setIsFormDialogOpen(false);
       setSelectedRoom(null);
-      
-      // TODO: Show success notification
-      console.log(`${editMode === 'add' ? 'Thêm' : 'Cập nhật'} phòng thành công!`);
     } catch (error) {
-      // TODO: Show error notification
       console.error('Error submitting room:', error);
+      handleApiError(error);
     } finally {
       setIsLoading(false);
     }
   };
-
   /**
    * Xử lý xác nhận xóa phòng
    * 
@@ -146,35 +173,26 @@ const QuanLyPhongPage = () => {
    */
   const handleConfirmDelete = async () => {
     setIsLoading(true);
-    
     try {
-      // TODO: Replace with actual API call
-      // await fetch(`/api/phong/${selectedRoom.IdPH}`, { method: 'DELETE' });
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Mock logic
-      setRooms(rooms.filter(room => room.IdPH !== selectedRoom.IdPH));
+      // Gọi API xóa phòng
+      await roomAPI.delete(selectedRoom.IdPH);
+      // Reload danh sách sau khi xóa thành công
+      await fetchRooms();
       setIsDeleteDialogOpen(false);
       setSelectedRoom(null);
-      
       // Điều chỉnh trang nếu trang hiện tại không còn dữ liệu
       const newTotalPages = Math.ceil((rooms.length - 1) / itemsPerPage);
       if (currentPage > newTotalPages && newTotalPages > 0) {
         setCurrentPage(newTotalPages);
       }
-      
-      // TODO: Show success notification
-      console.log('Xóa phòng thành công!');
+      showSuccess("Xóa phòng thành công");
     } catch (error) {
-      // TODO: Show error notification
       console.error('Error deleting room:', error);
+      handleApiError(error);
     } finally {
       setIsLoading(false);
     }
   };
-
   /**
    * Xử lý thay đổi trang
    */
@@ -187,10 +205,10 @@ const QuanLyPhongPage = () => {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-headline-lg text-headline-lg text-on-surface">
+          <h1 className="text-lg font-headline-lg text-headline-lg text-on-surface">
             Quản lý phòng
           </h1>
-          <p className="mt-space-xs font-body-md text-body-md text-on-surface-variant">
+          <p className="text-lg mt-space-xs font-body-md text-body-md text-on-surface-variant">
             Quản lý thông tin phòng, loại phòng và trạng thái phòng
           </p>
         </div>
@@ -217,7 +235,7 @@ const QuanLyPhongPage = () => {
               meeting_room
             </span>
             <div>
-              <p className="font-label-sm text-label-sm text-on-surface-variant">
+              <p className="text-lg font-label-sm text-label-sm text-on-surface-variant">
                 Tổng số phòng
               </p>
               <p className="font-headline-md text-headline-md text-on-surface">
@@ -233,11 +251,11 @@ const QuanLyPhongPage = () => {
               check_circle
             </span>
             <div>
-              <p className="font-label-sm text-label-sm text-on-surface-variant">
+              <p className="text-lg font-label-sm text-label-sm text-on-surface-variant">
                 Phòng trống
               </p>
               <p className="font-headline-md text-headline-md text-on-surface">
-                {rooms.filter(r => r.TrangThaiPhong === 0).length}
+                {rooms.filter(r => r.TrangThaiPhong === "TRONG").length}
               </p>
             </div>
           </div>
@@ -249,11 +267,11 @@ const QuanLyPhongPage = () => {
               engineering
             </span>
             <div>
-              <p className="font-label-sm text-label-sm text-on-surface-variant">
+              <p className="text-lg font-label-sm text-label-sm text-on-surface-variant">
                 Đang bảo trì
               </p>
               <p className="font-headline-md text-headline-md text-on-surface">
-                {rooms.filter(r => r.TrangThaiPhong === 1).length}
+                {rooms.filter(r => r.TrangThaiPhong === "DANG_SUA_CHUA").length}
               </p>
             </div>
           </div>
@@ -329,7 +347,7 @@ const QuanLyPhongPage = () => {
         onSubmit={handleSubmitForm}
         editMode={editMode}
         roomData={selectedRoom}
-        loaiPhongList={mockLoaiPhong}
+        roomtypeData = {roomtype}
         isLoading={isLoading}
       />
 

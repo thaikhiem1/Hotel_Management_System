@@ -1,14 +1,14 @@
-import React from 'react';
+import React from "react";
 
 /**
  * RoomTable - Component hiển thị bảng danh sách phòng
- * 
+ *
  * Props:
  * - rooms: Array - Danh sách phòng cần hiển thị
  * - onEdit: Function - Callback khi nhấn nút sửa
  * - onDelete: Function - Callback khi nhấn nút xóa
  * - isLoading: Boolean - Trạng thái loading
- * 
+ *
  * Hiển thị các cột theo Database.md:
  * - IdPH: ID phòng (có icon)
  * - MaPH: Mã phòng (P101, P102...)
@@ -17,7 +17,7 @@ import React from 'react';
  * - TrangThaiPhong: Trạng thái (0: Trống, 1: Đang sửa chữa)
  * - GhiChu: Ghi chú
  * - Actions: Các nút thao tác (Sửa, Xóa)
- * 
+ *
  * TODO: AUTHORIZATION
  * - Nút Sửa: Chỉ hiển thị cho Admin (Role 0) và Quản lý (Role 2)
  * - Nút Xóa: Chỉ hiển thị cho Admin (Role 0)
@@ -27,43 +27,64 @@ const RoomTable = ({ rooms, onEdit, onDelete, isLoading }) => {
    * Format số tiền theo định dạng Việt Nam
    */
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
     }).format(amount);
   };
 
   /**
    * Lấy badge trạng thái phòng
+   * Backend trả về: "TRONG" | "DANG_SUA_CHUA"
    */
-  const getStatusBadge = (status) => {
-    if (status === 0) {
+  const getStatusBadge = (room) => {
+    if (room.TrangThaiPhong === "TRONG") {
       return (
-        <span className="inline-flex items-center gap-space-xs px-space-sm py-space-xs
-                       rounded-full bg-tertiary/20 text-tertiary font-label-sm text-label-sm">
-          <span className="material-symbols-outlined text-[16px]">check_circle</span>
+        <span
+          className="inline-flex items-center gap-space-xs px-space-sm py-space-xs
+                       rounded-full bg-tertiary/20 text-tertiary font-label-sm text-label-sm"
+        >
+          <span className="material-symbols-outlined text-[16px]">
+            check_circle
+          </span>
           <span>Trống</span>
         </span>
       );
-    } else if (status === 1) {
+    } else if (room.TrangThaiPhong === "DANG_SUA_CHUA") {
       return (
-        <span className="inline-flex items-center gap-space-xs px-space-sm py-space-xs
-                       rounded-full bg-error/20 text-error font-label-sm text-label-sm">
-          <span className="material-symbols-outlined text-[16px]">engineering</span>
+        <span
+          className="inline-flex items-center gap-space-xs px-space-sm py-space-xs
+                       rounded-full bg-error/20 text-error font-label-sm text-label-sm"
+        >
+          <span className="material-symbols-outlined text-[16px]">
+            engineering
+          </span>
           <span>Đang sửa chữa</span>
         </span>
       );
     }
-    return null;
+    return (
+      <span
+        className="inline-flex items-center gap-space-xs px-space-sm py-space-xs
+                     rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm"
+      >
+        <span className="material-symbols-outlined text-[16px]">help</span>
+        <span>Không xác định</span>
+      </span>
+    );
   };
 
   if (isLoading) {
     return (
-      <div className="w-full p-space-xl flex items-center justify-center
-                    bg-surface-container-low rounded-lg border border-outline-variant">
+      <div
+        className="w-full p-space-xl flex items-center justify-center
+                    bg-surface-container-low rounded-lg border border-outline-variant"
+      >
         <div className="flex flex-col items-center gap-space-md">
           <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-          <p className="font-body-md text-body-md text-on-surface-variant">Đang tải dữ liệu...</p>
+          <p className="font-body-md text-body-md text-on-surface-variant">
+            Đang tải dữ liệu...
+          </p>
         </div>
       </div>
     );
@@ -71,8 +92,10 @@ const RoomTable = ({ rooms, onEdit, onDelete, isLoading }) => {
 
   if (!rooms || rooms.length === 0) {
     return (
-      <div className="w-full p-space-xl flex items-center justify-center
-                    bg-surface-container-low rounded-lg border border-outline-variant">
+      <div
+        className="w-full p-space-xl flex items-center justify-center
+                    bg-surface-container-low rounded-lg border border-outline-variant"
+      >
         <div className="flex flex-col items-center gap-space-md">
           <span className="material-symbols-outlined text-[48px] text-on-surface-variant">
             meeting_room
@@ -84,26 +107,26 @@ const RoomTable = ({ rooms, onEdit, onDelete, isLoading }) => {
       </div>
     );
   }
-
+  const getformatMaP = (idPH) => `P${String(idPH).padStart(3, 0)}`;
   return (
     <div className="w-full overflow-x-auto bg-surface-container-low rounded-lg border border-outline-variant">
       <table className="w-full">
         <thead className="bg-surface-container-high border-b border-outline-variant">
           <tr>
             <th className="px-space-md py-space-sm text-left font-label-md text-label-md text-on-surface">
-              <div className="flex items-center gap-space-xs">
-                <span className="material-symbols-outlined text-[20px]">tag</span>
-                <span>ID Phòng</span>
-              </div>
-            </th>
-            <th className="px-space-md py-space-sm text-left font-label-md text-label-md text-on-surface">
               Mã phòng
+            </th>
+            <th className="px-4px py-space-sm text-left font-label-md text-label-md text-on-surface">
+              Tên phòng
             </th>
             <th className="px-space-md py-space-sm text-left font-label-md text-label-md text-on-surface">
               Loại phòng
             </th>
             <th className="px-space-md py-space-sm text-right font-label-md text-label-md text-on-surface">
               Giá ngày
+            </th>
+            <th className="px-space-md py-space-sm text-right font-label-md text-label-md text-on-surface">
+              Giá giờ
             </th>
             <th className="px-space-md py-space-sm text-center font-label-md text-label-md text-on-surface">
               Trạng thái
@@ -131,7 +154,7 @@ const RoomTable = ({ rooms, onEdit, onDelete, isLoading }) => {
                     </span>
                   </div>
                   <span className="font-body-md text-body-md text-on-surface font-semibold">
-                    #{room.IdPH}
+                    {getformatMaP(room.IdPH)}
                   </span>
                 </div>
               </td>
@@ -146,26 +169,32 @@ const RoomTable = ({ rooms, onEdit, onDelete, isLoading }) => {
               {/* Tên loại phòng */}
               <td className="px-space-md py-space-md">
                 <span className="font-body-md text-body-md text-on-surface">
-                  {room.loaiPhong?.TenLPH || 'N/A'}
+                  {room.TenLPH || "N/A"}
                 </span>
               </td>
 
               {/* Giá ngày */}
               <td className="px-space-md py-space-md text-right">
                 <span className="font-body-md text-body-md text-on-surface font-semibold text-primary">
-                  {formatCurrency(room.loaiPhong?.GiaNgay || 0)}
+                  {formatCurrency(room.GiaNgay || 0)}
+                </span>
+              </td>
+              {/* Giá giờ */}
+              <td className="px-space-md py-space-md text-right">
+                <span className="font-body-md text-body-md text-on-surface font-semibold text-primary">
+                  {formatCurrency(room.GiaGio || 0)}
                 </span>
               </td>
 
               {/* Trạng thái */}
               <td className="px-space-md py-space-md text-center">
-                {getStatusBadge(room.TrangThaiPhong)}
+                {getStatusBadge(room)}
               </td>
 
               {/* Ghi chú */}
               <td className="px-space-md py-space-md">
                 <span className="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">
-                  {room.GhiChu || '—'}
+                  {room.GhiChu || "—"}
                 </span>
               </td>
 
@@ -179,7 +208,9 @@ const RoomTable = ({ rooms, onEdit, onDelete, isLoading }) => {
                              transition-colors duration-150 group"
                     title="Chỉnh sửa"
                   >
-                    <span className="material-symbols-outlined text-[20px]">edit</span>
+                    <span className="material-symbols-outlined text-[20px]">
+                      edit
+                    </span>
                   </button>
 
                   {/* Nút Xóa - TODO: AUTHORIZATION - Chỉ Admin */}
@@ -189,7 +220,9 @@ const RoomTable = ({ rooms, onEdit, onDelete, isLoading }) => {
                              transition-colors duration-150 group"
                     title="Xóa"
                   >
-                    <span className="material-symbols-outlined text-[20px]">delete</span>
+                    <span className="material-symbols-outlined text-[20px]">
+                      delete
+                    </span>
                   </button>
                 </div>
               </td>

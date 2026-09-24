@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import ThemeToggle from './ThemeToggle';
 
 const Header = ({ sidebarWidth = 384 }) => {
   const [time, setTime] = useState(new Date());
@@ -25,6 +26,13 @@ const Header = ({ sidebarWidth = 384 }) => {
             expand_more
           </span>
         </div>
+          <div className="flex items-center gap-space-sm bg-surface-container-high px-space-md py-space-sm rounded-lg">
+            Hôm nay là ngày: {time.toLocaleDateString('vi-VN', {
+              day: '2-digit',
+              month: '2-digit',
+              year: '2-digit'
+            })}
+          </div>
         <div className="hidden lg:flex items-center gap-space-xs text-on-surface-variant bg-surface-container-low px-space-md py-space-sm rounded-lg">
           <span className="material-symbols-outlined text-[18px] text-primary">
             schedule
@@ -32,11 +40,12 @@ const Header = ({ sidebarWidth = 384 }) => {
           <span className="font-label-md text-label-md tracking-wider text-on-surface">
             {time.toLocaleTimeString('vi-VN',{
               hour12: false
-            })} • GMT+7
+            })} 
           </span>
         </div>
       </div>
       <div className="flex items-center gap-space-lg">
+        <ThemeToggle />
         <button className="relative p-space-sm text-on-surface-variant hover:text-on-surface transition-colors rounded-lg hover:bg-surface-container">
           <span className="material-symbols-outlined text-[24px]">
             notifications

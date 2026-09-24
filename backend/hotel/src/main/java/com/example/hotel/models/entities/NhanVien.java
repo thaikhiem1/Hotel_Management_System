@@ -1,30 +1,10 @@
 package com.example.hotel.models.entities;
-
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-
-/**
- * Entity NhanVien - Nhân viên
- * Mapping 100% theo Database.md
- * 
- * Table NhanVien {
- *   IdNV int [pk, increment]
- *   TenNV varchar(100) [not null]
- *   ChucVu varchar(50)
- *   Luong decimal(18,2)
- *   SDT varchar(15)
- *   CCCD varchar(20) [unique]
- *   NgaySinh date
- *   GioiTinh varchar(10)
- *   DiaChi varchar(255)
- *   Email varchar(100)
- *   Avatar varchar(255)
- * }
- */
 @Entity
 @Table(name = "NhanVien")
 @Data

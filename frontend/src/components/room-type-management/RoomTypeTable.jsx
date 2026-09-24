@@ -1,14 +1,14 @@
-import React from 'react';
+import React from "react";
 
 /**
  * RoomTypeTable - Component hiển thị bảng danh sách loại phòng
- * 
+ *
  * Props:
  * - roomTypes: Array - Danh sách loại phòng cần hiển thị
  * - onEdit: Function - Callback khi nhấn nút sửa
  * - onDelete: Function - Callback khi nhấn nút xóa
  * - isLoading: Boolean - Trạng thái loading
- * 
+ *
  * Hiển thị các cột theo Database.md:
  * - IdLPH: ID loại phòng (có icon)
  * - TenLPH: Tên loại phòng
@@ -17,7 +17,7 @@ import React from 'react';
  * - GiaNgay: Giá thuê theo ngày
  * - GiaGio: Giá thuê theo giờ
  * - Actions: Các nút thao tác (Sửa, Xóa)
- * 
+ *
  * TODO: AUTHORIZATION
  * - Nút Sửa: Chỉ hiển thị cho Admin (Role 0) và Quản lý (Role 2)
  * - Nút Xóa: Chỉ hiển thị cho Admin (Role 0)
@@ -27,19 +27,23 @@ const RoomTypeTable = ({ roomTypes, onEdit, onDelete, isLoading }) => {
    * Format số tiền theo định dạng Việt Nam
    */
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
     }).format(amount);
   };
 
   if (isLoading) {
     return (
-      <div className="w-full p-space-xl flex items-center justify-center
-                    bg-surface-container-low rounded-lg border border-outline-variant">
+      <div
+        className="w-full p-space-xl flex items-center justify-center
+                    bg-surface-container-low rounded-lg border border-outline-variant"
+      >
         <div className="flex flex-col items-center gap-space-md">
           <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-          <p className="font-body-md text-body-md text-on-surface-variant">Đang tải dữ liệu...</p>
+          <p className="font-body-md text-body-md text-on-surface-variant">
+            Đang tải dữ liệu...
+          </p>
         </div>
       </div>
     );
@@ -47,8 +51,10 @@ const RoomTypeTable = ({ roomTypes, onEdit, onDelete, isLoading }) => {
 
   if (!roomTypes || roomTypes.length === 0) {
     return (
-      <div className="w-full p-space-xl flex items-center justify-center
-                    bg-surface-container-low rounded-lg border border-outline-variant">
+      <div
+        className="w-full p-space-xl flex items-center justify-center
+                    bg-surface-container-low rounded-lg border border-outline-variant"
+      >
         <div className="flex flex-col items-center gap-space-md">
           <span className="material-symbols-outlined text-[48px] text-on-surface-variant">
             category
@@ -60,7 +66,7 @@ const RoomTypeTable = ({ roomTypes, onEdit, onDelete, isLoading }) => {
       </div>
     );
   }
-
+  const getformatMaLPH = (idLPH) => `LP${String(idLPH).padStart(3, 0)}`;
   return (
     <div className="w-full overflow-x-auto bg-surface-container-low rounded-lg border border-outline-variant">
       <table className="w-full">
@@ -68,8 +74,9 @@ const RoomTypeTable = ({ roomTypes, onEdit, onDelete, isLoading }) => {
           <tr>
             <th className="px-space-md py-space-sm text-left font-label-md text-label-md text-on-surface">
               <div className="flex items-center gap-space-xs">
-                <span className="material-symbols-outlined text-[20px]">tag</span>
-                <span>ID</span>
+                <span className="text-left font-label-md text-label-md text-on-surface">
+                  Mã loại phòng
+                </span>
               </div>
             </th>
             <th className="px-space-md py-space-sm text-left font-label-md text-label-md text-on-surface">
@@ -107,7 +114,7 @@ const RoomTypeTable = ({ roomTypes, onEdit, onDelete, isLoading }) => {
                     </span>
                   </div>
                   <span className="font-body-md text-body-md text-on-surface font-semibold">
-                    #{roomType.IdLPH}
+                    {getformatMaLPH(roomType.IdLPH)}
                   </span>
                 </div>
               </td>
@@ -121,19 +128,31 @@ const RoomTypeTable = ({ roomTypes, onEdit, onDelete, isLoading }) => {
 
               {/* Số giường */}
               <td className="px-space-md py-space-md text-center">
-                <div className="inline-flex items-center gap-space-xs px-space-sm py-space-xs
-                              rounded-full bg-tertiary/20 text-tertiary">
-                  <span className="material-symbols-outlined text-[16px]">bed</span>
-                  <span className="font-body-sm text-body-sm">{roomType.SoGiuong}</span>
+                <div
+                  className="inline-flex items-center gap-space-xs px-space-sm py-space-xs
+                              rounded-full bg-tertiary/20 text-tertiary"
+                >
+                  <span className="material-symbols-outlined text-[16px]">
+                    bed
+                  </span>
+                  <span className="font-body-sm text-body-sm">
+                    {roomType.SoGiuong}
+                  </span>
                 </div>
               </td>
 
               {/* Số người tối đa */}
               <td className="px-space-md py-space-md text-center">
-                <div className="inline-flex items-center gap-space-xs px-space-sm py-space-xs
-                              rounded-full bg-primary/20 text-primary">
-                  <span className="material-symbols-outlined text-[16px]">group</span>
-                  <span className="font-body-sm text-body-sm">{roomType.SoNguoiToiDa}</span>
+                <div
+                  className="inline-flex items-center gap-space-xs px-space-sm py-space-xs
+                              rounded-full bg-primary/20 text-primary"
+                >
+                  <span className="material-symbols-outlined text-[16px]">
+                    group
+                  </span>
+                  <span className="font-body-sm text-body-sm">
+                    {roomType.SoNguoiToiDa}
+                  </span>
                 </div>
               </td>
 
@@ -147,7 +166,7 @@ const RoomTypeTable = ({ roomTypes, onEdit, onDelete, isLoading }) => {
               {/* Giá giờ */}
               <td className="px-space-md py-space-md text-right">
                 <span className="font-body-sm text-body-sm text-on-surface-variant">
-                  {roomType.GiaGio ? formatCurrency(roomType.GiaGio) : '—'}
+                  {roomType.GiaGio ? formatCurrency(roomType.GiaGio) : "—"}
                 </span>
               </td>
 
@@ -161,7 +180,9 @@ const RoomTypeTable = ({ roomTypes, onEdit, onDelete, isLoading }) => {
                              transition-colors duration-150 group"
                     title="Chỉnh sửa"
                   >
-                    <span className="material-symbols-outlined text-[20px]">edit</span>
+                    <span className="material-symbols-outlined text-[20px]">
+                      edit
+                    </span>
                   </button>
 
                   {/* Nút Xóa - TODO: AUTHORIZATION - Chỉ Admin */}
@@ -171,7 +192,9 @@ const RoomTypeTable = ({ roomTypes, onEdit, onDelete, isLoading }) => {
                              transition-colors duration-150 group"
                     title="Xóa"
                   >
-                    <span className="material-symbols-outlined text-[20px]">delete</span>
+                    <span className="material-symbols-outlined text-[20px]">
+                      delete
+                    </span>
                   </button>
                 </div>
               </td>

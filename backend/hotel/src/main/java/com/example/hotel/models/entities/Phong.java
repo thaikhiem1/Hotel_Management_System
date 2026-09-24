@@ -1,24 +1,10 @@
 package com.example.hotel.models.entities;
-
+import com.example.hotel.Enums.RoomStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.Data;
 
-/**
- * Entity Phong - Phòng
- * Mapping 100% theo Database.md
- * 
- * Table Phong {
- *   IdPH int [pk, increment]
- *   MaPH varchar(20) [not null, unique]
- *   TrangThaiPhong int [not null] -- 0: Trống, 1: Đang sửa chữa
- *   IdLPH int [not null]
- *   GhiChu varchar(255)
- * }
- * 
- * Ref: Phong.IdLPH > LoaiPhong.IdLPH
- */
 @Entity
 @Table(name = "Phong")
 @Data
@@ -34,19 +20,12 @@ public class Phong {
     @Column(name = "MaPH", nullable = false, unique = true, length = 20)
     private String maPH;
     
-    /**
-     * Trạng thái phòng:
-     * 0 = Trống
-     * 1 = Đang sửa chữa
-     */
+    @Enumerated(EnumType.STRING)
     @Column(name = "TrangThaiPhong", nullable = false)
-    private Integer trangThaiPhong;
-    
-    @Column(name = "IdLPH", nullable = false)
-    private Integer idLPH;
+    private RoomStatus trangThaiPhong = RoomStatus.TRONG;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "IdLPH", referencedColumnName = "IdLPH", insertable = false, updatable = false)
+    @JoinColumn(name = "IdLPH", nullable = false)
     private LoaiPhong loaiPhong;
     
     @Column(name = "GhiChu", length = 255)

@@ -26,10 +26,10 @@ const DeleteConfirmDialog = ({ isOpen, onClose, onConfirm, roomData, isLoading }
   // Map room data to generic dialog format
   const itemDetails = [
     { label: 'Mã phòng', value: roomData.MaPH, highlight: true },
-    { label: 'Loại phòng', value: roomData.loaiPhong?.TenLPH || 'N/A', highlight: false },
+    { label: 'Loại phòng', value: roomData.TenLPH || 'N/A', highlight: false },
     { 
       label: 'Trạng thái', 
-      value: roomData.TrangThaiPhong === 0 ? 'Trống' : 'Đang sửa chữa',
+      value: roomData.TrangThaiPhong === 'TRONG' ? 'Trống' : 'Đang sửa chữa',
       highlight: false
     }
   ];

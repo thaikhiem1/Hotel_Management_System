@@ -1,24 +1,9 @@
 package com.example.hotel.models.entities;
-
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
-
-/**
- * Entity LoaiPhong - Loại phòng
- * Mapping 100% theo Database.md
- * 
- * Table LoaiPhong {
- *   IdLPH int [pk, increment]
- *   TenLPH varchar(100) [not null]
- *   SoGiuong int [not null]
- *   SoNguoiToiDa int [not null]
- *   GiaNgay decimal(18,2) [not null]
- *   GiaGio decimal(18,2)
- * }
- */
 @Entity
 @Table(name = "LoaiPhong")
 @Data
