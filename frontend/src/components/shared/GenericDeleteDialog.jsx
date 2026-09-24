@@ -1,18 +1,5 @@
 import React from 'react';
 
-/**
- * GenericDeleteDialog - Component dialog xác nhận xóa có thể tái sử dụng
- * 
- * Props:
- * - isOpen: Boolean - Trạng thái mở/đóng dialog
- * - onClose: Function - Callback khi đóng dialog
- * - onConfirm: Function - Callback khi xác nhận xóa
- * - title: String - Tiêu đề dialog
- * - itemName: String - Tên item sẽ xóa (hiển thị trong nội dung)
- * - itemDetails: Array - Mảng các object { label, value, highlight } để hiển thị chi tiết
- * - warningMessage: String - Thông báo cảnh báo tùy chỉnh
- * - isLoading: Boolean - Trạng thái loading
- */
 const GenericDeleteDialog = ({
   isOpen,
   onClose,

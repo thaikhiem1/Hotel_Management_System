@@ -1,25 +1,6 @@
 import React from "react";
 import GenericDeleteDialog from "@/components/shared/GenericDeleteDialog";
 
-/**
- * RoomTypeDeleteDialog - Dialog xác nhận xóa loại phòng
- * Wrapper của GenericDeleteDialog với data mapping cho Loại Phòng
- *
- * Props:
- * - isOpen: Boolean - Trạng thái mở/đóng dialog
- * - onClose: Function - Callback khi đóng dialog
- * - onConfirm: Function - Callback khi xác nhận xóa
- * - roomTypeData: Object - Dữ liệu loại phòng cần xóa
- * - isLoading: Boolean - Trạng thái loading
- *
- * TODO: AUTHORIZATION
- * - Chỉ Admin (Role 0) mới được phép xóa loại phòng
- *
- * TODO: API INTEGRATION
- * - Trước khi xóa, cần kiểm tra xem có phòng nào đang sử dụng loại phòng này không
- * - Gọi API GET /api/phong/count-by-type/{IdLPH}
- * - Nếu có phòng đang sử dụng, hiển thị cảnh báo và không cho phép xóa
- */
 const RoomTypeDeleteDialog = ({
   isOpen,
   onClose,

@@ -1,27 +1,5 @@
 import React from "react";
 
-/**
- * RoomTable - Component hiển thị bảng danh sách phòng
- *
- * Props:
- * - rooms: Array - Danh sách phòng cần hiển thị
- * - onEdit: Function - Callback khi nhấn nút sửa
- * - onDelete: Function - Callback khi nhấn nút xóa
- * - isLoading: Boolean - Trạng thái loading
- *
- * Hiển thị các cột theo Database.md:
- * - IdPH: ID phòng (có icon)
- * - MaPH: Mã phòng (P101, P102...)
- * - TenLPH: Tên loại phòng (từ bảng LoaiPhong)
- * - GiaNgay: Giá thuê theo ngày (từ bảng LoaiPhong)
- * - TrangThaiPhong: Trạng thái (0: Trống, 1: Đang sửa chữa)
- * - GhiChu: Ghi chú
- * - Actions: Các nút thao tác (Sửa, Xóa)
- *
- * TODO: AUTHORIZATION
- * - Nút Sửa: Chỉ hiển thị cho Admin (Role 0) và Quản lý (Role 2)
- * - Nút Xóa: Chỉ hiển thị cho Admin (Role 0)
- */
 const RoomTable = ({ rooms, onEdit, onDelete, isLoading }) => {
   /**
    * Format số tiền theo định dạng Việt Nam
@@ -35,7 +13,6 @@ const RoomTable = ({ rooms, onEdit, onDelete, isLoading }) => {
 
   /**
    * Lấy badge trạng thái phòng
-   * Backend trả về: "TRONG" | "DANG_SUA_CHUA"
    */
   const getStatusBadge = (room) => {
     if (room.TrangThaiPhong === "TRONG") {
@@ -149,9 +126,7 @@ const RoomTable = ({ rooms, onEdit, onDelete, isLoading }) => {
               <td className="px-space-md py-space-md">
                 <div className="flex items-center gap-space-sm">
                   <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
-                    <span className="material-symbols-outlined text-[18px] text-primary">
-                      meeting_room
-                    </span>
+                    <span className="material-symbols-outlined text-[18px] text-primary">meeting_room</span>
                   </div>
                   <span className="font-body-md text-body-md text-on-surface font-semibold">
                     {getformatMaP(room.IdPH)}
@@ -208,9 +183,7 @@ const RoomTable = ({ rooms, onEdit, onDelete, isLoading }) => {
                              transition-colors duration-150 group"
                     title="Chỉnh sửa"
                   >
-                    <span className="material-symbols-outlined text-[20px]">
-                      edit
-                    </span>
+                    <span className="material-symbols-outlined text-[20px]">edit</span>
                   </button>
 
                   {/* Nút Xóa - TODO: AUTHORIZATION - Chỉ Admin */}
@@ -220,9 +193,7 @@ const RoomTable = ({ rooms, onEdit, onDelete, isLoading }) => {
                              transition-colors duration-150 group"
                     title="Xóa"
                   >
-                    <span className="material-symbols-outlined text-[20px]">
-                      delete
-                    </span>
+                    <span className="material-symbols-outlined text-[20px]">delete</span>
                   </button>
                 </div>
               </td>

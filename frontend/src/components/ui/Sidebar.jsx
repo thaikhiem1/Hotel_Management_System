@@ -119,11 +119,6 @@ const Sidebar = ({ onWidthChange }) => {
           icon: 'badge'
         },
         {
-          path: '/rentals',
-          label: 'Quản lý phiếu thuê',
-          icon: 'receipt_long'
-        },
-        {
           path: '/payments',
           label: 'Quản lý hóa đơn',
           icon: 'payments'

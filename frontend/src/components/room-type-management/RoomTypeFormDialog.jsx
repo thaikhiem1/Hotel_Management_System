@@ -1,23 +1,5 @@
 import React, { useState, useEffect } from "react";
 
-/**
- * RoomTypeFormDialog - Dialog form để thêm mới hoặc chỉnh sửa loại phòng
- *
- * Props:
- * - isOpen: Boolean - Trạng thái mở/đóng dialog
- * - onClose: Function - Callback khi đóng dialog
- * - onSubmit: Function - Callback khi submit form
- * - editMode: String - 'add' hoặc 'edit'
- * - roomTypeData: Object - Dữ liệu loại phòng cần sửa (null khi thêm mới)
- * - isLoading: Boolean - Trạng thái loading
- *
- * Form fields theo Database.md:
- * - TenLPH: Tên loại phòng (required)
- * - SoGiuong: Số giường (required, number, min: 1)
- * - SoNguoiToiDa: Số người tối đa (required, number, min: 1)
- * - GiaNgay: Giá ngày (required, number, min: 0)
- * - GiaGio: Giá giờ (optional, number, min: 0)
- */
 const RoomTypeFormDialog = ({
   isOpen,
   onClose,

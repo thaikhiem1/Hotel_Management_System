@@ -1,18 +1,5 @@
 import React, { useState, useEffect } from "react";
 
-/**
- * RoomFormDialog - Dialog form để thêm mới hoặc chỉnh sửa thông tin phòng
- *
- * Props:
- * - isOpen: Boolean - Trạng thái mở/đóng dialog
- * - onClose: Function - Callback khi đóng dialog
- * - onSubmit: Function - Callback khi submit form
- * - editMode: String - 'add' hoặc 'edit'
- * - roomData: Object - Dữ liệu phòng cần sửa (null khi thêm mới)
- * - roomtypeData: Array - Danh sách loại phòng từ parent component
- * - isLoading: Boolean - Trạng thái loading
- **/
-
 const RoomFormDialog = ({
   isOpen,
   onClose,
@@ -33,12 +20,8 @@ const RoomFormDialog = ({
 
   /**
    * Binding dữ liệu khi mở form sửa
-   * Khi roomData thay đổi (từ null thành object hoặc ngược lại),
-   * form sẽ được reset hoặc binding dữ liệu từ phòng được chọn
-   */
+   **/
   useEffect(() => {
-     console.log("🔥 useEffect chạy");
-    
     if (!isOpen) return;
 
     if (editMode === "edit" && roomData) {
@@ -47,7 +30,9 @@ const RoomFormDialog = ({
 
       // Fallback: tìm theo TenLPH nếu không có IdLPH
       if (!idLPH && roomData.TenLPH && roomtypeData.length > 0) {
-        const matched = roomtypeData.find((lp) => lp.TenLPH === roomData.TenLPH);
+        const matched = roomtypeData.find(
+          (lp) => lp.TenLPH === roomData.TenLPH,
+        );
         idLPH = matched ? matched.IdLPH : "";
       }
 
@@ -69,9 +54,7 @@ const RoomFormDialog = ({
     setErrors({});
   }, [isOpen, editMode, roomData, roomtypeData]);
 
-  /**
-   * Xử lý thay đổi giá trị input
-   */
+  // Xử lý thay đổi giá trị input
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -85,9 +68,6 @@ const RoomFormDialog = ({
     }
   };
 
-  /**
-   * Validate form
-   */
   const validate = () => {
     const newErrors = {};
 
@@ -105,9 +85,6 @@ const RoomFormDialog = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  /**
-   * Xử lý submit form
-   */
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -115,7 +92,6 @@ const RoomFormDialog = ({
       return;
     }
 
-    // Prepare data theo format backend 
     const submitData = {
       MaPH: formData.MaPH,
       IdLPH: formData.IdLPH,
@@ -126,9 +102,6 @@ const RoomFormDialog = ({
     onSubmit(submitData);
   };
 
-  /**
-   * Xử lý đóng dialog
-   */
   const handleClose = () => {
     if (!isLoading) {
       setFormData({
@@ -240,6 +213,7 @@ const RoomFormDialog = ({
                   ? "-- Không có loại phòng --"
                   : "-- Chọn loại phòng --"}
               </option>
+
               {roomtypeData.map((roomType) => (
                 <option key={roomType.IdLPH} value={roomType.IdLPH}>
                   {roomType.TenLPH} -{" "}
@@ -374,10 +348,7 @@ const RoomFormDialog = ({
             >
               {isLoading ? (
                 <>
-                  <div
-                    className="w-4 h-4 border-2 border-on-primary border-t-transparent
-                                rounded-full animate-spin"
-                  />
+                  <div className="w-4 h-4 border-2 border-on-primary border-t-transparent rounded-full animate-spin" />
                   <span>Đang xử lý...</span>
                 </>
               ) : (

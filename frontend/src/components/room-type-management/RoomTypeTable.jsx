@@ -1,27 +1,5 @@
 import React from "react";
 
-/**
- * RoomTypeTable - Component hiển thị bảng danh sách loại phòng
- *
- * Props:
- * - roomTypes: Array - Danh sách loại phòng cần hiển thị
- * - onEdit: Function - Callback khi nhấn nút sửa
- * - onDelete: Function - Callback khi nhấn nút xóa
- * - isLoading: Boolean - Trạng thái loading
- *
- * Hiển thị các cột theo Database.md:
- * - IdLPH: ID loại phòng (có icon)
- * - TenLPH: Tên loại phòng
- * - SoGiuong: Số giường
- * - SoNguoiToiDa: Số người tối đa
- * - GiaNgay: Giá thuê theo ngày
- * - GiaGio: Giá thuê theo giờ
- * - Actions: Các nút thao tác (Sửa, Xóa)
- *
- * TODO: AUTHORIZATION
- * - Nút Sửa: Chỉ hiển thị cho Admin (Role 0) và Quản lý (Role 2)
- * - Nút Xóa: Chỉ hiển thị cho Admin (Role 0)
- */
 const RoomTypeTable = ({ roomTypes, onEdit, onDelete, isLoading }) => {
   /**
    * Format số tiền theo định dạng Việt Nam

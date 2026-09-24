@@ -107,8 +107,6 @@ const QuanLyPhongPage = () => {
    * @param {Object} room - Đối tượng phòng được chọn
    */
   const handleEdit = (room) => {
-    console.log("ROOM ĐƯỢC CHỌN:", room);
-    console.log("ID PHÒNG:", room.IdPH);
     setEditMode('edit');
     setSelectedRoom(room);
     setIsFormDialogOpen(true);
@@ -128,10 +126,7 @@ const QuanLyPhongPage = () => {
    * @param {Object} roomData - Dữ liệu phòng từ form
    */
   const handleSubmitForm = async (roomData) => {
-    console.log("EDIT MODE:", editMode);
-    console.log("SELECTED ROOM:", selectedRoom);
-    console.log("ID:", selectedRoom?.IdPH);
-    console.log("ROOM DATA:", roomData);
+
     setIsLoading(true);    
     try {
       if (editMode === 'add') {

@@ -4,11 +4,14 @@ import ResetPasswordPage from './pages/ResetPasswordPage'
 import './styles/index.css'
 import { BrowserRouter } from 'react-router-dom'
 import AppRoutes from './routes/AppRoutes'
+import { ToastProvider } from './contexts/ToastContext'
 
 function App() {
   return (
     <BrowserRouter>
-      <AppRoutes/>
+      <ToastProvider>
+        <AppRoutes/>
+      </ToastProvider>
     </BrowserRouter>
   )
 }

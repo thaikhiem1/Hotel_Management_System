@@ -1,7 +1,3 @@
-/**
- * LanguageToggle - Language Selector Component
- * Allows switching between Vietnamese and English
- */
 function LanguageToggle({ language, setLanguage }) {
   const handleLanguageChange = (lang) => {
     setLanguage(lang);
