@@ -6,7 +6,10 @@ import com.example.hotel.models.dto.response.RoomResponse;
 
 public interface IRoomService {
     RoomResponse CreateRoom(RoomRequest request);
+
     List<RoomResponse> GetAll();
-    RoomResponse UpdateRoom(Integer idPH, RoomRequest request);
-    void DeleteRoom(Integer idPH);
+
+    RoomResponse UpdateRoom(Integer IdPH, RoomRequest request);
+
+    void DeleteRoom(Integer IdPH);
 }

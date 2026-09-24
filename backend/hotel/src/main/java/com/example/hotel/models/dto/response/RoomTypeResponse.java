@@ -1,4 +1,5 @@
 package com.example.hotel.models.dto.response;
+
 import java.math.BigDecimal;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
@@ -6,26 +7,26 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Getter 
+@Getter
 @Setter
 @NoArgsConstructor
-@AllArgsConstructor 
+@AllArgsConstructor
 public class RoomTypeResponse {
     @JsonProperty("IdLPH")
-    private Integer IdLPH;
+    private Integer idLPH;
 
     @JsonProperty("TenLPH")
-    private String TenLPH;
+    private String tenLPH;
 
     @JsonProperty("SoGiuong")
-    private Integer SoGiuong;
+    private Integer soGiuong;
 
     @JsonProperty("SoNguoiToiDa")
-    private Integer SoNguoiToiDa;
+    private Integer soNguoiToiDa;
 
     @JsonProperty("GiaNgay")
-    private BigDecimal GiaNgay;
+    private BigDecimal giaNgay;
 
     @JsonProperty("GiaGio")
-    private BigDecimal GiaGio;
+    private BigDecimal giaGio;
 }

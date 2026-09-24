@@ -9,7 +9,7 @@ import java.util.List;
 @Repository
 public interface roomRepository extends JpaRepository<Phong, Integer> {
     boolean existsByMaPH(String maPH);
-
+    boolean existsByLoaiPhong_IdLPH(Integer idLPH);
     @Query("SELECT p FROM Phong p LEFT JOIN FETCH p.loaiPhong ORDER BY p.idPH ASC")
     List<Phong> findAllWithLoaiPhong();
 }

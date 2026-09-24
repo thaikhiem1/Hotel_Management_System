@@ -20,24 +20,24 @@ public class RoomTypeRequest {
     @NotNull(message = "Tên loại phòng không được bỏ trống")
     @Size(max = 100, message = "Tên loại phòng tối đa 100 ký tự")
     @JsonProperty("TenLPH")
-    private String TenLPH;
+    private String tenLPH;
 
     @NotNull(message = "Số giường không được bỏ trống")
     @Positive(message = "Số giường phải lớn hơn 0")
     @JsonProperty("SoGiuong")
-    private Integer SoGiuong;
+    private Integer soGiuong;
 
     @NotNull(message = "Số khách tối đa không được bỏ trống")
     @Positive(message = "Số khách tối đa phải lớn hơn 0")
     @JsonProperty("SoNguoiToiDa")
-    private Integer SoNguoiToiDa;
+    private Integer soNguoiToiDa;
 
     @NotNull(message = "Giá theo ngày không được bỏ trống")
     @Positive(message = "Giá theo ngày phải lớn hơn 0")
     @JsonProperty("GiaNgay")
-    private BigDecimal GiaNgay;
+    private BigDecimal giaNgay;
 
     @Positive(message = "Giá theo giờ phải lớn hơn 0")
     @JsonProperty("GiaGio")
-    private BigDecimal GiaGio;
+    private BigDecimal giaGio;
 }
