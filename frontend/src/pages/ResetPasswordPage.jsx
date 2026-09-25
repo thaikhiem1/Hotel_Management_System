@@ -1,16 +1,12 @@
-import ResetPasswordLeftPanel from '../components/layout/ResetPasswordLeftPanel';
-import ResetPasswordRightPanel from '../components/layout/ResetPasswordRightPanel';
+import ResetPasswordLeftPanel from "../components/layout/ResetPasswordLeftPanel";
+import ResetPasswordRightPanel from "../components/layout/ResetPasswordRightPanel";
 
-/**
- * ResetPasswordPage - Grand Astoria Password Recovery Portal
- * Administrative password reset page for hotel management system
- */
 function ResetPasswordPage() {
   return (
     <div className="bg-background font-body-md text-on-surface antialiased min-h-screen relative selection:bg-primary selection:text-on-primary">
       {/* Background Radial Gradient Overlay */}
       <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_80%_60%_at_80%_-10%,rgba(27,42,74,0.3),transparent_70%)] z-0" />
-      
+
       <main className="relative z-10 w-full min-h-screen bg-transparent flex flex-col justify-center">
         <div className="flex flex-col w-full">
           <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-12 flex items-center justify-center">

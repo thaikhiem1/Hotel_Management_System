@@ -2,6 +2,11 @@ import React from 'react';
 import { cn } from '@/utils/lib/util';
 
 const RoomCard = ({ room, onAction }) => {
+  // TODO: Lấy role từ AuthContext hoặc Redux store
+  // Ví dụ: const { user } = useAuth(); const userRole = user?.role;
+  // Role: 0 = Admin, 1 = Nhân viên lễ tân, 2 = Quản lý
+  const userRole = 0; // Mock data - tạm thời dùng Admin để test đầy đủ chức năng
+
   const getStatusConfig = (status) => {
     const configs = {
       available: {
@@ -9,8 +14,8 @@ const RoomCard = ({ room, onAction }) => {
         color: 'bg-primary/20 text-primary',
         icon: 'check_circle',
         actions: [
-          { id: 'view', label: 'Xem chi tiết', icon: 'visibility', variant: 'secondary' },
-          { id: 'book', label: 'Đặt phòng tức thì', icon: 'add_circle', variant: 'primary' }
+          { id: 'view', label: 'Xem chi tiết', icon: 'visibility', variant: 'secondary', roles: [0, 1, 2] },
+          { id: 'book', label: 'Đặt phòng', icon: 'add_circle', variant: 'primary', roles: [0, 1, 2] }
         ]
       },
       reserved: {
@@ -18,8 +23,9 @@ const RoomCard = ({ room, onAction }) => {
         color: 'bg-secondary/20 text-secondary',
         icon: 'event',
         actions: [
-          { id: 'view', label: 'Xem chi tiết', icon: 'visibility', variant: 'secondary' },
-          { id: 'checkin', label: 'Nhận phòng', icon: 'login', variant: 'primary' }
+          { id: 'view', label: 'Xem chi tiết', icon: 'visibility', variant: 'secondary', roles: [0, 1, 2] },
+          { id: 'checkin', label: 'Nhận phòng', icon: 'login', variant: 'primary', roles: [0, 1] },
+          { id: 'cancel', label: 'Hủy đặt', icon: 'cancel', variant: 'error', roles: [0, 2] }
         ]
       },
       occupied: {
@@ -27,18 +33,18 @@ const RoomCard = ({ room, onAction }) => {
         color: 'bg-tertiary/20 text-tertiary',
         icon: 'person',
         actions: [
-          { id: 'view', label: 'Xem chi tiết', icon: 'visibility', variant: 'secondary' },
-          { id: 'service', label: 'Thêm dịch vụ', icon: 'room_service', variant: 'tertiary' },
-          { id: 'checkout', label: 'Trả phòng', icon: 'logout', variant: 'primary' }
+          { id: 'view', label: 'Xem chi tiết', icon: 'visibility', variant: 'secondary', roles: [0, 1, 2] },
+          { id: 'service', label: 'Thêm dịch vụ', icon: 'room_service', variant: 'tertiary', roles: [0, 1] },
+          { id: 'checkout', label: 'Trả phòng', icon: 'logout', variant: 'primary', roles: [0, 1] }
         ]
       },
       cleaning: {
         label: 'Đang dọn dẹp',
-        color: 'bg-secondary/20 text-secondary',
+        color: 'bg-amber-500/20 text-amber-600',
         icon: 'cleaning_services',
         actions: [
-          { id: 'inspect', label: 'Kiểm tra buồng', icon: 'fact_check', variant: 'secondary' },
-          { id: 'ready', label: 'Đánh dấu sẵn sàng', icon: 'done_all', variant: 'primary' }
+          { id: 'view', label: 'Xem chi tiết', icon: 'visibility', variant: 'secondary', roles: [0, 1, 2] },
+          { id: 'ready', label: 'Đánh dấu sẵn sàng', icon: 'done_all', variant: 'primary', roles: [0, 1] }
         ]
       },
       maintenance: {
@@ -46,8 +52,8 @@ const RoomCard = ({ room, onAction }) => {
         color: 'bg-error/20 text-error',
         icon: 'engineering',
         actions: [
-          { id: 'reason', label: 'Xem lý do', icon: 'info', variant: 'secondary' },
-          { id: 'complete', label: 'Hoàn thành bảo trì', icon: 'done', variant: 'primary' }
+          { id: 'view', label: 'Xem chi tiết', icon: 'visibility', variant: 'secondary', roles: [0, 1, 2] },
+          { id: 'complete', label: 'Hoàn thành bảo trì', icon: 'done', variant: 'primary', roles: [0, 2] }
         ]
       }
     };
@@ -60,9 +66,20 @@ const RoomCard = ({ room, onAction }) => {
     const variants = {
       primary: 'bg-primary-container hover:bg-primary text-on-primary-container hover:text-on-primary',
       secondary: 'bg-surface-container-high hover:bg-surface-container-highest text-on-surface',
-      tertiary: 'bg-tertiary-container hover:bg-tertiary text-on-tertiary-container hover:text-on-tertiary'
+      tertiary: 'bg-tertiary-container hover:bg-tertiary text-on-tertiary-container hover:text-on-tertiary',
+      error: 'bg-error-container hover:bg-error text-on-error-container hover:text-on-error'
     };
     return variants[variant] || variants.secondary;
+  };
+
+  // Lọc actions theo quyền của user
+  const getFilteredActions = (actions) => {
+    return actions.filter(action => {
+      // Nếu action không có roles được định nghĩa, cho phép tất cả roles
+      if (!action.roles || action.roles.length === 0) return true;
+      // Kiểm tra role hiện tại có trong danh sách roles được phép không
+      return action.roles.includes(userRole);
+    });
   };
 
   return (
@@ -122,26 +139,31 @@ const RoomCard = ({ room, onAction }) => {
         </div>
       )}
 
-      {/* Guest Info (if occupied) */}
-      {room.status === 'occupied' && room.guestName && (
+      {/* Guest Info (if occupied or reserved) */}
+      {(room.status === 'occupied' || room.status === 'reserved') && room.guestName && (
         <div className="mb-space-md p-space-md rounded-lg bg-tertiary/10 border border-tertiary/20">
           <p className="font-label-sm text-label-sm text-tertiary uppercase tracking-wider mb-space-xs">
-            Khách hiện tại
+            {room.status === 'occupied' ? 'Khách hiện tại' : 'Khách đã đặt'}
           </p>
           <p className="font-body-md text-body-md text-on-surface font-semibold">
             {room.guestName}
           </p>
-          {room.checkOutTime && (
+          {room.status === 'occupied' && room.checkOutTime && (
             <p className="font-body-sm text-body-sm text-outline mt-space-xs">
               Trả phòng: {room.checkOutTime}
+            </p>
+          )}
+          {room.status === 'reserved' && room.checkInTime && (
+            <p className="font-body-sm text-body-sm text-outline mt-space-xs">
+              Nhận phòng: {room.checkInTime}
             </p>
           )}
         </div>
       )}
 
-      {/* Actions */}
+      {/* Actions - Filtered by user role */}
       <div className="flex flex-col gap-space-sm">
-        {statusConfig.actions.map((action) => (
+        {getFilteredActions(statusConfig.actions).map((action) => (
           <button
             key={action.id}
             onClick={() => onAction(action.id, room)}

@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { cn } from '@/utils/lib/util';
+import React, { useState, useEffect, useRef } from "react";
+import { cn } from "@/utils/lib/util";
 
 /**
  * EmployeeProfileDialog - Dialog hiển thị và chỉnh sửa profile nhân viên
@@ -16,25 +16,27 @@ const EmployeeProfileDialog = ({
   onClose,
   onSubmit,
   employeeData = null,
-  mode = 'view',
+  mode = "view",
   isLoading = false,
-  canEdit = false
+  canEdit = false,
 }) => {
   const fileInputRef = useRef(null);
-  const [isEditMode, setIsEditMode] = useState(mode === 'edit' || mode === 'add');
+  const [isEditMode, setIsEditMode] = useState(
+    mode === "edit" || mode === "add",
+  );
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [formData, setFormData] = useState({
-    tenNV: '',
-    chucVu: 'Nhân Viên',
-    luong: '',
-    sdt: '',
-    cccd: '',
-    ngaySinh: '',
-    gioiTinh: 'Nam',
-    diaChi: '',
-    email: '',
-    avatar: '',
-    isWorking: true
+    tenNV: "",
+    chucVu: "Nhân Viên",
+    luong: "",
+    sdt: "",
+    cccd: "",
+    ngaySinh: "",
+    gioiTinh: "Nam",
+    diaChi: "",
+    email: "",
+    avatar: "",
+    isWorking: true,
   });
 
   // Reset form khi dialog mở/đóng hoặc data thay đổi
@@ -42,46 +44,46 @@ const EmployeeProfileDialog = ({
     if (isOpen) {
       if (employeeData) {
         setFormData({
-          tenNV: employeeData.tenNV || '',
-          chucVu: employeeData.chucVu || 'Nhân Viên',
-          luong: employeeData.luong || '',
-          sdt: employeeData.sdt || '',
-          cccd: employeeData.cccd || '',
-          ngaySinh: employeeData.ngaySinh || '',
-          gioiTinh: employeeData.gioiTinh || 'Nam',
-          diaChi: employeeData.diaChi || '',
-          email: employeeData.email || '',
-          avatar: employeeData.avatar || '',
-          isWorking: employeeData.isWorking ?? true
+          tenNV: employeeData.tenNV || "",
+          chucVu: employeeData.chucVu || "Nhân Viên",
+          luong: employeeData.luong || "",
+          sdt: employeeData.sdt || "",
+          cccd: employeeData.cccd || "",
+          ngaySinh: employeeData.ngaySinh || "",
+          gioiTinh: employeeData.gioiTinh || "Nam",
+          diaChi: employeeData.diaChi || "",
+          email: employeeData.email || "",
+          avatar: employeeData.avatar || "",
+          isWorking: employeeData.isWorking ?? true,
         });
         setAvatarPreview(employeeData.avatar);
       } else {
         // Reset form cho chế độ thêm mới
         setFormData({
-          tenNV: '',
-          chucVu: 'Nhân Viên',
-          luong: '',
-          sdt: '',
-          cccd: '',
-          ngaySinh: '',
-          gioiTinh: 'Nam',
-          diaChi: '',
-          email: '',
-          avatar: '',
-          isWorking: true
+          tenNV: "",
+          chucVu: "Nhân Viên",
+          luong: "",
+          sdt: "",
+          cccd: "",
+          ngaySinh: "",
+          gioiTinh: "Nam",
+          diaChi: "",
+          email: "",
+          avatar: "",
+          isWorking: true,
         });
         setAvatarPreview(null);
       }
-      setIsEditMode(mode === 'edit' || mode === 'add');
+      setIsEditMode(mode === "edit" || mode === "add");
     }
   }, [isOpen, employeeData, mode]);
 
   // Xử lý thay đổi input
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === "checkbox" ? checked : value,
     }));
   };
 
@@ -90,14 +92,14 @@ const EmployeeProfileDialog = ({
     const file = e.target.files[0];
     if (file) {
       // Validate file type
-      if (!file.type.startsWith('image/')) {
-        alert('Vui lòng chọn file ảnh!');
+      if (!file.type.startsWith("image/")) {
+        alert("Vui lòng chọn file ảnh!");
         return;
       }
-      
+
       // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        alert('Kích thước ảnh không được vượt quá 5MB!');
+        alert("Kích thước ảnh không được vượt quá 5MB!");
         return;
       }
 
@@ -105,9 +107,9 @@ const EmployeeProfileDialog = ({
       const reader = new FileReader();
       reader.onloadend = () => {
         setAvatarPreview(reader.result);
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
-          avatar: reader.result // Base64 string hoặc URL
+          avatar: reader.result, // Base64 string hoặc URL
         }));
       };
       reader.readAsDataURL(file);
@@ -117,20 +119,20 @@ const EmployeeProfileDialog = ({
   // Xử lý submit form
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     // Validation
     if (!formData.tenNV.trim()) {
-      alert('Vui lòng nhập tên nhân viên!');
+      alert("Vui lòng nhập tên nhân viên!");
       return;
     }
-    
+
     if (!formData.email.trim()) {
-      alert('Vui lòng nhập email!');
+      alert("Vui lòng nhập email!");
       return;
     }
-    
+
     if (!formData.sdt.trim()) {
-      alert('Vui lòng nhập số điện thoại!');
+      alert("Vui lòng nhập số điện thoại!");
       return;
     }
 
@@ -153,21 +155,26 @@ const EmployeeProfileDialog = ({
       />
 
       {/* Dialog Content */}
-      <div className={cn(
-        'relative w-full max-w-4xl max-h-[90vh] overflow-y-auto',
-        'bg-surface-container-low rounded-2xl shadow-2xl',
-        'mx-space-lg'
-      )}>
+      <div
+        className={cn(
+          "relative w-full max-w-4xl max-h-[90vh] overflow-y-auto",
+          "bg-surface-container-low rounded-2xl shadow-2xl",
+          "mx-space-lg",
+        )}
+      >
         {/* Header */}
         <div className="sticky top-0 z-10 flex items-center justify-between p-space-lg bg-surface-container-low border-b border-outline-variant">
           <div className="flex items-center gap-space-md">
             <span className="material-symbols-outlined text-primary text-[28px]">
-              {mode === 'add' ? 'person_add' : 'badge'}
+              {mode === "add" ? "person_add" : "badge"}
             </span>
             <div>
               <h2 className="font-headline-md text-headline-md text-on-surface">
-                {mode === 'add' ? 'Thêm nhân viên mới' : 
-                 isEditMode ? 'Chỉnh sửa thông tin' : 'Thông tin nhân viên'}
+                {mode === "add"
+                  ? "Thêm nhân viên mới"
+                  : isEditMode
+                    ? "Chỉnh sửa thông tin"
+                    : "Thông tin nhân viên"}
               </h2>
               {employeeData && (
                 <p className="font-body-sm text-body-sm text-on-surface-variant">
@@ -179,16 +186,18 @@ const EmployeeProfileDialog = ({
 
           <div className="flex items-center gap-space-sm">
             {/* Toggle Edit Button */}
-            {mode === 'view' && canEdit && !isEditMode && (
+            {mode === "view" && canEdit && !isEditMode && (
               <button
                 onClick={handleToggleEdit}
                 className={cn(
-                  'flex items-center gap-space-xs px-space-md py-space-sm rounded-lg',
-                  'bg-primary text-on-primary font-label-md text-label-md',
-                  'hover:bg-primary/90 transition-colors'
+                  "flex items-center gap-space-xs px-space-md py-space-sm rounded-lg",
+                  "bg-primary text-on-primary font-label-md text-label-md",
+                  "hover:bg-primary/90 transition-colors",
                 )}
               >
-                <span className="material-symbols-outlined text-[20px]">edit</span>
+                <span className="material-symbols-outlined text-[20px]">
+                  edit
+                </span>
                 Chỉnh sửa
               </button>
             )}
@@ -211,11 +220,15 @@ const EmployeeProfileDialog = ({
           <div className="flex flex-col items-center gap-space-md pb-space-lg border-b border-outline-variant">
             <div className="relative">
               <img
-                src={avatarPreview || formData.avatar || 'https://via.placeholder.com/150'}
+                src={
+                  avatarPreview ||
+                  formData.avatar ||
+                  "https://via.placeholder.com/150"
+                }
                 alt="Avatar"
                 className="w-32 h-32 rounded-full object-cover ring-4 ring-primary/20"
                 onError={(e) => {
-                  e.target.src = 'https://via.placeholder.com/150?text=Avatar';
+                  e.target.src = "https://via.placeholder.com/150?text=Avatar";
                 }}
               />
               {isEditMode && (
@@ -223,9 +236,9 @@ const EmployeeProfileDialog = ({
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   className={cn(
-                    'absolute bottom-0 right-0 p-space-sm rounded-full',
-                    'bg-primary text-on-primary shadow-lg',
-                    'hover:bg-primary/90 transition-colors'
+                    "absolute bottom-0 right-0 p-space-sm rounded-full",
+                    "bg-primary text-on-primary shadow-lg",
+                    "hover:bg-primary/90 transition-colors",
                   )}
                 >
                   <span className="material-symbols-outlined text-[20px]">
@@ -265,12 +278,12 @@ const EmployeeProfileDialog = ({
                 onChange={handleInputChange}
                 disabled={!isEditMode}
                 className={cn(
-                  'w-full px-space-md py-space-sm rounded-lg',
-                  'bg-surface-container-highest border border-outline',
-                  'font-body-md text-body-md text-on-surface',
-                  'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent',
-                  'disabled:opacity-60 disabled:cursor-not-allowed',
-                  'transition-all'
+                  "w-full px-space-md py-space-sm rounded-lg",
+                  "bg-surface-container-highest border border-outline",
+                  "font-body-md text-body-md text-on-surface",
+                  "focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent",
+                  "disabled:opacity-60 disabled:cursor-not-allowed",
+                  "transition-all",
                 )}
                 placeholder="Nhập họ và tên"
                 required
@@ -288,12 +301,12 @@ const EmployeeProfileDialog = ({
                 onChange={handleInputChange}
                 disabled={!isEditMode}
                 className={cn(
-                  'w-full px-space-md py-space-sm rounded-lg',
-                  'bg-surface-container-highest border border-outline',
-                  'font-body-md text-body-md text-on-surface',
-                  'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent',
-                  'disabled:opacity-60 disabled:cursor-not-allowed',
-                  'transition-all'
+                  "w-full px-space-md py-space-sm rounded-lg",
+                  "bg-surface-container-highest border border-outline",
+                  "font-body-md text-body-md text-on-surface",
+                  "focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent",
+                  "disabled:opacity-60 disabled:cursor-not-allowed",
+                  "transition-all",
                 )}
                 required
               >
@@ -314,12 +327,12 @@ const EmployeeProfileDialog = ({
                 onChange={handleInputChange}
                 disabled={!isEditMode}
                 className={cn(
-                  'w-full px-space-md py-space-sm rounded-lg',
-                  'bg-surface-container-highest border border-outline',
-                  'font-body-md text-body-md text-on-surface',
-                  'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent',
-                  'disabled:opacity-60 disabled:cursor-not-allowed',
-                  'transition-all'
+                  "w-full px-space-md py-space-sm rounded-lg",
+                  "bg-surface-container-highest border border-outline",
+                  "font-body-md text-body-md text-on-surface",
+                  "focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent",
+                  "disabled:opacity-60 disabled:cursor-not-allowed",
+                  "transition-all",
                 )}
                 placeholder="email@example.com"
                 required
@@ -338,12 +351,12 @@ const EmployeeProfileDialog = ({
                 onChange={handleInputChange}
                 disabled={!isEditMode}
                 className={cn(
-                  'w-full px-space-md py-space-sm rounded-lg',
-                  'bg-surface-container-highest border border-outline',
-                  'font-body-md text-body-md text-on-surface',
-                  'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent',
-                  'disabled:opacity-60 disabled:cursor-not-allowed',
-                  'transition-all'
+                  "w-full px-space-md py-space-sm rounded-lg",
+                  "bg-surface-container-highest border border-outline",
+                  "font-body-md text-body-md text-on-surface",
+                  "focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent",
+                  "disabled:opacity-60 disabled:cursor-not-allowed",
+                  "transition-all",
                 )}
                 placeholder="0123456789"
                 required
@@ -362,12 +375,12 @@ const EmployeeProfileDialog = ({
                 onChange={handleInputChange}
                 disabled={!isEditMode}
                 className={cn(
-                  'w-full px-space-md py-space-sm rounded-lg',
-                  'bg-surface-container-highest border border-outline',
-                  'font-body-md text-body-md text-on-surface',
-                  'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent',
-                  'disabled:opacity-60 disabled:cursor-not-allowed',
-                  'transition-all'
+                  "w-full px-space-md py-space-sm rounded-lg",
+                  "bg-surface-container-highest border border-outline",
+                  "font-body-md text-body-md text-on-surface",
+                  "focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent",
+                  "disabled:opacity-60 disabled:cursor-not-allowed",
+                  "transition-all",
                 )}
                 placeholder="001234567890"
               />
@@ -385,12 +398,12 @@ const EmployeeProfileDialog = ({
                 onChange={handleInputChange}
                 disabled={!isEditMode}
                 className={cn(
-                  'w-full px-space-md py-space-sm rounded-lg',
-                  'bg-surface-container-highest border border-outline',
-                  'font-body-md text-body-md text-on-surface',
-                  'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent',
-                  'disabled:opacity-60 disabled:cursor-not-allowed',
-                  'transition-all'
+                  "w-full px-space-md py-space-sm rounded-lg",
+                  "bg-surface-container-highest border border-outline",
+                  "font-body-md text-body-md text-on-surface",
+                  "focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent",
+                  "disabled:opacity-60 disabled:cursor-not-allowed",
+                  "transition-all",
                 )}
               />
             </div>
@@ -406,12 +419,12 @@ const EmployeeProfileDialog = ({
                 onChange={handleInputChange}
                 disabled={!isEditMode}
                 className={cn(
-                  'w-full px-space-md py-space-sm rounded-lg',
-                  'bg-surface-container-highest border border-outline',
-                  'font-body-md text-body-md text-on-surface',
-                  'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent',
-                  'disabled:opacity-60 disabled:cursor-not-allowed',
-                  'transition-all'
+                  "w-full px-space-md py-space-sm rounded-lg",
+                  "bg-surface-container-highest border border-outline",
+                  "font-body-md text-body-md text-on-surface",
+                  "focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent",
+                  "disabled:opacity-60 disabled:cursor-not-allowed",
+                  "transition-all",
                 )}
               >
                 <option value="Nam">Nam</option>
@@ -432,12 +445,12 @@ const EmployeeProfileDialog = ({
                 onChange={handleInputChange}
                 disabled={!isEditMode}
                 className={cn(
-                  'w-full px-space-md py-space-sm rounded-lg',
-                  'bg-surface-container-highest border border-outline',
-                  'font-body-md text-body-md text-on-surface',
-                  'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent',
-                  'disabled:opacity-60 disabled:cursor-not-allowed',
-                  'transition-all'
+                  "w-full px-space-md py-space-sm rounded-lg",
+                  "bg-surface-container-highest border border-outline",
+                  "font-body-md text-body-md text-on-surface",
+                  "focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent",
+                  "disabled:opacity-60 disabled:cursor-not-allowed",
+                  "transition-all",
                 )}
                 placeholder="10000000"
                 min="0"
@@ -457,12 +470,12 @@ const EmployeeProfileDialog = ({
                 disabled={!isEditMode}
                 rows="3"
                 className={cn(
-                  'w-full px-space-md py-space-sm rounded-lg',
-                  'bg-surface-container-highest border border-outline',
-                  'font-body-md text-body-md text-on-surface',
-                  'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent',
-                  'disabled:opacity-60 disabled:cursor-not-allowed',
-                  'transition-all resize-none'
+                  "w-full px-space-md py-space-sm rounded-lg",
+                  "bg-surface-container-highest border border-outline",
+                  "font-body-md text-body-md text-on-surface",
+                  "focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent",
+                  "disabled:opacity-60 disabled:cursor-not-allowed",
+                  "transition-all resize-none",
                 )}
                 placeholder="Nhập địa chỉ đầy đủ"
               />
@@ -478,10 +491,10 @@ const EmployeeProfileDialog = ({
                   onChange={handleInputChange}
                   disabled={!isEditMode}
                   className={cn(
-                    'w-5 h-5 rounded border-2 border-outline',
-                    'text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2',
-                    'disabled:opacity-60 disabled:cursor-not-allowed',
-                    'transition-all'
+                    "w-5 h-5 rounded border-2 border-outline",
+                    "text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2",
+                    "disabled:opacity-60 disabled:cursor-not-allowed",
+                    "transition-all",
                   )}
                 />
                 <span className="font-label-md text-label-md text-on-surface font-semibold">
@@ -499,14 +512,14 @@ const EmployeeProfileDialog = ({
             <div className="flex items-center justify-end gap-space-md pt-space-md border-t border-outline-variant">
               <button
                 type="button"
-                onClick={mode === 'view' ? handleToggleEdit : onClose}
+                onClick={mode === "view" ? handleToggleEdit : onClose}
                 disabled={isLoading}
                 className={cn(
-                  'px-space-lg py-space-sm rounded-lg',
-                  'bg-surface-container-high text-on-surface',
-                  'font-label-lg text-label-lg',
-                  'hover:bg-surface-container-highest transition-colors',
-                  'disabled:opacity-60 disabled:cursor-not-allowed'
+                  "px-space-lg py-space-sm rounded-lg",
+                  "bg-surface-container-high text-on-surface",
+                  "font-label-lg text-label-lg",
+                  "hover:bg-surface-container-highest transition-colors",
+                  "disabled:opacity-60 disabled:cursor-not-allowed",
                 )}
               >
                 Hủy
@@ -515,10 +528,10 @@ const EmployeeProfileDialog = ({
                 type="submit"
                 disabled={isLoading}
                 className={cn(
-                  'flex items-center gap-space-xs px-space-lg py-space-sm rounded-lg',
-                  'bg-primary text-on-primary font-label-lg text-label-lg',
-                  'hover:bg-primary/90 transition-colors',
-                  'disabled:opacity-60 disabled:cursor-not-allowed'
+                  "flex items-center gap-space-xs px-space-lg py-space-sm rounded-lg",
+                  "bg-primary text-on-primary font-label-lg text-label-lg",
+                  "hover:bg-primary/90 transition-colors",
+                  "disabled:opacity-60 disabled:cursor-not-allowed",
                 )}
               >
                 {isLoading ? (
@@ -531,9 +544,9 @@ const EmployeeProfileDialog = ({
                 ) : (
                   <>
                     <span className="material-symbols-outlined text-[20px]">
-                      {mode === 'add' ? 'person_add' : 'save'}
+                      {mode === "add" ? "person_add" : "save"}
                     </span>
-                    {mode === 'add' ? 'Thêm nhân viên' : 'Lưu thay đổi'}
+                    {mode === "add" ? "Thêm nhân viên" : "Lưu thay đổi"}
                   </>
                 )}
               </button>

@@ -5,19 +5,6 @@ import DeleteConfirmDialog from '@/components/room-management/DeleteConfirmDialo
 import { roomAPI, roomTypeAPI } from '@/services/api';
 import { showSuccess, handleApiError } from '@/utils/notification';
 
-/**
- * QuanLyPhongPage - Trang quản lý phòng
- * Hiển thị danh sách phòng với các chức năng CRUD
- * Chuẩn hóa 100% theo Database.md
- * 
- * Table Phong {
- *   IdPH int [pk, increment]
- *   MaPH varchar(20) [not null, unique]
- *   TrangThaiPhong int [not null] -- 0: Trống, 1: Đang sửa chữa
- *   IdLPH int [not null]
- *   GhiChu varchar(255)
- * }
- */
 const QuanLyPhongPage = () => {
   // State quản lý dữ liệu phòng (sẽ được thay thế bằng API call)
   const [rooms, setRooms] = useState([]);
@@ -43,16 +30,12 @@ const QuanLyPhongPage = () => {
     fetchRoomTypes();
   }, []);
   
-  /**
-   * Fetch danh sách phòng từ API
-   */
   const fetchRooms = async () => {
     setIsLoading(true);
     try {
       // Gọi API lấy danh sách phòng
       const data = await roomAPI.getAll();
-      // Map dữ liệu từ backend sang frontend format
-      // Backend: IdPH, MaPH, TenLPH, GiaNgay, GiaGio, TrangThai, GhiChu
+
       const mappedData = data.map(item => ({
         IdPH: item.IdPH,
         MaPH: item.MaPH,
@@ -94,16 +77,13 @@ const QuanLyPhongPage = () => {
     return rooms.slice(startIndex, endIndex);
   }, [rooms, currentPage, itemsPerPage]);
   const totalPages = Math.ceil(rooms.length / itemsPerPage);
-  /**
-   * Mở dialog thêm phòng mới
-   */
+
   const handleAddNew = () => {
     setEditMode('add');
     setSelectedRoom(null);
     setIsFormDialogOpen(true);
   };
   /**
-   * Mở dialog sửa phòng với dữ liệu được binding từ dòng được chọn
    * @param {Object} room - Đối tượng phòng được chọn
    */
   const handleEdit = (room) => {
@@ -132,7 +112,7 @@ const QuanLyPhongPage = () => {
       if (editMode === 'add') {
         // Gọi API thêm mới
         const newRoom = await roomAPI.create(roomData);
-        // Reload lại danh sách phòng sau khi thêm thành công
+
         await fetchRooms();
         showSuccess("Thêm phòng mới thành công");
         console.log('Thêm phòng thành công:', newRoom);
@@ -154,18 +134,7 @@ const QuanLyPhongPage = () => {
       setIsLoading(false);
     }
   };
-  /**
-   * Xử lý xác nhận xóa phòng
-   * 
-   * TODO: API INTEGRATION
-   * - Gọi DELETE /api/phong/{IdPH}
-   * - Xử lý response và cập nhật state
-   * - Hiển thị thông báo thành công/thất bại
-   * 
-   * TODO: AUTHORIZATION
-   * - Chỉ Admin (Role 0) mới được phép xóa phòng
-   * - Kiểm tra phòng có đang được thuê hay không trước khi xóa
-   */
+
   const handleConfirmDelete = async () => {
     setIsLoading(true);
     try {

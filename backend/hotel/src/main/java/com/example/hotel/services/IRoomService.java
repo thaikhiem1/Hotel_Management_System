@@ -8,8 +8,4 @@ public interface IRoomService {
     RoomResponse CreateRoom(RoomRequest request);
 
     List<RoomResponse> GetAll();
-
-    RoomResponse UpdateRoom(Integer IdPH, RoomRequest request);
-
-    void DeleteRoom(Integer IdPH);
 }

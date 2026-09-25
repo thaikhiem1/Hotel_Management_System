@@ -1,44 +1,43 @@
-import { useState } from 'react';
-import {Link, useNavigate } from 'react-router-dom'
-/**
- * LoginForm - Hotel Management System Authentication Form
- * Handles user login with username/password and additional options
- */
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+
 function LoginForm() {
   const navigate = useNavigate();
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
-  const [alertMessage, setAlertMessage] = useState('');
-  const [alertType, setAlertType] = useState(''); // 'success' or 'error'
- 
+  const [alertMessage, setAlertMessage] = useState("");
+  const [alertType, setAlertType] = useState(""); // 'success' or 'error'
+
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
- 
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     setIsLoading(true);
-    setAlertMessage('');
-    setAlertType('');
- 
+    setAlertMessage("");
+    setAlertType("");
+
     // Simulate authentication process
     setTimeout(() => {
       setIsLoading(false);
-      setAlertType('success');
-      setAlertMessage(`Chứng thực hợp lệ cho tài khoản "${username}". Đang chuyển hướng PMS...`);
+      setAlertType("success");
+      setAlertMessage(
+        `Chứng thực hợp lệ cho tài khoản "${username}". Đang chuyển hướng PMS...`,
+      );
       // In a real application, handle navigation here
       // Example: navigate('/dashboard');
       setTimeout(() => {
-        setAlertMessage('');
-        navigate('/dashboard')
+        setAlertMessage("");
+        navigate("/dashboard");
       }, 900);
     }, 500);
   };
- 
+
   return (
     <>
       <form className="space-y-6" onSubmit={handleSubmit}>
@@ -67,7 +66,7 @@ function LoginForm() {
             />
           </div>
         </div>
- 
+
         {/* Field 2: Password */}
         <div className="space-y-2">
           <label
@@ -81,7 +80,7 @@ function LoginForm() {
               <span className="material-symbols-outlined text-lg">key</span>
             </div>
             <input
-              type={showPassword ? 'text' : 'password'}
+              type={showPassword ? "text" : "password"}
               id="password"
               name="password"
               value={password}
@@ -98,12 +97,12 @@ function LoginForm() {
               className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-on-surface-variant hover:text-primary transition-colors focus:outline-none"
             >
               <span className="material-symbols-outlined text-lg">
-                {showPassword ? 'visibility_off' : 'visibility'}
+                {showPassword ? "visibility_off" : "visibility"}
               </span>
             </button>
           </div>
         </div>
- 
+
         {/* Options Row: Show Password Checkbox & Forgot Password Link */}
         <div className="flex items-center justify-between pt-1">
           <label className="flex items-center gap-2.5 cursor-pointer select-none group">
@@ -124,13 +123,13 @@ function LoginForm() {
             </span>
           </label>
           <Link
-            to= "/reset-password"
+            to="/reset-password"
             className="font-label-lg text-label-lg text-primary hover:text-primary-fixed underline-offset-4 hover:underline transition-all"
           >
             Quên mật khẩu?
           </Link>
         </div>
- 
+
         {/* Secondary Row: Remember Session */}
         <div className="flex items-center gap-2.5">
           <div className="relative flex items-center justify-center">
@@ -152,7 +151,7 @@ function LoginForm() {
             Ghi nhớ thông tin tôi
           </label>
         </div>
- 
+
         {/* Action Button: Luxury Gold CTA */}
         <button
           type="submit"
@@ -174,18 +173,18 @@ function LoginForm() {
           )}
         </button>
       </form>
- 
+
       {/* Dynamic Feedback Message Container */}
       {alertMessage && (
         <div
           className={`mt-4 p-3 rounded font-body-sm text-body-sm flex items-center justify-center gap-2 ${
-            alertType === 'success'
-              ? 'bg-surface-container-high text-primary'
-              : 'bg-error-container text-on-error-container'
+            alertType === "success"
+              ? "bg-surface-container-high text-primary"
+              : "bg-error-container text-on-error-container"
           }`}
         >
           <span className="material-symbols-outlined text-base">
-            {alertType === 'success' ? 'check_circle' : 'error'}
+            {alertType === "success" ? "check_circle" : "error"}
           </span>
           <span>{alertMessage}</span>
         </div>
@@ -193,6 +192,5 @@ function LoginForm() {
     </>
   );
 }
- 
+
 export default LoginForm;
- 

@@ -17,6 +17,13 @@ const RoomFilterTabs = ({ activeFilter, onFilterChange, counts }) => {
       color: 'text-primary'
     },
     { 
+      id: 'reserved', 
+      label: 'Đã đặt', 
+      icon: 'event',
+      count: counts?.reserved || 0,
+      color: 'text-secondary'
+    },
+    { 
       id: 'occupied', 
       label: 'Đang có khách', 
       icon: 'person',
@@ -28,7 +35,7 @@ const RoomFilterTabs = ({ activeFilter, onFilterChange, counts }) => {
       label: 'Đang dọn dẹp', 
       icon: 'cleaning_services',
       count: counts?.cleaning || 0,
-      color: 'text-secondary'
+      color: 'text-amber-600'
     },
     { 
       id: 'maintenance', 

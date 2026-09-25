@@ -196,8 +196,7 @@ const EmployeeCard = ({ employee, onClick }) => {
           "flex items-center gap-space-xs opacity-0 group-hover:opacity-100",
           "transition-all duration-300 transform translate-x-2 group-hover:translate-x-0",
         )}
-      >
-      </div>
+      ></div>
     </div>
   );
 };

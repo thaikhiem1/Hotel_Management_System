@@ -4,7 +4,9 @@ import {
   QuickActions,
   StatCard,
   RoomFilterTabs,
-  RoomGrid
+  RoomGrid,
+  RoomDetailModal,
+  AddServiceModal
 } from '@/components/dashboard';
 import {
   mockPhong,
@@ -22,6 +24,9 @@ import {
 const DashboardPage = () => {
   const [activeFilter, setActiveFilter] = useState('all');
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedRoom, setSelectedRoom] = useState(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isAddServiceModalOpen, setIsAddServiceModalOpen] = useState(false);
 
   // Bộ lọc ngày giờ (mặc định hôm nay lúc 14:00 đến 12:00 hôm sau)
   const todayStr = new Date().toISOString().split('T')[0];
@@ -72,6 +77,7 @@ const DashboardPage = () => {
     const counts = {
       all: processedRooms.length,
       available: 0,
+      reserved: 0,
       occupied: 0,
       cleaning: 0,
       maintenance: 0
@@ -129,16 +135,105 @@ const DashboardPage = () => {
 
   const handleRoomAction = (actionId, room) => {
     console.log(`Action: ${actionId} on room:`, room);
+    
     switch (actionId) {
       case 'view':
-        alert(`Chi tiết phòng ${room.name} (${room.roomType})\nGiá ngày: ${room.pricePerDay.toLocaleString()}đ\nGiá giờ: ${room.pricePerHour.toLocaleString()}đ`);
+        // Mở modal chi tiết phòng
+        setSelectedRoom(room);
+        setIsDetailModalOpen(true);
         break;
+
       case 'book':
+        // TODO: Điều hướng tới trang đặt phòng với phòng được chọn sẵn
+        // API: GET /api/rooms/{IdPH}/availability (kiểm tra tính khả dụng)
+        // Sau đó chuyển đến form đặt phòng
+        // Authorization: Bearer token (quyền lễ tân/quản lý)
         alert(`Điều hướng tới trang lập phiếu thuê phòng ${room.name}`);
         break;
+
+      case 'checkin':
+        // TODO: API xử lý nhận phòng (chuyển từ "đã đặt" sang "đang thuê")
+        // API: POST /api/rental-details/{IdCTDP}/checkin
+        // Body: { checkinTime: ISO string, actualGuests: number }
+        // Authorization: Bearer token (quyền lễ tân)
+        if (confirm(`Xác nhận nhận phòng ${room.name} cho khách ${room.guestName}?`)) {
+          console.log('Processing check-in for room:', room);
+          alert('Đang xử lý nhận phòng...');
+          // Sau khi API thành công, cần refresh lại danh sách phòng
+          handleRefresh();
+        }
+        break;
+
+      case 'cancel':
+        // TODO: API hủy đặt phòng
+        // API: POST /api/rental-details/{IdCTDP}/cancel
+        // Authorization: Bearer token (quyền quản lý/admin)
+        if (confirm(`Xác nhận HỦY đặt phòng ${room.name}? Hành động này không thể hoàn tác!`)) {
+          console.log('Cancelling reservation for room:', room);
+          alert('Đang xử lý hủy đặt phòng...');
+          handleRefresh();
+        }
+        break;
+
+      case 'service':
+        // Mở modal thêm dịch vụ riêng biệt
+        setSelectedRoom(room);
+        setIsAddServiceModalOpen(true);
+        break;
+
+      case 'checkout':
+        // TODO: API xử lý trả phòng (chuyển sang trạng thái "đang dọn dẹp")
+        // API: POST /api/rental-details/{IdCTDP}/checkout
+        // Body: { checkoutTime: ISO string }
+        // Authorization: Bearer token (quyền lễ tân)
+        if (confirm(`Xác nhận trả phòng ${room.name}?`)) {
+          console.log('Processing check-out for room:', room);
+          alert('Đang xử lý trả phòng và tạo hóa đơn...');
+          handleRefresh();
+        }
+        break;
+
+      case 'ready':
+        // TODO: API đánh dấu phòng sẵn sàng sau khi dọn dẹp
+        // API: PUT /api/rooms/{IdPH}/status
+        // Body: { status: 'available' }
+        // Authorization: Bearer token (quyền lễ tân)
+        if (confirm(`Xác nhận phòng ${room.name} đã dọn dẹp xong và sẵn sàng?`)) {
+          console.log('Marking room as ready:', room);
+          alert('Đã đánh dấu phòng sẵn sàng');
+          handleRefresh();
+        }
+        break;
+
+      case 'complete':
+        // TODO: API hoàn thành bảo trì
+        // API: PUT /api/rooms/{IdPH}/maintenance
+        // Body: { status: 0, completionNote: string }
+        // Authorization: Bearer token (quyền quản lý/admin)
+        if (confirm(`Xác nhận hoàn thành bảo trì phòng ${room.name}?`)) {
+          console.log('Completing maintenance for room:', room);
+          alert('Đã hoàn thành bảo trì');
+          handleRefresh();
+        }
+        break;
+
       default:
         break;
     }
+  };
+
+  const handleAddService = (room, services) => {
+    // TODO: API thêm dịch vụ cho phòng
+    // API: POST /api/rental-details/{IdCTDP}/services
+    // Body: { services: [{ serviceId, quantity, price }] }
+    // Authorization: Bearer token (quyền lễ tân/quản lý)
+    console.log('Adding services to room:', room, services);
+    
+    const totalAmount = services.reduce((sum, s) => sum + (s.price * s.quantity), 0);
+    alert(`Đã thêm ${services.length} dịch vụ cho phòng ${room.name}\nTổng: ${totalAmount.toLocaleString('vi-VN')}đ`);
+    
+    // Refresh sau khi thêm dịch vụ thành công
+    handleRefresh();
   };
 
   // Lọc phòng theo tab được chọn
@@ -243,6 +338,31 @@ const DashboardPage = () => {
           isLoading={isLoading}
         />
       </div>
+
+      {/* Room Detail Modal - Hiển thị chi tiết phòng */}
+      <RoomDetailModal
+        room={selectedRoom}
+        isOpen={isDetailModalOpen}
+        onClose={() => {
+          setIsDetailModalOpen(false);
+          setSelectedRoom(null);
+        }}
+        onOpenAddService={(room) => {
+          setSelectedRoom(room);
+          setIsAddServiceModalOpen(true);
+        }}
+      />
+
+      {/* Add Service Modal - Form thêm dịch vụ */}
+      <AddServiceModal
+        room={selectedRoom}
+        isOpen={isAddServiceModalOpen}
+        onClose={() => {
+          setIsAddServiceModalOpen(false);
+          // Không set selectedRoom = null để có thể quay lại modal chi tiết
+        }}
+        onSubmit={handleAddService}
+      />
     </div>
   );
 };

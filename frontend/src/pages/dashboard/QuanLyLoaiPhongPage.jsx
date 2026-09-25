@@ -5,20 +5,6 @@ import RoomTypeDeleteDialog from '@/components/room-type-management/RoomTypeDele
 import { roomTypeAPI } from '@/services/api';
 import { showSuccess, showError, handleApiError } from '@/utils/notification';
 
-/**
- * QuanLyLoaiPhongPage - Trang quản lý loại phòng
- * Hiển thị danh sách loại phòng với các chức năng CRUD
- * Chuẩn hóa 100% theo Database.md
- * 
- * Table LoaiPhong {
- *   IdLPH int [pk, increment]
- *   TenLPH varchar(100) [not null]
- *   SoGiuong int [not null]
- *   SoNguoiToiDa int [not null]
- *   GiaNgay decimal(18,2) [not null]
- *   GiaGio decimal(18,2)
- * }
- */
 const QuanLyLoaiPhongPage = () => {
   // State quản lý dữ liệu loại phòng từ API
   const [roomTypes, setRoomTypes] = useState([]);
@@ -27,36 +13,23 @@ const QuanLyLoaiPhongPage = () => {
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   
-  // State quản lý chế độ thêm/sửa và loại phòng được chọn
-  const [editMode, setEditMode] = useState('add'); // 'add' | 'edit'
+  const [editMode, setEditMode] = useState('add'); 
   const [selectedRoomType, setSelectedRoomType] = useState(null);
   
-  // State phân trang
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   
-  // State loading
   const [isLoading, setIsLoading] = useState(false);
   
-  /**
-   * useEffect - Load dữ liệu loại phòng khi component mount
-   * API: GET /api/roomtype
-   */
   useEffect(() => {
     fetchRoomTypes();
   }, []);
   
-  /**
-   * Fetch danh sách loại phòng từ API
-   */
   const fetchRoomTypes = async () => {
     setIsLoading(true);
     try {
-      // Gọi API lấy danh sách loại phòng
       const data = await roomTypeAPI.getAll();
       
-      // Map dữ liệu từ backend sang frontend format
-      // Backend: IdLPH, TenLPH, SoGiuong, SoNguoiToiDa, GiaNgay, GiaGio
       const mappedData = data.map(item => ({
         IdLPH: item.IdLPH,
         TenLPH: item.TenLPH,
@@ -67,9 +40,7 @@ const QuanLyLoaiPhongPage = () => {
       }));
       
       setRoomTypes(mappedData);
-      console.log('Loaded room types:', mappedData.length);
     } catch (error) {
-      console.error('Error fetching room types:', error);
       handleApiError(error);
     } finally {
       setIsLoading(false);
@@ -100,11 +71,6 @@ const QuanLyLoaiPhongPage = () => {
     };
   }, [roomTypes]);
 
-  // ============ HANDLERS ============
-
-  /**
-   * Mở dialog thêm loại phòng mới
-   */
   const handleAddNew = () => {
     setEditMode('add');
     setSelectedRoomType(null);
@@ -112,8 +78,7 @@ const QuanLyLoaiPhongPage = () => {
   };
 
   /**
-   * Mở dialog sửa loại phòng với dữ liệu được binding từ dòng được chọn
-   * @param {Object} roomType - Đối tượng loại phòng được chọn
+   * @param {Object} roomType 
    */
   const handleEdit = (roomType) => {
     setEditMode('edit');
@@ -122,8 +87,7 @@ const QuanLyLoaiPhongPage = () => {
   };
 
   /**
-   * Mở dialog xác nhận xóa
-   * @param {Object} roomType - Đối tượng loại phòng cần xóa
+   * @param {Object} roomType 
    */
   const handleDelete = (roomType) => {
     setSelectedRoomType(roomType);
@@ -133,46 +97,32 @@ const QuanLyLoaiPhongPage = () => {
   /**
    * Xử lý submit form (thêm mới hoặc cập nhật)
    * @param {Object} roomTypeData - Dữ liệu loại phòng từ form
-   * 
-   * API INTEGRATION:
-   * - Nếu editMode === 'add': Gọi POST /api/roomtype
-   * - Nếu editMode === 'edit': Gọi PUT /api/roomtype/{IdLPH}
-   * 
-   * TODO: AUTHORIZATION
-   * - Role 0 (Admin) và Role 2 (Quản lý) có quyền thêm/sửa
-   * - Role 1 (Lễ tân) chỉ xem
    */
   const handleSubmitForm = async (roomTypeData) => {
     setIsLoading(true);
     
     try {
       if (editMode === 'add') {
-        // Thêm mới - Gọi API POST
+
         const response = await roomTypeAPI.create(roomTypeData);
         
-        // Thêm vào danh sách
         setRoomTypes([...roomTypes, response]);
         
-        // Hiển thị thông báo thành công
         showSuccess('Thêm loại phòng thành công!');
       } else {
-        // Cập nhật - Gọi API PUT
+
         const response = await roomTypeAPI.update(selectedRoomType.IdLPH, roomTypeData);
         
-        // Cập nhật danh sách
         setRoomTypes(roomTypes.map(rt => 
           rt.IdLPH === selectedRoomType.IdLPH ? response : rt
         ));
         
-        // Hiển thị thông báo thành công
         showSuccess('Cập nhật loại phòng thành công!');
       }
 
-      // Đóng dialog và reset
       setIsFormDialogOpen(false);
       setSelectedRoomType(null);
       
-      // Refresh lại danh sách từ server
       await fetchRoomTypes();
       
     } catch (error) {
@@ -183,40 +133,24 @@ const QuanLyLoaiPhongPage = () => {
     }
   };
 
-  /**
-   * Xử lý xác nhận xóa loại phòng
-   * 
-   * API INTEGRATION:
-   * - Gọi DELETE /api/roomtype/{IdLPH}
-   * 
-   * TODO: AUTHORIZATION
-   * - Chỉ Admin (Role 0) mới được phép xóa
-   * - Kiểm tra có phòng nào đang sử dụng loại phòng này không
-   */
   const handleConfirmDelete = async () => {
     setIsLoading(true);
     
     try {
-      // Gọi API DELETE
       await roomTypeAPI.delete(selectedRoomType.IdLPH);
       
-      // Xóa khỏi danh sách
       setRoomTypes(roomTypes.filter(rt => rt.IdLPH !== selectedRoomType.IdLPH));
       
-      // Đóng dialog
       setIsDeleteDialogOpen(false);
       setSelectedRoomType(null);
       
-      // Điều chỉnh trang nếu cần
       const newTotalPages = Math.ceil((roomTypes.length - 1) / itemsPerPage);
       if (currentPage > newTotalPages && newTotalPages > 0) {
         setCurrentPage(newTotalPages);
       }
       
-      // Hiển thị thông báo thành công
       showSuccess('Xóa loại phòng thành công!');
       
-      // Refresh lại danh sách từ server
       await fetchRoomTypes();
       
     } catch (error) {
@@ -227,16 +161,10 @@ const QuanLyLoaiPhongPage = () => {
     }
   };
 
-  /**
-   * Xử lý thay đổi trang
-   */
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
   };
 
-  /**
-   * Format số tiền theo định dạng Việt Nam
-   */
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
@@ -257,7 +185,7 @@ const QuanLyLoaiPhongPage = () => {
           </p>
         </div>
 
-        {/* Nút thêm mới - TODO: AUTHORIZATION - Chỉ Admin và Quản lý có quyền */}
+        {/* Nút thêm mới */}
         <button
           onClick={handleAddNew}
           className="flex items-center gap-space-xs px-space-md py-space-sm rounded-lg
