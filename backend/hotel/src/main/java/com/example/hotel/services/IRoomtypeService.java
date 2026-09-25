@@ -8,6 +8,6 @@ public interface IRoomtypeService {
         RoomTypeResponse CreateRoomtype(RoomTypeRequest request);
         List<RoomTypeResponse> GetAll();
         RoomTypeResponse UpdateRoomType(Integer idLPH, RoomTypeRequest request);
-        void 
+        void DeletedRoomType(Integer idLPH);
 
 }
