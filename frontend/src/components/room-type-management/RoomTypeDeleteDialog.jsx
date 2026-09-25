@@ -22,25 +22,25 @@ const RoomTypeDeleteDialog = ({
 
   // Map room type data to generic dialog format
   const itemDetails = [
-    { label: "Tên loại phòng", value: roomTypeData.TenLPH, highlight: true },
-    { label: "Số giường", value: roomTypeData.SoGiuong, highlight: false },
+    { label: "Tên loại phòng", value: roomTypeData.room_type_name, highlight: true },
+    { label: "Số giường", value: roomTypeData.number_of_beds, highlight: false },
     {
       label: "Số người tối đa",
-      value: roomTypeData.SoNguoiToiDa,
+      value: roomTypeData.maximum_occupancy,
       highlight: false,
     },
     {
       label: "Giá ngày",
-      value: formatCurrency(roomTypeData.GiaNgay),
+      value: formatCurrency(roomTypeData.daily_rate),
       highlight: false,
     },
   ];
 
   // Add price per hour if exists
-  if (roomTypeData.GiaGio) {
+  if (roomTypeData.hourly_rate) {
     itemDetails.push({
       label: "Giá giờ",
-      value: formatCurrency(roomTypeData.GiaGio),
+      value: formatCurrency(roomTypeData.hourly_rate),
       highlight: false,
     });
   }

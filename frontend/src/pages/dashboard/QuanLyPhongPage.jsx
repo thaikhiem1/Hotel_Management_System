@@ -17,7 +17,7 @@ const QuanLyPhongPage = () => {
   const [editMode, setEditMode] = useState('add'); // 'add' | 'edit'
   const [selectedRoom, setSelectedRoom] = useState(null);
   // State quản lý danh sách loại phòng
-  const [roomtype, setRoomTypes] = useState([]);
+  const [roomType, setRoomTypes] = useState([]);
   
   // State phân trang
   const [currentPage, setCurrentPage] = useState(1);
@@ -37,14 +37,14 @@ const QuanLyPhongPage = () => {
       const data = await roomAPI.getAll();
 
       const mappedData = data.map(item => ({
-        IdPH: item.IdPH,
-        MaPH: item.MaPH,
-        IdLPH: item.IdLPH,
-        TenLPH: item.TenLPH,
-        GiaNgay: item.GiaNgay,
-        GiaGio: item.GiaGio,
-        TrangThaiPhong: item.TrangThaiPhong,
-        GhiChu: item.GhiChu,
+        room_id: item.room_id,
+        room_code: item.room_code,
+        room_type_id: item.room_type_id,
+        room_type_name: item.room_type_name,
+        daily_rate: item.daily_rate,
+        hourly_rate: item.hourly_rate,
+        room_status: item.room_status,
+        note: item.note,
       }));
       setRooms(mappedData);
       console.log('Loaded rooms :', mappedData.length);
@@ -56,9 +56,6 @@ const QuanLyPhongPage = () => {
     }
   };
 
-  /**
-   * Fetch danh sách loại phòng từ API
-   */
   const fetchRoomTypes = async () => {
     try {
       const data = await roomTypeAPI.getAll();
@@ -112,19 +109,17 @@ const QuanLyPhongPage = () => {
       if (editMode === 'add') {
         // Gọi API thêm mới
         const newRoom = await roomAPI.create(roomData);
-
         await fetchRooms();
-        showSuccess("Thêm phòng mới thành công");
-        console.log('Thêm phòng thành công:', newRoom);
+        showSuccess("add success");
+        console.log('add success: ', newRoom);
       } else {
         // Gọi API cập nhật
-        const updatedRoom = await roomAPI.update(selectedRoom.IdPH, roomData);
+        const updatedRoom = await roomAPI.update(selectedRoom.room_id, roomData);
         // Reload lại danh sách phòng sau khi cập nhật thành công
         await fetchRooms();
-        showSuccess("Cập nhật phòng thành công");
-        console.log('Cập nhật phòng thành công:', updatedRoom);
+        showSuccess("update success");
+        console.log('update success: ', updatedRoom);
       }
-      
       setIsFormDialogOpen(false);
       setSelectedRoom(null);
     } catch (error) {
@@ -139,8 +134,7 @@ const QuanLyPhongPage = () => {
     setIsLoading(true);
     try {
       // Gọi API xóa phòng
-      await roomAPI.delete(selectedRoom.IdPH);
-      // Reload danh sách sau khi xóa thành công
+      await roomAPI.delete(selectedRoom.room_id);
       await fetchRooms();
       setIsDeleteDialogOpen(false);
       setSelectedRoom(null);
@@ -149,7 +143,7 @@ const QuanLyPhongPage = () => {
       if (currentPage > newTotalPages && newTotalPages > 0) {
         setCurrentPage(newTotalPages);
       }
-      showSuccess("Xóa phòng thành công");
+      showSuccess("delete success");
     } catch (error) {
       console.error('Error deleting room:', error);
       handleApiError(error);
@@ -219,7 +213,7 @@ const QuanLyPhongPage = () => {
                 Phòng trống
               </p>
               <p className="font-headline-md text-headline-md text-on-surface">
-                {rooms.filter(r => r.TrangThaiPhong === "TRONG").length}
+                {rooms.filter(r => r.room_status === "AVAILABLE").length}
               </p>
             </div>
           </div>
@@ -235,7 +229,7 @@ const QuanLyPhongPage = () => {
                 Đang bảo trì
               </p>
               <p className="font-headline-md text-headline-md text-on-surface">
-                {rooms.filter(r => r.TrangThaiPhong === "DANG_SUA_CHUA").length}
+                {rooms.filter(r => r.room_status === "UNDER_MAINTENANCE").length}
               </p>
             </div>
           </div>
@@ -311,7 +305,7 @@ const QuanLyPhongPage = () => {
         onSubmit={handleSubmitForm}
         editMode={editMode}
         roomData={selectedRoom}
-        roomtypeData = {roomtype}
+        roomTypeData = {roomType}
         isLoading={isLoading}
       />
 

@@ -15,7 +15,7 @@ const RoomTable = ({ rooms, onEdit, onDelete, isLoading }) => {
    * Lấy badge trạng thái phòng
    */
   const getStatusBadge = (room) => {
-    if (room.TrangThaiPhong === "TRONG") {
+    if (room.room_status === "AVAILABLE") {
       return (
         <span
           className="inline-flex items-center gap-space-xs px-space-sm py-space-xs
@@ -27,7 +27,7 @@ const RoomTable = ({ rooms, onEdit, onDelete, isLoading }) => {
           <span>Trống</span>
         </span>
       );
-    } else if (room.TrangThaiPhong === "DANG_SUA_CHUA") {
+    } else if (room.room_status === "UNDER_MAINTENANCE") {
       return (
         <span
           className="inline-flex items-center gap-space-xs px-space-sm py-space-xs
@@ -84,7 +84,7 @@ const RoomTable = ({ rooms, onEdit, onDelete, isLoading }) => {
       </div>
     );
   }
-  const getformatMaP = (idPH) => `P${String(idPH).padStart(3, 0)}`;
+  const getformatMaP = (room_id) => `P${String(room_id).padStart(3, 0)}`;
   return (
     <div className="w-full overflow-x-auto bg-surface-container-low rounded-lg border border-outline-variant">
       <table className="w-full">
@@ -119,7 +119,7 @@ const RoomTable = ({ rooms, onEdit, onDelete, isLoading }) => {
         <tbody className="divide-y divide-outline-variant">
           {rooms.map((room) => (
             <tr
-              key={room.IdPH}
+              key={room.room_id}
               className="hover:bg-surface-container-highest transition-colors duration-150"
             >
               {/* ID Phòng với icon */}
@@ -129,7 +129,7 @@ const RoomTable = ({ rooms, onEdit, onDelete, isLoading }) => {
                     <span className="material-symbols-outlined text-[18px] text-primary">meeting_room</span>
                   </div>
                   <span className="font-body-md text-body-md text-on-surface font-semibold">
-                    {getformatMaP(room.IdPH)}
+                    {getformatMaP(room.room_id)}
                   </span>
                 </div>
               </td>
@@ -137,27 +137,27 @@ const RoomTable = ({ rooms, onEdit, onDelete, isLoading }) => {
               {/* Mã phòng */}
               <td className="px-space-md py-space-md">
                 <span className="font-body-md text-body-md text-on-surface font-semibold">
-                  {room.MaPH}
+                  {room.room_code}
                 </span>
               </td>
 
               {/* Tên loại phòng */}
               <td className="px-space-md py-space-md">
                 <span className="font-body-md text-body-md text-on-surface">
-                  {room.TenLPH || "N/A"}
+                  {room.room_type_name}
                 </span>
               </td>
 
               {/* Giá ngày */}
               <td className="px-space-md py-space-md text-right">
                 <span className="font-body-md text-body-md text-on-surface font-semibold text-primary">
-                  {formatCurrency(room.GiaNgay || 0)}
+                  {formatCurrency(room.daily_rate || 0)}
                 </span>
               </td>
               {/* Giá giờ */}
               <td className="px-space-md py-space-md text-right">
                 <span className="font-body-md text-body-md text-on-surface font-semibold text-primary">
-                  {formatCurrency(room.GiaGio || 0)}
+                  {formatCurrency(room.hourly_rate || 0)}
                 </span>
               </td>
 
@@ -169,7 +169,7 @@ const RoomTable = ({ rooms, onEdit, onDelete, isLoading }) => {
               {/* Ghi chú */}
               <td className="px-space-md py-space-md">
                 <span className="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">
-                  {room.GhiChu || "—"}
+                  {room.note || "—"}
                 </span>
               </td>
 

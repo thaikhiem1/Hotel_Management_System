@@ -7,37 +7,36 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-/**
- * Request DTO cho tạo/cập nhật loại phòng
- */
-@Data
+@Getter 
+@Setter 
 @NoArgsConstructor
 @AllArgsConstructor
 public class RoomTypeRequest {
     @NotNull(message = "Tên loại phòng không được bỏ trống")
     @Size(max = 100, message = "Tên loại phòng tối đa 100 ký tự")
-    @JsonProperty("TenLPH")
-    private String tenLPH;
+    @JsonProperty("room_type_name")
+    private String roomTypeName;
 
     @NotNull(message = "Số giường không được bỏ trống")
     @Positive(message = "Số giường phải lớn hơn 0")
-    @JsonProperty("SoGiuong")
-    private Integer soGiuong;
+    @JsonProperty("number_of_beds")
+    private Integer numberOfBeds;
 
     @NotNull(message = "Số khách tối đa không được bỏ trống")
     @Positive(message = "Số khách tối đa phải lớn hơn 0")
-    @JsonProperty("SoNguoiToiDa")
-    private Integer soNguoiToiDa;
+    @JsonProperty("maximum_occupancy")
+    private Integer maximumOccupancy;
 
     @NotNull(message = "Giá theo ngày không được bỏ trống")
     @Positive(message = "Giá theo ngày phải lớn hơn 0")
-    @JsonProperty("GiaNgay")
-    private BigDecimal giaNgay;
+    @JsonProperty("daily_rate")
+    private BigDecimal dailyRate;
 
     @Positive(message = "Giá theo giờ phải lớn hơn 0")
-    @JsonProperty("GiaGio")
-    private BigDecimal giaGio;
+    @JsonProperty("hourly_rate")
+    private BigDecimal hourlyRate;
 }

@@ -9,11 +9,11 @@ const RoomTypeFormDialog = ({
   isLoading,
 }) => {
   const [formData, setFormData] = useState({
-    TenLPH: "",
-    SoGiuong: 1,
-    SoNguoiToiDa: 2,
-    GiaNgay: 0,
-    GiaGio: 0,
+    room_type_name: "",
+    number_of_beds: 1,
+    maximum_occupancy: 2,
+    daily_rate: 0,
+    hourly_rate: 0,
   });
 
   const [errors, setErrors] = useState({});
@@ -25,20 +25,20 @@ const RoomTypeFormDialog = ({
     if (!isOpen) return;
     if (editMode === "edit" && roomTypeData) {
       setFormData({
-        TenLPH: roomTypeData.TenLPH || "",
-        SoGiuong: roomTypeData.SoGiuong || 1,
-        SoNguoiToiDa: roomTypeData.SoNguoiToiDa || 2,
-        GiaNgay: roomTypeData.GiaNgay || 0,
-        GiaGio: roomTypeData.GiaGio || 0,
+        room_type_name: roomTypeData.room_type_name || "",
+        number_of_beds: roomTypeData.number_of_beds || 1,
+        maximum_occupancy: roomTypeData.maximum_occupancy || 2,
+        daily_rate: roomTypeData.daily_rate || 0,
+        hourly_rate: roomTypeData.hourly_rate || 0,
       });
     } else {
       // Reset form khi thêm mới
       setFormData({
-        TenLPH: "",
-        SoGiuong: 1,
-        SoNguoiToiDa: 2,
-        GiaNgay: 0,
-        GiaGio: 0,
+        room_type_name: "",
+        number_of_beds: 1,
+        maximum_occupancy: 2,
+        daily_rate: 0,
+        hourly_rate: 0,
       });
     }
     setErrors({});
@@ -66,24 +66,24 @@ const RoomTypeFormDialog = ({
   const validate = () => {
     const newErrors = {};
 
-    if (!formData.TenLPH.trim()) {
-      newErrors.TenLPH = "Vui lòng nhập tên loại phòng";
+    if (!formData.room_type_name.trim()) {
+      newErrors.room_type_name = "Vui lòng nhập tên loại phòng";
     }
 
-    if (formData.SoGiuong < 1) {
-      newErrors.SoGiuong = "Số giường phải lớn hơn 0";
+    if (formData.number_of_beds < 1) {
+      newErrors.number_of_beds = "Số giường phải lớn hơn 0";
     }
 
-    if (formData.SoNguoiToiDa < 1) {
-      newErrors.SoNguoiToiDa = "Số người tối đa phải lớn hơn 0";
+    if (formData.maximum_occupancy < 1) {
+      newErrors.maximum_occupancy = "Số người tối đa phải lớn hơn 0";
     }
 
-    if (formData.GiaNgay <= 0) {
-      newErrors.GiaNgay = "Giá ngày phải lớn hơn 0";
+    if (formData.daily_rate <= 0) {
+      newErrors.daily_rate = "Giá ngày phải lớn hơn 0";
     }
 
-    if (formData.GiaGio < 0) {
-      newErrors.GiaGio = "Giá giờ không được âm";
+    if (formData.hourly_rate < 0) {
+      newErrors.hourly_rate = "Giá giờ không được âm";
     }
 
     setErrors(newErrors);
@@ -109,11 +109,11 @@ const RoomTypeFormDialog = ({
   const handleClose = () => {
     if (!isLoading) {
       setFormData({
-        TenLPH: "",
-        SoGiuong: 1,
-        SoNguoiToiDa: 2,
-        GiaNgay: 0,
-        GiaGio: 0,
+        room_type_name: "",
+        number_of_beds: 1,
+        maximum_occupancy: 2,
+        daily_rate: 0,
+        hourly_rate: 0,
       });
       setErrors({});
       onClose();
@@ -168,8 +168,8 @@ const RoomTypeFormDialog = ({
             </label>
             <input
               type="text"
-              name="TenLPH"
-              value={formData.TenLPH}
+              name="room_type_name"
+              value={formData.room_type_name}
               onChange={handleChange}
               disabled={isLoading}
               placeholder="Ví dụ: Phòng Deluxe, Phòng Suite..."
@@ -177,14 +177,14 @@ const RoomTypeFormDialog = ({
                        bg-surface-container font-body-md text-body-md text-on-surface
                        focus:outline-none focus:ring-2 focus:ring-primary
                        disabled:opacity-50 disabled:cursor-not-allowed
-                       ${errors.TenLPH ? "border-error" : "border-outline-variant"}`}
+                       ${errors.room_type_name ? "border-error" : "border-outline-variant"}`}
             />
-            {errors.TenLPH && (
+            {errors.room_type_name && (
               <p className="flex items-center gap-space-xs text-error font-body-sm text-body-sm">
                 <span className="material-symbols-outlined text-[16px]">
                   error
                 </span>
-                <span>{errors.TenLPH}</span>
+                <span>{errors.room_type_name}</span>
               </p>
             )}
           </div>
@@ -202,8 +202,8 @@ const RoomTypeFormDialog = ({
               </label>
               <input
                 type="number"
-                name="SoGiuong"
-                value={formData.SoGiuong}
+                name="number_of_beds"
+                value={formData.number_of_beds}
                 onChange={handleChange}
                 disabled={isLoading}
                 min="1"
@@ -211,14 +211,14 @@ const RoomTypeFormDialog = ({
                          bg-surface-container font-body-md text-body-md text-on-surface
                          focus:outline-none focus:ring-2 focus:ring-primary
                          disabled:opacity-50 disabled:cursor-not-allowed
-                         ${errors.SoGiuong ? "border-error" : "border-outline-variant"}`}
+                         ${errors.number_of_beds ? "border-error" : "border-outline-variant"}`}
               />
-              {errors.SoGiuong && (
+              {errors.number_of_beds && (
                 <p className="flex items-center gap-space-xs text-error font-body-sm text-body-sm">
                   <span className="material-symbols-outlined text-[16px]">
                     error
                   </span>
-                  <span>{errors.SoGiuong}</span>
+                  <span>{errors.number_of_beds}</span>
                 </p>
               )}
             </div>
@@ -234,8 +234,8 @@ const RoomTypeFormDialog = ({
               </label>
               <input
                 type="number"
-                name="SoNguoiToiDa"
-                value={formData.SoNguoiToiDa}
+                name="maximum_occupancy"
+                value={formData.maximum_occupancy}
                 onChange={handleChange}
                 disabled={isLoading}
                 min="1"
@@ -243,14 +243,14 @@ const RoomTypeFormDialog = ({
                          bg-surface-container font-body-md text-body-md text-on-surface
                          focus:outline-none focus:ring-2 focus:ring-primary
                          disabled:opacity-50 disabled:cursor-not-allowed
-                         ${errors.SoNguoiToiDa ? "border-error" : "border-outline-variant"}`}
+                         ${errors.maximum_occupancy ? "border-error" : "border-outline-variant"}`}
               />
-              {errors.SoNguoiToiDa && (
+              {errors.maximum_occupancy && (
                 <p className="flex items-center gap-space-xs text-error font-body-sm text-body-sm">
                   <span className="material-symbols-outlined text-[16px]">
                     error
                   </span>
-                  <span>{errors.SoNguoiToiDa}</span>
+                  <span>{errors.maximum_occupancy}</span>
                 </p>
               )}
             </div>
@@ -269,8 +269,8 @@ const RoomTypeFormDialog = ({
               </label>
               <input
                 type="number"
-                name="GiaNgay"
-                value={formData.GiaNgay}
+                name="daily_rate"
+                value={formData.daily_rate}
                 onChange={handleChange}
                 disabled={isLoading}
                 required
@@ -281,14 +281,14 @@ const RoomTypeFormDialog = ({
                          bg-surface-container font-body-md text-body-md text-on-surface
                          focus:outline-none focus:ring-2 focus:ring-primary
                          disabled:opacity-50 disabled:cursor-not-allowed
-                         ${errors.GiaNgay ? "border-error" : "border-outline-variant"}`}
+                         ${errors.daily_rate ? "border-error" : "border-outline-variant"}`}
               />
-              {errors.GiaNgay && (
+              {errors.daily_rate && (
                 <p className="flex items-center gap-space-xs text-error font-body-sm text-body-sm">
                   <span className="material-symbols-outlined text-[16px]">
                     error
                   </span>
-                  <span>{errors.GiaNgay}</span>
+                  <span>{errors.daily_rate}</span>
                 </p>
               )}
             </div>
@@ -303,8 +303,8 @@ const RoomTypeFormDialog = ({
               </label>
               <input
                 type="number"
-                name="GiaGio"
-                value={formData.GiaGio}
+                name="hourly_rate"
+                value={formData.hourly_rate}
                 onChange={handleChange}
                 disabled={isLoading}
                 required
@@ -315,14 +315,14 @@ const RoomTypeFormDialog = ({
                          bg-surface-container font-body-md text-body-md text-on-surface
                          focus:outline-none focus:ring-2 focus:ring-primary
                          disabled:opacity-50 disabled:cursor-not-allowed
-                         ${errors.GiaGio ? "border-error" : "border-outline-variant"}`}
+                         ${errors.hourly_rate ? "border-error" : "border-outline-variant"}`}
               />
-              {errors.GiaGio && (
+              {errors.hourly_rate && (
                 <p className="flex items-center gap-space-xs text-error font-body-sm text-body-sm">
                   <span className="material-symbols-outlined text-[16px]">
                     error
                   </span>
-                  <span>{errors.GiaGio}</span>
+                  <span>{errors.hourly_rate}</span>
                 </p>
               )}
               <p className="font-body-sm text-body-sm text-on-surface-variant">

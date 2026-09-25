@@ -3,22 +3,26 @@ package com.example.hotel.mapper;
 import org.springframework.stereotype.Component;
 import com.example.hotel.models.dto.request.RoomTypeRequest;
 import com.example.hotel.models.dto.response.RoomTypeResponse;
-import com.example.hotel.models.entities.LoaiPhong; // Changed from RoomType
+import com.example.hotel.models.entities.room_types;
 
 @Component
 public class RoomTypeMapper {
-    public LoaiPhong toEntities(RoomTypeRequest request) {
-        LoaiPhong roomType = new LoaiPhong();
-        roomType.setTenLPH(request.getTenLPH());
-        roomType.setSoGiuong(request.getSoGiuong());
-        roomType.setSoNguoiToiDa(request.getSoNguoiToiDa());
-        roomType.setGiaNgay(request.getGiaNgay());
-        roomType.setGiaGio(request.getGiaGio());
+    public room_types toEntities(RoomTypeRequest request) {
+        room_types roomType = new room_types();
+        roomType.setRoomTypeName(request.getRoomTypeName());
+        roomType.setNumberOfBeds(request.getNumberOfBeds());
+        roomType.setMaximumOccupancy(request.getMaximumOccupancy());
+        roomType.setDailyRate(request.getDailyRate());
+        roomType.setHourlyRate(request.getHourlyRate());
         return roomType;
     }
 
-    public RoomTypeResponse toRoomTypeResponse(LoaiPhong roomType) {
-        return new RoomTypeResponse(roomType.getIdLPH(), roomType.getTenLPH(), roomType.getSoGiuong(),
-                roomType.getSoNguoiToiDa(), roomType.getGiaNgay(), roomType.getGiaGio());
+    public RoomTypeResponse toRoomTypeResponse(room_types roomType) {
+        if(roomType == null){
+            throw new IllegalArgumentException("Room type not exists");
+        }
+        return new RoomTypeResponse(roomType.getRoomTypeId(), roomType.getRoomTypeName(),
+                roomType.getNumberOfBeds(),
+                roomType.getMaximumOccupancy(), roomType.getDailyRate(), roomType.getHourlyRate());
     }
 }

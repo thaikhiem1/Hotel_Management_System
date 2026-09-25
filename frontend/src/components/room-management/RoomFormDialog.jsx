@@ -6,14 +6,14 @@ const RoomFormDialog = ({
   onSubmit,
   editMode,
   roomData,
-  roomtypeData = [],
+  roomTypeData = [],
   isLoading,
 }) => {
   const [formData, setFormData] = useState({
-    MaPH: "",
-    IdLPH: "",
-    TrangThaiPhong: "TRONG",
-    GhiChu: "",
+    room_code: "",
+    room_type_name: "",
+    room_status: "AVAILABLE",
+    note: "",
   });
 
   const [errors, setErrors] = useState({});
@@ -25,41 +25,40 @@ const RoomFormDialog = ({
     if (!isOpen) return;
 
     if (editMode === "edit" && roomData) {
-      // Ưu tiên dùng IdLPH trực tiếp từ roomData
-      let idLPH = roomData.IdLPH ? Number(roomData.IdLPH) : "";
+      // Ưu tiên dùng room_type_id trực tiếp từ roomData
+      let room_type_id = roomData.room_type_id ? Number(roomData.IdLPH) : "";
 
-      // Fallback: tìm theo TenLPH nếu không có IdLPH
-      if (!idLPH && roomData.TenLPH && roomtypeData.length > 0) {
-        const matched = roomtypeData.find(
-          (lp) => lp.TenLPH === roomData.TenLPH,
+      // Fallback: tìm theo room_type_name nếu không có room_type_id
+      if (!room_type_id && roomData.room_type_name && roomTypeData.length > 0) {
+        const matched = roomTypeData.find(
+          (lp) => lp.room_type_name === roomData.room_type_name,
         );
-        idLPH = matched ? matched.IdLPH : "";
+        room_type_id = matched ? matched.room_type_id : "";
       }
-
       setFormData({
-        MaPH: roomData.MaPH || "",
-        IdLPH: idLPH,
-        TrangThaiPhong: roomData.TrangThaiPhong || "TRONG",
-        GhiChu: roomData.GhiChu || "",
+        room_code: roomData.MaPH || "",
+        room_type_id: idLPH,
+        room_status: roomData.room_status || "AVAILABLE",
+        note: roomData.note || "",
       });
     } else if (editMode === "add") {
       // Reset form khi thêm mới, chọn loại phòng đầu tiên nếu có
       setFormData({
-        MaPH: "",
-        IdLPH: roomtypeData.length > 0 ? roomtypeData[0].IdLPH : "",
-        TrangThaiPhong: "TRONG",
-        GhiChu: "",
+        room_code: "",
+        room_type_id: roomTypeData.length > 0 ? roomTypeData[0].room_type_id : "",
+        room_status: "AVAILABLE",
+        note: "",
       });
     }
     setErrors({});
-  }, [isOpen, editMode, roomData, roomtypeData]);
+  }, [isOpen, editMode, roomData, roomTypeData]);
 
   // Xử lý thay đổi giá trị input
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: name === "IdLPH" ? parseInt(value, 10) : value,
+      [name]: name === "room_type_id" ? parseInt(value, 10) : value,
     }));
 
     // Xóa lỗi khi user bắt đầu nhập
@@ -71,14 +70,14 @@ const RoomFormDialog = ({
   const validate = () => {
     const newErrors = {};
 
-    if (!formData.MaPH.trim()) {
-      newErrors.MaPH = "Vui lòng nhập mã phòng";
+    if (!formData.room_code.trim()) {
+      newErrors.room_code = "Vui lòng nhập mã phòng";
     } else if (!/^[A-Z0-9]+$/i.test(formData.MaPH)) {
-      newErrors.MaPH = "Mã phòng chỉ được chứa chữ cái và số";
+      newErrors.room_code = "Mã phòng chỉ được chứa chữ cái và số";
     }
 
-    if (!formData.IdLPH) {
-      newErrors.IdLPH = "Vui lòng chọn loại phòng";
+    if (!formData.room_type_id) {
+      newErrors.room_type_id = "Vui lòng chọn loại phòng";
     }
 
     setErrors(newErrors);
@@ -93,10 +92,10 @@ const RoomFormDialog = ({
     }
 
     const submitData = {
-      MaPH: formData.MaPH,
-      IdLPH: formData.IdLPH,
-      TrangThaiPhong: editMode === "add" ? "TRONG" : formData.TrangThaiPhong,
-      GhiChu: formData.GhiChu || null,
+      room_code: formData.room_code,
+      room_type_id: formData.room_type_id,
+      room_status: editMode === "add" ? "AVAILABLE" : formData.room_status,
+      note: formData.note || null,
     };
 
     onSubmit(submitData);
@@ -105,10 +104,10 @@ const RoomFormDialog = ({
   const handleClose = () => {
     if (!isLoading) {
       setFormData({
-        MaPH: "",
-        IdLPH: "",
-        TrangThaiPhong: "TRONG",
-        GhiChu: "",
+        room_code: "",
+        room_type_id: "",
+        room_status: "AVAILABLE",
+        note: "",
       });
       setErrors({});
       onClose();
@@ -162,8 +161,8 @@ const RoomFormDialog = ({
             </label>
             <input
               type="text"
-              name="MaPH"
-              value={formData.MaPH}
+              name="room_code"
+              value={formData.room_code}
               onChange={handleChange}
               disabled={isLoading || editMode === "edit"} // Không cho sửa mã phòng khi edit
               placeholder="Ví dụ: P101, P202..."
@@ -171,14 +170,14 @@ const RoomFormDialog = ({
                        bg-surface-container font-body-md text-body-md text-on-surface
                        focus:outline-none focus:ring-2 focus:ring-primary
                        disabled:opacity-50 disabled:cursor-not-allowed
-                       ${errors.MaPH ? "border-error" : "border-outline-variant"}`}
+                       ${errors.room_code ? "border-error" : "border-outline-variant"}`}
             />
-            {errors.MaPH && (
+            {errors.room_code && (
               <p className="flex items-center gap-space-xs text-error font-body-sm text-body-sm">
                 <span className="material-symbols-outlined text-[16px]">
                   error
                 </span>
-                <span>{errors.MaPH}</span>
+                <span>{errors.room_code}</span>
               </p>
             )}
             {editMode === "edit" && (
@@ -198,39 +197,34 @@ const RoomFormDialog = ({
               <span className="text-error">*</span>
             </label>
             <select
-              name="IdLPH"
-              value={formData.IdLPH}
+              name="room_type_id"
+              value={formData.room_type_id}
               onChange={handleChange}
               disabled={isLoading}
               className={`w-full px-space-md py-space-sm rounded-lg border
                        bg-surface-container font-body-md text-body-md text-on-surface
                        focus:outline-none focus:ring-2 focus:ring-primary
                        disabled:opacity-50 disabled:cursor-not-allowed
-                       ${errors.IdLPH ? "border-error" : "border-outline-variant"}`}
+                       ${errors.room_type_id ? "border-error" : "border-outline-variant"}`}
             >
               <option value="">
-                {roomtypeData.length === 0
+                {roomTypeData.length === 0
                   ? "-- Không có loại phòng --"
                   : "-- Chọn loại phòng --"}
               </option>
 
-              {roomtypeData.map((roomType) => (
-                <option key={roomType.IdLPH} value={roomType.IdLPH}>
-                  {roomType.TenLPH} -{" "}
-                  {new Intl.NumberFormat("vi-VN", {
-                    style: "currency",
-                    currency: "VND",
-                  }).format(roomType.GiaNgay)}
-                  /ngày
+              {roomTypeData.map((roomType) => (
+                <option key={roomType.room_type_id} value={roomType.room_type_id}>
+                  {roomType.room_type_name}
                 </option>
               ))}
             </select>
-            {errors.IdLPH && (
+            {errors.room_type_id && (
               <p className="flex items-center gap-space-xs text-error font-body-sm text-body-sm">
                 <span className="material-symbols-outlined text-[16px]">
                   error
                 </span>
-                <span>{errors.IdLPH}</span>
+                <span>{errors.room_type_id}</span>
               </p>
             )}
           </div>
@@ -254,9 +248,9 @@ const RoomFormDialog = ({
                 >
                   <input
                     type="radio"
-                    name="TrangThaiPhong"
-                    value="TRONG"
-                    checked={formData.TrangThaiPhong === "TRONG"}
+                    name="room_status"
+                    value="AVAILABLE"
+                    checked={formData.room_status === "AVAILABLE"}
                     onChange={handleChange}
                     disabled={isLoading}
                     className="w-4 h-4 text-primary focus:ring-2 focus:ring-primary"
@@ -280,9 +274,9 @@ const RoomFormDialog = ({
                 >
                   <input
                     type="radio"
-                    name="TrangThaiPhong"
-                    value="DANG_SUA_CHUA"
-                    checked={formData.TrangThaiPhong === "DANG_SUA_CHUA"}
+                    name="room_status"
+                    value="UNDER_MAINTENANCE"
+                    checked={formData.room_status === "UNDER_MAINTENANCE"}
                     onChange={handleChange}
                     disabled={isLoading}
                     className="w-4 h-4 text-error focus:ring-2 focus:ring-error"
@@ -309,8 +303,8 @@ const RoomFormDialog = ({
               <span>Ghi chú</span>
             </label>
             <textarea
-              name="GhiChu"
-              value={formData.GhiChu}
+              name="note"
+              value={formData.note}
               onChange={handleChange}
               disabled={isLoading}
               placeholder="Nhập ghi chú về phòng (tùy chọn)..."

@@ -5,28 +5,26 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class RoomTypeResponse {
-    @JsonProperty("IdLPH")
-    private Integer idLPH;
+    @JsonProperty("room_type_id")
+    private Integer roomTypeId;
 
-    @JsonProperty("TenLPH")
-    private String tenLPH;
+    @JsonProperty("room_type_name")
+    private String roomTypeName;
 
-    @JsonProperty("SoGiuong")
-    private Integer soGiuong;
+    @JsonProperty("number_of_beds")
+    private Integer numberOfBeds;
 
-    @JsonProperty("SoNguoiToiDa")
-    private Integer soNguoiToiDa;
+    @JsonProperty("maximum_occupancy")
+    private Integer maximumOccupancy;
 
-    @JsonProperty("GiaNgay")
-    private BigDecimal giaNgay;
+    @JsonProperty("daily_rate")
+    private BigDecimal dailyRate;
 
-    @JsonProperty("GiaGio")
-    private BigDecimal giaGio;
+    @JsonProperty("hourly_rate")
+    private BigDecimal hourlyRate;
 }

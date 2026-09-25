@@ -11,10 +11,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import com.example.hotel.services.IRoomtypeService;
+import com.example.hotel.services.IRoomTypesService;
 import com.example.hotel.models.dto.request.RoomTypeRequest;
 import com.example.hotel.models.dto.response.RoomTypeResponse;
-import com.example.hotel.repositorys.roomRepository;
 
 import jakarta.validation.Valid;
 import java.util.List;
@@ -24,8 +23,8 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/roomtype")
 @CrossOrigin(origins = { "http://localhost:5173" })
 @RequiredArgsConstructor
-public class roomtypeController {
-    private final IRoomtypeService roomTypeService;
+public class RoomTypeController {
+    private final IRoomTypesService roomTypeService;
 
     @PostMapping
     public ResponseEntity<RoomTypeResponse> create(
@@ -33,7 +32,7 @@ public class roomtypeController {
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(roomTypeService.CreateRoomtype(request));
+                .body(roomTypeService.CreateRoomType(request));
     }
 
     @GetMapping

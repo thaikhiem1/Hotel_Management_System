@@ -12,16 +12,16 @@ const DeleteConfirmDialog = ({
 
   // Map room data to generic dialog format
   const itemDetails = [
-    { label: "Mã phòng", value: roomData.MaPH, highlight: true },
-    { label: "Loại phòng", value: roomData.TenLPH || "N/A", highlight: false },
+    { label: "Mã phòng", value: roomData.room_code, highlight: true },
+    { label: "Loại phòng", value: roomData.room_type_name || "N/A", highlight: false },
     {
       label: "Trạng thái",
-      value: roomData.TrangThaiPhong === "TRONG" ? "Trống" : "Đang sửa chữa",
+      value: roomData.room_status === "AVAILABLE" ? "Trống" : "Đang sửa chữa",
       highlight: false,
     },
   ];
 
-  if (roomData.GhiChu) {
+  if (roomData.note) {
     itemDetails.push({
       label: "Ghi chú",
       value: roomData.GhiChu,

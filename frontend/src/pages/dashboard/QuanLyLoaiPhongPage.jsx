@@ -3,7 +3,7 @@ import RoomTypeTable from '@/components/room-type-management/RoomTypeTable';
 import RoomTypeFormDialog from '@/components/room-type-management/RoomTypeFormDialog';
 import RoomTypeDeleteDialog from '@/components/room-type-management/RoomTypeDeleteDialog';
 import { roomTypeAPI } from '@/services/api';
-import { showSuccess, showError, handleApiError } from '@/utils/notification';
+import { showSuccess, handleApiError } from '@/utils/notification';
 
 const QuanLyLoaiPhongPage = () => {
   // State quản lý dữ liệu loại phòng từ API
@@ -31,12 +31,12 @@ const QuanLyLoaiPhongPage = () => {
       const data = await roomTypeAPI.getAll();
       
       const mappedData = data.map(item => ({
-        IdLPH: item.IdLPH,
-        TenLPH: item.TenLPH,
-        SoGiuong: item.SoGiuong,
-        SoNguoiToiDa: item.SoNguoiToiDa,
-        GiaNgay: item.GiaNgay,
-        GiaGio: item.GiaGio
+        room_type_id: item.room_type_id,
+        room_type_name: item.room_type_name,
+        number_of_beds: item.number_of_beds,
+        maximum_occupancy: item.maximum_occupancy,
+        daily_rate: item.daily_rate,
+        hourly_rate: item.hourly_rate
       }));
       
       setRoomTypes(mappedData);
@@ -59,10 +59,10 @@ const QuanLyLoaiPhongPage = () => {
   // Tính toán thống kê
   const stats = useMemo(() => {
     const avgPrice = roomTypes.length > 0
-      ? roomTypes.reduce((sum, rt) => sum + rt.GiaNgay, 0) / roomTypes.length
+      ? roomTypes.reduce((sum, rt) => sum + rt.daily_rate, 0) / roomTypes.length
       : 0;
     
-    const maxCapacity = Math.max(...roomTypes.map(rt => rt.SoNguoiToiDa), 0);
+    const maxCapacity = Math.max(...roomTypes.map(rt => rt.maximum_occupancy), 0);
     
     return {
       total: roomTypes.length,
@@ -96,7 +96,7 @@ const QuanLyLoaiPhongPage = () => {
 
   /**
    * Xử lý submit form (thêm mới hoặc cập nhật)
-   * @param {Object} roomTypeData - Dữ liệu loại phòng từ form
+   * @param {Object} roomTypeData 
    */
   const handleSubmitForm = async (roomTypeData) => {
     setIsLoading(true);
@@ -108,16 +108,16 @@ const QuanLyLoaiPhongPage = () => {
         
         setRoomTypes([...roomTypes, response]);
         
-        showSuccess('Thêm loại phòng thành công!');
+        showSuccess('add room_type success');
       } else {
 
-        const response = await roomTypeAPI.update(selectedRoomType.IdLPH, roomTypeData);
+        const response = await roomTypeAPI.update(selectedRoomType.room_type_id, roomTypeData);
         
         setRoomTypes(roomTypes.map(rt => 
-          rt.IdLPH === selectedRoomType.IdLPH ? response : rt
+          rt.room_type_id === selectedRoomType.room_type_id ? response : rt
         ));
         
-        showSuccess('Cập nhật loại phòng thành công!');
+        showSuccess('update room_type success!');
       }
 
       setIsFormDialogOpen(false);
@@ -137,9 +137,9 @@ const QuanLyLoaiPhongPage = () => {
     setIsLoading(true);
     
     try {
-      await roomTypeAPI.delete(selectedRoomType.IdLPH);
+      await roomTypeAPI.delete(selectedRoomType.room_type_id);
       
-      setRoomTypes(roomTypes.filter(rt => rt.IdLPH !== selectedRoomType.IdLPH));
+      setRoomTypes(roomTypes.filter(rt => rt.room_type_id !== selectedRoomType.room_type_id));
       
       setIsDeleteDialogOpen(false);
       setSelectedRoomType(null);
@@ -149,7 +149,7 @@ const QuanLyLoaiPhongPage = () => {
         setCurrentPage(newTotalPages);
       }
       
-      showSuccess('Xóa loại phòng thành công!');
+      showSuccess('delete success!');
       
       await fetchRoomTypes();
       
