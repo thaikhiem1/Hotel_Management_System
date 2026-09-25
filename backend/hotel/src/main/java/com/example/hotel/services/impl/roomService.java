@@ -1,6 +1,8 @@
 package com.example.hotel.services.impl;
 
 import java.util.List;
+
+import org.hibernate.sql.ast.tree.insert.ConflictClause;
 import org.springframework.stereotype.Service;
 import com.example.hotel.mapper.RoomMapper;
 import com.example.hotel.models.dto.request.RoomRequest;
@@ -45,5 +47,31 @@ public class RoomService implements IRoomService {
                 .stream()
                 .map(_RoomMapper::toRoomResponse)
                 .toList();
+    }
+
+    @Override
+    public RoomResponse UpdateRoom(Integer id, RoomRequest request) {
+        rooms existsRoom = _RoomRepository.findById(id).orElseThrow(() -> {
+            throw new IllegalArgumentException("Phòng này không tồn tại");
+        });
+        if (!existsRoom.getRoomCode().equals(request.getRoomCode())
+                && _RoomRepository.existsByRoomCode(request.getRoomCode())) {
+            throw new RuntimeException("Mã phòng này đã tồn tại");
+        }
+        room_types existsRoomTypes = _RoomTypeRepository.findById(request.getRoomTypeId()).orElseThrow(() -> {
+            throw new IllegalArgumentException("Loại phòng này không tồn tại");
+        });
+        existsRoom.setRoomTypes(existsRoomTypes);
+        existsRoom.setRoomStatus(request.getRoomStatus());
+        existsRoom.setNote(request.getNote());
+        return _RoomMapper.toRoomResponse(_RoomRepository.save(existsRoom));
+    }
+
+    @Override
+    public void DeletedRoom(Integer id) {
+        rooms existsRoom = _RoomRepository.findById(id).orElseThrow(() -> {
+            throw new IllegalArgumentException("Phòng này chưa tồn tại");
+        });
+        _RoomRepository.delete(existsRoom);
     }
 }

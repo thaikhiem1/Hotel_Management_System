@@ -131,6 +131,8 @@ const QuanLyPhongPage = () => {
   };
 
   const handleConfirmDelete = async () => {
+    console.log("room_id: " + selectedRoom.room_id);
+    
     setIsLoading(true);
     try {
       // Gọi API xóa phòng

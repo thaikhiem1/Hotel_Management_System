@@ -26,7 +26,7 @@ const RoomFormDialog = ({
 
     if (editMode === "edit" && roomData) {
       // Ưu tiên dùng room_type_id trực tiếp từ roomData
-      let room_type_id = roomData.room_type_id ? Number(roomData.IdLPH) : "";
+      let room_type_id = roomData.room_type_id ? Number(roomData.room_type_id) : "";
 
       // Fallback: tìm theo room_type_name nếu không có room_type_id
       if (!room_type_id && roomData.room_type_name && roomTypeData.length > 0) {
@@ -36,8 +36,8 @@ const RoomFormDialog = ({
         room_type_id = matched ? matched.room_type_id : "";
       }
       setFormData({
-        room_code: roomData.MaPH || "",
-        room_type_id: idLPH,
+        room_code: roomData.room_code || "",
+        room_type_id: room_type_id,
         room_status: roomData.room_status || "AVAILABLE",
         note: roomData.note || "",
       });

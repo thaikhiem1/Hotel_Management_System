@@ -10,9 +10,10 @@ import com.example.hotel.models.entities.room_types;
 import com.example.hotel.repositorys.RoomTypeRepository;
 import com.example.hotel.repositorys.RoomRepository;
 import com.example.hotel.services.*;
+
 @Service
 public class RoomTypesService implements IRoomTypesService {
-    
+
     private final RoomTypeMapper _roomTypeMapper;
     private final RoomTypeRepository _RoomTypeRepository;
     private final RoomRepository _RoomRepository;
@@ -30,7 +31,7 @@ public class RoomTypesService implements IRoomTypesService {
             throw new IllegalArgumentException("Tên loại phòng đã tồn tại");
         }
         room_types RoomType = _roomTypeMapper.toEntities(request);
-        if(RoomType == null){
+        if (RoomType == null) {
             return null;
         }
         room_types savedRoomType = _RoomTypeRepository.save(RoomType);
@@ -50,7 +51,7 @@ public class RoomTypesService implements IRoomTypesService {
             throw new RuntimeException("ID loại phòng không tồn tại" + IdLPH);
         });
         if (!existsRoom_types.getRoomTypeName().equals(request.getRoomTypeName())
-                && _RoomTypeRepository.existsByRoomTypeName(request.getRoomTypeName()) ){
+                && _RoomTypeRepository.existsByRoomTypeName(request.getRoomTypeName())) {
             throw new IllegalArgumentException("Tên loại phòng này đã tồn tại");
         }
         existsRoom_types.setRoomTypeName(request.getRoomTypeName());
