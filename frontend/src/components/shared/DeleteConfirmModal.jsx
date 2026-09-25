@@ -1,15 +1,5 @@
 import React from 'react';
 
-/**
- * DeleteConfirmModal - Modal xác nhận xóa (reusable)
- * 
- * Props:
- * - isOpen: Trạng thái mở/đóng
- * - onClose: Callback đóng modal
- * - onConfirm: Callback xác nhận xóa
- * - title: Tiêu đề modal
- * - message: Nội dung thông báo
- */
 const DeleteConfirmModal = ({ 
   isOpen, 
   onClose, 

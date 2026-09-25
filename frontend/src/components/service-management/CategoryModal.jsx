@@ -1,10 +1,6 @@
 import React, { useState } from 'react';
 import { cn } from '@/utils/lib/util';
 
-/**
- * CategoryModal - Modal quản lý loại dịch vụ (LoaiDichVu)
- * Table: LoaiDichVu { IdLDV, TenLDV }
- */
 const CategoryModal = ({ isOpen, onClose, onAddCategory, categories, onDeleteCategory }) => {
   const [newCategoryName, setNewCategoryName] = useState('');
   const [error, setError] = useState('');

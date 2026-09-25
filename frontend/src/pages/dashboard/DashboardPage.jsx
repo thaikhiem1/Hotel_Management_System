@@ -8,6 +8,7 @@ import {
   RoomDetailModal,
   AddServiceModal
 } from '@/components/dashboard';
+import { InvoiceModal } from '@/components/invoice';
 import {
   mockPhong,
   mockLoaiPhong,
@@ -17,16 +18,14 @@ import {
   getRoomStatusAtTime
 } from '@/services/mockData';
 
-/**
- * DashboardPage - Trang tổng quan quản lý phòng và hoạt động khách sạn
- * Chuẩn hóa 100% theo Database.md
- */
 const DashboardPage = () => {
   const [activeFilter, setActiveFilter] = useState('all');
   const [isLoading, setIsLoading] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isAddServiceModalOpen, setIsAddServiceModalOpen] = useState(false);
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+  const [invoiceData, setInvoiceData] = useState(null);
 
   // Bộ lọc ngày giờ (mặc định hôm nay lúc 14:00 đến 12:00 hôm sau)
   const todayStr = new Date().toISOString().split('T')[0];
@@ -181,17 +180,103 @@ const DashboardPage = () => {
         setIsAddServiceModalOpen(true);
         break;
 
-      case 'checkout':
-        // TODO: API xử lý trả phòng (chuyển sang trạng thái "đang dọn dẹp")
-        // API: POST /api/rental-details/{IdCTDP}/checkout
-        // Body: { checkoutTime: ISO string }
+      case 'checkout': {
+        // TODO: API lấy thông tin đầy đủ để xuất hóa đơn
+        // API: GET /api/rental-details/{IdCTDP}/invoice-data
+        // Bao gồm: rental_receipt, booking_detail, customer, services
         // Authorization: Bearer token (quyền lễ tân)
-        if (confirm(`Xác nhận trả phòng ${room.name}?`)) {
-          console.log('Processing check-out for room:', room);
-          alert('Đang xử lý trả phòng và tạo hóa đơn...');
-          handleRefresh();
+        
+        // Tìm phiếu thuê và chi tiết đặt phòng từ mock data
+        let foundRentalReceipt = null;
+        let foundBookingDetail = null;
+        
+        for (const phieuThue of mockPhieuThue) {
+          const chiTiet = phieuThue.chiTiet?.find(ct => 
+            ct.IdPH === room.id && ct.TrangThaiDatPhong === 1 // 1: Đang thuê
+          );
+          
+          if (chiTiet) {
+            foundBookingDetail = chiTiet;
+            foundRentalReceipt = phieuThue;
+            break;
+          }
         }
+        
+        if (!foundRentalReceipt || !foundBookingDetail) {
+          alert('Không tìm thấy thông tin phiếu thuê cho phòng này!\nVui lòng kiểm tra lại trạng thái phòng.');
+          break;
+        }
+        
+        // Chuyển đổi từ format mock data sang format Database.md
+        const rentalReceipt = {
+          rental_receipt_id: foundRentalReceipt.IdPT,
+          rental_date: foundRentalReceipt.NgPT,
+          customer_id: foundRentalReceipt.IdKH,
+          employee_id: foundRentalReceipt.IdNV,
+          customer: {
+            customer_id: foundRentalReceipt.khachHang.IdKH,
+            full_name: foundRentalReceipt.khachHang.TenKH,
+            phone: foundRentalReceipt.khachHang.SDT,
+            citizen_id_passport: foundRentalReceipt.khachHang.CCCD_Passport,
+            nationality: foundRentalReceipt.khachHang.QuocTich,
+            gender: foundRentalReceipt.khachHang.GioiTinh
+          },
+          employee: {
+            employee_id: mockNhanVien.find(nv => nv.IdNV === foundRentalReceipt.IdNV)?.IdNV || 1,
+            full_name: mockNhanVien.find(nv => nv.IdNV === foundRentalReceipt.IdNV)?.TenNV || 'N/A',
+            position: mockNhanVien.find(nv => nv.IdNV === foundRentalReceipt.IdNV)?.ChucVu || 'N/A'
+          }
+        };
+
+        const bookingDetail = {
+          booking_detail_id: foundBookingDetail.IdCTDP,
+          rental_receipt_id: foundRentalReceipt.IdPT,
+          room_id: foundBookingDetail.IdPH,
+          number_of_guests: foundBookingDetail.SoNguoi,
+          check_in_date: foundBookingDetail.NgayCheckIn?.split('T')[0] || '',
+          check_out_date: foundBookingDetail.NgayCheckOut?.split('T')[0] || '',
+          booking_status: 'CHECKED_IN',
+          unit_price: foundBookingDetail.DonGia,
+          total_amount: foundBookingDetail.ThanhTien
+        };
+
+        // Mock services - TODO: lấy từ API thực
+        const services = [
+          {
+            booking_detail_id: foundBookingDetail.IdCTDP,
+            service_id: 1,
+            unit_price: 150000,
+            quantity: 2,
+            total_amount: 300000,
+            service: {
+              service_id: 1,
+              service_name: 'Ăn sáng buffet',
+              unit: 'suất'
+            }
+          },
+          {
+            booking_detail_id: foundBookingDetail.IdCTDP,
+            service_id: 2,
+            unit_price: 30000,
+            quantity: 5,
+            total_amount: 150000,
+            service: {
+              service_id: 2,
+              service_name: 'Giặt ủi',
+              unit: 'kg'
+            }
+          }
+        ];
+
+        setInvoiceData({
+          rentalReceipt: rentalReceipt,
+          bookingDetail: bookingDetail,
+          services: services
+        });
+        setSelectedRoom(room);
+        setIsInvoiceModalOpen(true);
         break;
+      }
 
       case 'ready':
         // TODO: API đánh dấu phòng sẵn sàng sau khi dọn dẹp
@@ -233,6 +318,22 @@ const DashboardPage = () => {
     alert(`Đã thêm ${services.length} dịch vụ cho phòng ${room.name}\nTổng: ${totalAmount.toLocaleString('vi-VN')}đ`);
     
     // Refresh sau khi thêm dịch vụ thành công
+    handleRefresh();
+  };
+
+  const handleInvoiceConfirm = (invoiceResult) => {
+    // TODO: API tạo hóa đơn và cập nhật trạng thái phòng
+    // API: POST /api/invoices
+    // Body: { rental_receipt_id, employee_id, total_amount, invoice_date, payment_status: 'PAID' }
+    // Authorization: Bearer token (quyền lễ tân)
+    
+    console.log('Invoice created:', invoiceResult);
+    alert(`Đã tạo hóa đơn thành công!\nTổng thanh toán: ${invoiceResult.totalAmount.toLocaleString('vi-VN')}đ\nPhòng sẽ chuyển sang trạng thái "Đang dọn dẹp"`);
+    
+    // Đóng modal và refresh
+    setIsInvoiceModalOpen(false);
+    setSelectedRoom(null);
+    setInvoiceData(null);
     handleRefresh();
   };
 
@@ -362,6 +463,21 @@ const DashboardPage = () => {
           // Không set selectedRoom = null để có thể quay lại modal chi tiết
         }}
         onSubmit={handleAddService}
+      />
+
+      {/* Invoice Modal - Phiếu hóa đơn thanh toán */}
+      <InvoiceModal
+        room={selectedRoom}
+        rentalReceipt={invoiceData?.rentalReceipt}
+        bookingDetail={invoiceData?.bookingDetail}
+        services={invoiceData?.services}
+        isOpen={isInvoiceModalOpen}
+        onClose={() => {
+          setIsInvoiceModalOpen(false);
+          setSelectedRoom(null);
+          setInvoiceData(null);
+        }}
+        onConfirm={handleInvoiceConfirm}
       />
     </div>
   );

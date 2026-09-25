@@ -237,12 +237,12 @@ export const mockPhieuThue = [
         IdPT: 1,
         IdPH: 1, // P101
         SoNguoi: 2,
-        NgayCheckIn: '2026-09-23T14:00:00',
-        NgayCheckOut: '2026-09-24T02:00:00', // Đặt từ 14:00 đến 02:00 sáng hôm sau
-        HinhThucThue: 'GIO',
-        TrangThaiDatPhong: 1, // 1: Đang thuê (hoặc 0: Đã đặt)
-        DonGia: 150000,
-        ThanhTien: 1800000, // 12 giờ * 150k
+        NgayCheckIn: '2026-09-24T14:00:00',
+        NgayCheckOut: '2026-09-26T12:00:00', // Kéo dài đến ngày 26
+        HinhThucThue: 'NGAY',
+        TrangThaiDatPhong: 1, // 1: Đang thuê
+        DonGia: 1500000,
+        ThanhTien: 3000000, // 2 ngày
         phong: mockPhong[0]
       }
     ]
@@ -260,11 +260,11 @@ export const mockPhieuThue = [
         IdPH: 2, // P102
         SoNguoi: 2,
         NgayCheckIn: '2026-09-22T14:00:00',
-        NgayCheckOut: '2026-09-25T14:00:00',
+        NgayCheckOut: '2026-09-26T14:00:00', // Kéo dài đến ngày 26
         HinhThucThue: 'NGAY',
         TrangThaiDatPhong: 1, // 1: Đang thuê
         DonGia: 2500000,
-        ThanhTien: 7500000,
+        ThanhTien: 10000000, // 4 ngày
         phong: mockPhong[1]
       },
       {
@@ -272,12 +272,12 @@ export const mockPhieuThue = [
         IdPT: 2,
         IdPH: 7, // P107
         SoNguoi: 2,
-        NgayCheckIn: '2026-09-22T14:00:00',
-        NgayCheckOut: '2026-09-24T12:00:00',
+        NgayCheckIn: '2026-09-24T14:00:00',
+        NgayCheckOut: '2026-09-26T12:00:00', // Kéo dài đến ngày 26
         HinhThucThue: 'NGAY',
         TrangThaiDatPhong: 1, // 1: Đang thuê
         DonGia: 1500000,
-        ThanhTien: 3000000,
+        ThanhTien: 3000000, // 2 ngày
         phong: mockPhong[6]
       }
     ]

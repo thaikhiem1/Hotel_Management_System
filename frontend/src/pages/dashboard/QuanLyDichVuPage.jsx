@@ -4,12 +4,6 @@ import ServiceModal from '@/components/service-management/ServiceModal';
 import CategoryModal from '@/components/service-management/CategoryModal';
 import DeleteConfirmModal from '@/components/shared/DeleteConfirmModal';
 
-/**
- * QuanLyDichVuPage - Trang quản lý dịch vụ khách sạn
- * Chuẩn 100% theo Database.md:
- * - Table LoaiDichVu { IdLDV, TenLDV }
- * - Table DichVu { IdDV, TenDV, DonGia, SLTon, IdLDV }
- */
 const QuanLyDichVuPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');

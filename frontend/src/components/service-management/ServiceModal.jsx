@@ -1,10 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/utils/lib/util';
 
-/**
- * ServiceModal - Modal thêm/sửa dịch vụ
- * Table: DichVu { IdDV, TenDV, DonGia, DonVi, SLTon, IdLDV }
- */
 const ServiceModal = ({ 
   isOpen, 
   onClose, 

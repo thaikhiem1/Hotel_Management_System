@@ -1,3 +1,4 @@
+```sql
 -- =========================================================
 -- 1. EMPLOYEE
 -- =========================================================
@@ -344,3 +345,4 @@ CREATE TABLE monthly_revenue_statistics (
 
 -- Invoice -> Employee
 -- N Invoices -> 1 Employee
+```
