@@ -18,7 +18,7 @@ public class RoomTypeMapper {
     }
 
     public RoomTypeResponse toRoomTypeResponse(room_types roomType) {
-        if(roomType == null){
+        if (roomType == null) {
             throw new IllegalArgumentException("Room type not exists");
         }
         return new RoomTypeResponse(roomType.getRoomTypeId(), roomType.getRoomTypeName(),
