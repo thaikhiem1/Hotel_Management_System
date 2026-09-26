@@ -3,6 +3,7 @@ package com.example.hotel.models.dto.request;
 import java.math.BigDecimal;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
@@ -16,7 +17,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RoomTypeRequest {
-    @NotNull(message = "Tên loại phòng không được bỏ trống")
+    @NotBlank (message = "Tên loại phòng không được bỏ trống")
     @Size(max = 100, message = "Tên loại phòng tối đa 100 ký tự")
     @JsonProperty("room_type_name")
     private String roomTypeName;

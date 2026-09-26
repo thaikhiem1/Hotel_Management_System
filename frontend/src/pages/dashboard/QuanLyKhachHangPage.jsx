@@ -2,7 +2,9 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { CustomerTable, CustomerFormDialog } from '@/components/customer-management';
 import { GenericDeleteDialog } from '@/components/shared';
 import { showSuccess, handleApiError } from '@/utils/notification';
+import { customerAPI } from '@/services/api';
 import { cn } from '@/utils/lib/util';
+import { FolderMinus } from 'lucide-react';
 
 const QuanLyKhachHangPage = () => {
   // State quản lý dữ liệu khách hàng
@@ -33,116 +35,19 @@ const QuanLyKhachHangPage = () => {
     fetchCustomers();
   }, []);
 
-  /**
-   * Fetch danh sách khách hàng từ API
-   * TODO: Replace with real API call
-   */
   const fetchCustomers = async () => {
     setIsLoading(true);
     try {
-      // Mock data
-      const mockData = [
-        {
-          IdKH: 1,
-          TenKH: 'Nguyễn Văn An',
-          SDT: '0901234567',
-          CCCD_Passport: '001234567890',
-          QuocTich: 'Việt Nam',
-          GioiTinh: 'Nam'
-        },
-        {
-          IdKH: 2,
-          TenKH: 'Trần Thị Bình',
-          SDT: '0912345678',
-          CCCD_Passport: '001234567891',
-          QuocTich: 'Việt Nam',
-          GioiTinh: 'Nữ'
-        },
-        {
-          IdKH: 3,
-          TenKH: 'John Smith',
-          SDT: '0923456789',
-          CCCD_Passport: 'AB1234567',
-          QuocTich: 'Mỹ',
-          GioiTinh: 'Nam'
-        },
-        {
-          IdKH: 4,
-          TenKH: 'Lê Văn Cường',
-          SDT: '0934567890',
-          CCCD_Passport: '001234567892',
-          QuocTich: 'Việt Nam',
-          GioiTinh: 'Nam'
-        },
-        {
-          IdKH: 5,
-          TenKH: 'Phạm Thị Dung',
-          SDT: '0945678901',
-          CCCD_Passport: '001234567893',
-          QuocTich: 'Việt Nam',
-          GioiTinh: 'Nữ'
-        },
-        {
-          IdKH: 6,
-          TenKH: 'Kim Min-ho',
-          SDT: '0956789012',
-          CCCD_Passport: 'KR9876543',
-          QuocTich: 'Hàn Quốc',
-          GioiTinh: 'Nam'
-        },
-        {
-          IdKH: 7,
-          TenKH: 'Nguyễn Thị Em',
-          SDT: '0967890123',
-          CCCD_Passport: '001234567894',
-          QuocTich: 'Việt Nam',
-          GioiTinh: 'Nữ'
-        },
-        {
-          IdKH: 8,
-          TenKH: 'Michael Johnson',
-          SDT: '0978901234',
-          CCCD_Passport: 'CD5678901',
-          QuocTich: 'Anh',
-          GioiTinh: 'Nam'
-        },
-        {
-          IdKH: 9,
-          TenKH: 'Hoàng Văn Giang',
-          SDT: '0989012345',
-          CCCD_Passport: '001234567895',
-          QuocTich: 'Việt Nam',
-          GioiTinh: 'Nam'
-        },
-        {
-          IdKH: 10,
-          TenKH: 'Võ Thị Hà',
-          SDT: '0990123456',
-          CCCD_Passport: '001234567896',
-          QuocTich: 'Việt Nam',
-          GioiTinh: 'Nữ'
-        },
-        {
-          IdKH: 11,
-          TenKH: 'Tanaka Yuki',
-          SDT: '0901234568',
-          CCCD_Passport: 'JP1234567',
-          QuocTich: 'Nhật Bản',
-          GioiTinh: 'Nữ'
-        },
-        {
-          IdKH: 12,
-          TenKH: 'Đỗ Văn Khoa',
-          SDT: '0912345679',
-          CCCD_Passport: '001234567897',
-          QuocTich: 'Việt Nam',
-          GioiTinh: 'Nam'
-        }
-      ];
-
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setCustomers(mockData);
+      const data = await customerAPI.getAll();
+      const mappedData = data.map(item => ({
+        customerId: item.customer_id,
+        fullName: item.full_name,
+        phone: item.phone,
+        citizenId: item.citizen_id_passport,
+        nationality: item.nationality,
+        gender: item.gender 
+      }));
+      setCustomers(mappedData);
     } catch (error) {
       console.error('Error fetching customers:', error);
       handleApiError(error);
@@ -151,21 +56,18 @@ const QuanLyKhachHangPage = () => {
     }
   };
 
-  /**
-   * Filter và search khách hàng
-   */
   const filteredCustomers = useMemo(() => {
     return customers.filter(customer => {
       // Filter by gender
-      if (filterGender !== 'all' && customer.GioiTinh !== filterGender) {
+      if (filterGender !== 'all' && customer.gender !== filterGender) {
         return false;
       }
       
       // Filter by nationality
-      if (filterNationality === 'Việt Nam' && customer.QuocTich !== 'Việt Nam') {
+      if (filterNationality === 'Việt Nam' && customer.nationality !== 'Việt Nam') {
         return false;
       }
-      if (filterNationality === 'Nước ngoài' && customer.QuocTich === 'Việt Nam') {
+      if (filterNationality === 'Nước ngoài' && customer.nationality === 'Việt Nam') {
         return false;
       }
       
@@ -173,9 +75,9 @@ const QuanLyKhachHangPage = () => {
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         return (
-          customer.TenKH.toLowerCase().includes(query) ||
-          (customer.SDT && customer.SDT.includes(query)) ||
-          (customer.CCCD_Passport && customer.CCCD_Passport.toLowerCase().includes(query))
+          customer.fullName?.toLowerCase().includes(query) ||
+          (customer.phone && customer.phone.includes(query)) ||
+          (customer.citizenId && customer.citizenId.toLowerCase().includes(query))
         );
       }
       
@@ -199,10 +101,10 @@ const QuanLyKhachHangPage = () => {
    */
   const stats = useMemo(() => {
     const total = customers.length;
-    const vietnamese = customers.filter(c => c.QuocTich === 'Việt Nam').length;
+    const vietnamese = customers.filter(c => c.nationality === 'Việt Nam').length;
     const foreign = total - vietnamese;
-    const male = customers.filter(c => c.GioiTinh === 'Nam').length;
-    const female = customers.filter(c => c.GioiTinh === 'Nữ').length;
+    const male = customers.filter(c => c.gender === 'Nam' || c.gender === 'Male').length;
+    const female = customers.filter(c => c.gender === 'Nữ' || c.gender === 'Female').length;
     
     return { total, vietnamese, foreign, male, female };
   }, [customers]);
@@ -237,68 +139,64 @@ const QuanLyKhachHangPage = () => {
    * Xử lý submit form (thêm mới hoặc cập nhật)
    */
   const handleSubmitForm = async (formData) => {
-    setIsLoading(true);
-    try {
-      if (editMode === 'add') {
-        // TODO: Gọi API thêm mới
-        console.log('Thêm khách hàng mới:', formData);
-        
-        // Mock: Thêm vào state
-        const newCustomer = {
-          IdKH: customers.length + 1,
-          ...formData
-        };
-        setCustomers(prev => [...prev, newCustomer]);
-        
-        showSuccess('Thêm khách hàng thành công', `Khách hàng ${formData.TenKH} đã được thêm`);
-      } else {
-        // TODO: Gọi API cập nhật
-        console.log('Cập nhật khách hàng:', selectedCustomer.IdKH, formData);
-        
-        // Mock: Cập nhật state
-        setCustomers(prev =>
-          prev.map(customer =>
-            customer.IdKH === selectedCustomer.IdKH
-              ? { ...customer, ...formData }
-              : customer
-          )
-        );
-        
-        showSuccess('Cập nhật thành công', `Thông tin khách hàng ${formData.TenKH} đã được cập nhật`);
-      }
-      
-      setIsFormDialogOpen(false);
-      setSelectedCustomer(null);
-    } catch (error) {
-      console.error('Error submitting customer:', error);
-      handleApiError(error);
-    } finally {
-      setIsLoading(false);
+  setIsLoading(true);
+
+  try {
+    // Chuyển dữ liệu từ form sang đúng format CustomerRequest của Backend
+    console.log('Customer payload:', formData);
+
+    if (editMode === 'add') {
+      await customerAPI.create(formData);
+
+      showSuccess(
+        'Thêm khách hàng thành công',
+        `Khách hàng ${formData.fullName} đã được thêm`
+      );
+    } else {
+      await customerAPI.update(selectedCustomer.customerId,formData
+      );
+
+      showSuccess(
+        'Cập nhật thành công',
+        `Thông tin khách hàng ${formData.fullName} đã được cập nhật`
+      );
     }
-  };
+
+    // Đóng dialog
+    setIsFormDialogOpen(false);
+    setSelectedCustomer(null);
+
+    // Lấy lại dữ liệu thật từ database
+    await fetchCustomers();
+
+  } catch (error) {
+    console.error('Error submitting customer:', error);
+    handleApiError(error);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   /**
    * Xử lý xác nhận xóa khách hàng
    */
   const handleConfirmDelete = async () => {
+    if (!selectedCustomer) return;
+    
     setIsLoading(true);
     try {
-      // TODO: Gọi API xóa khách hàng
-      console.log('Xóa khách hàng:', selectedCustomer.IdKH);
-      
-      // Mock: Xóa khỏi state
-      setCustomers(prev => prev.filter(customer => customer.IdKH !== selectedCustomer.IdKH));
-      
-      setIsDeleteDialogOpen(false);
-      setSelectedCustomer(null);
+      // Gọi API xóa khách hàng
+      await customerAPI.delete(selectedCustomer.customerId);
       
       // Điều chỉnh trang nếu trang hiện tại không còn dữ liệu
       const newTotalPages = Math.ceil((customers.length - 1) / itemsPerPage);
       if (currentPage > newTotalPages && newTotalPages > 0) {
         setCurrentPage(newTotalPages);
       }
-      
       showSuccess('Xóa khách hàng thành công');
+      setIsDeleteDialogOpen(false);
+      setSelectedCustomer(null);
+      await fetchCustomers();
     } catch (error) {
       console.error('Error deleting customer:', error);
       handleApiError(error);
@@ -315,7 +213,6 @@ const QuanLyKhachHangPage = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Reset về trang 1 khi filter hoặc search thay đổi
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, filterGender, filterNationality]);
@@ -516,7 +413,7 @@ const QuanLyKhachHangPage = () => {
       {/* Phân trang */}
       {totalPages > 1 && !isLoading && filteredCustomers.length > 0 && (
         <div className="flex items-center justify-between px-space-md py-space-sm
-                      bg-surface-container-low rounded-lg border border-outline-variant">
+                     bg-surface-container-low rounded-lg border border-outline-variant">
           <p className="font-body-sm text-body-sm text-on-surface-variant">
             Trang {currentPage} / {totalPages} (Tổng {filteredCustomers.length} khách hàng)
           </p>
@@ -606,7 +503,7 @@ const QuanLyKhachHangPage = () => {
         isLoading={isLoading}
       />
 
-      {/* Dialog xác nhận xóa - Sử dụng GenericDeleteDialog */}
+      {/* Dialog xác nhận xóa */}
       <GenericDeleteDialog
         isOpen={isDeleteDialogOpen}
         onClose={() => {
@@ -614,11 +511,11 @@ const QuanLyKhachHangPage = () => {
           setSelectedCustomer(null);
         }}
         onConfirm={handleConfirmDelete}
-        isLoading={isLoading}
+        isLoading={isLoading}   
         title="Xác nhận xóa khách hàng"
-        description={
+        itemName={
           selectedCustomer
-            ? `Bạn có chắc chắn muốn xóa khách hàng "${selectedCustomer.TenKH}"? Hành động này không thể hoàn tác.`
+            ? selectedCustomer.fullName
             : ''
         }
       />

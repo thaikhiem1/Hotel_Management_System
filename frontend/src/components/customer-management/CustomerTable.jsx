@@ -1,21 +1,18 @@
 import React from 'react';
 import { cn } from '@/utils/lib/util';
 
-/**
- * CustomerTable - Component hiển thị bảng danh sách khách hàng
- * @param {Array} customers - Mảng dữ liệu khách hàng
- * @param {Function} onEdit - Callback khi click nút sửa
- * @param {Function} onDelete - Callback khi click nút xóa
- * @param {boolean} isLoading - Trạng thái loading
- */
 const CustomerTable = ({ customers, onEdit, onDelete, isLoading }) => {
   // Icon giới tính
   const getGenderIcon = (gender) => {
-    if (gender === 'Nam') return 'male';
-    if (gender === 'Nữ') return 'female';
+    if (gender === 'Male') return 'male';
+    if (gender === 'Female') return 'female';
     return 'transgender';
   };
-
+  const getFormatGender = (gender) => {
+    if(gender === 'Male') return 'Nam';
+    if(gender == 'Female') return 'Nữ'
+    return 'transgender';
+  }
   // Badge màu cho quốc tịch
   const getNationalityBadge = (nationality) => {
     if (nationality === 'Việt Nam') {
@@ -86,7 +83,7 @@ const CustomerTable = ({ customers, onEdit, onDelete, isLoading }) => {
         <tbody className="divide-y divide-outline-variant">
           {customers.map((customer, index) => (
             <tr
-              key={customer.IdKH}
+              key={customer.customerId}
               className={cn(
                 'transition-colors hover:bg-surface-container-highest',
                 index % 2 === 0 ? 'bg-surface-container-low' : 'bg-surface'
@@ -95,7 +92,7 @@ const CustomerTable = ({ customers, onEdit, onDelete, isLoading }) => {
               {/* ID */}
               <td className="px-space-md py-space-sm">
                 <span className="font-label-md text-label-md text-primary font-semibold">
-                  #{customer.IdKH}
+                  #{customer.customerId}
                 </span>
               </td>
 
@@ -111,7 +108,7 @@ const CustomerTable = ({ customers, onEdit, onDelete, isLoading }) => {
                     </span>
                   </div>
                   <span className="font-body-md text-body-md text-on-surface font-medium">
-                    {customer.TenKH}
+                    {customer.fullName}
                   </span>
                 </div>
               </td>
@@ -123,7 +120,7 @@ const CustomerTable = ({ customers, onEdit, onDelete, isLoading }) => {
                     phone
                   </span>
                   <span className="font-body-md text-body-md text-on-surface">
-                    {customer.SDT || '-'}
+                    {customer.phone || '-'}
                   </span>
                 </div>
               </td>
@@ -135,7 +132,7 @@ const CustomerTable = ({ customers, onEdit, onDelete, isLoading }) => {
                     badge
                   </span>
                   <span className="font-body-md text-body-md text-on-surface font-mono">
-                    {customer.CCCD_Passport || '-'}
+                    {customer.citizenId || '-'}
                   </span>
                 </div>
               </td>
@@ -145,12 +142,12 @@ const CustomerTable = ({ customers, onEdit, onDelete, isLoading }) => {
                 <span className={cn(
                   'inline-flex items-center gap-space-xs px-space-sm py-space-xs rounded-full',
                   'font-label-sm text-label-sm font-semibold',
-                  getNationalityBadge(customer.QuocTich)
+                  getNationalityBadge(customer.nationality)
                 )}>
                   <span className="material-symbols-outlined text-[16px]">
                     flag
                   </span>
-                  {customer.QuocTich || '-'}
+                  {customer.nationality || '-'}
                 </span>
               </td>
 
@@ -159,14 +156,14 @@ const CustomerTable = ({ customers, onEdit, onDelete, isLoading }) => {
                 <div className="flex items-center gap-space-xs">
                   <span className={cn(
                     'material-symbols-outlined text-[20px]',
-                    customer.GioiTinh === 'Nam' ? 'text-primary' : 
-                    customer.GioiTinh === 'Nữ' ? 'text-error' : 
+                    customer.gender === 'Male' ? 'text-primary' : 
+                    customer.gender === 'Female' ? 'text-error' : 
                     'text-on-surface-variant'
                   )}>
-                    {getGenderIcon(customer.GioiTinh)}
+                    {getGenderIcon(customer.gender)}
                   </span>
                   <span className="font-body-md text-body-md text-on-surface">
-                    {customer.GioiTinh || '-'}
+                    {getFormatGender(customer.gender) || '-'}
                   </span>
                 </div>
               </td>

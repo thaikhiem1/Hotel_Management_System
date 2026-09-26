@@ -19,11 +19,11 @@ const CustomerFormDialog = ({
   isLoading = false
 }) => {
   const [formData, setFormData] = useState({
-    TenKH: '',
-    SDT: '',
-    CCCD_Passport: '',
-    QuocTich: 'Việt Nam',
-    GioiTinh: 'Nam'
+    fullName: '',
+    phone: '',
+    citizenId: '',
+    nationality: 'Việt Nam',
+    gender: 'Male'
   });
 
   const [errors, setErrors] = useState({});
@@ -33,20 +33,20 @@ const CustomerFormDialog = ({
     if (isOpen) {
       if (editMode === 'edit' && customerData) {
         setFormData({
-          TenKH: customerData.TenKH || '',
-          SDT: customerData.SDT || '',
-          CCCD_Passport: customerData.CCCD_Passport || '',
-          QuocTich: customerData.QuocTich || 'Việt Nam',
-          GioiTinh: customerData.GioiTinh || 'Nam'
+          fullName: customerData.fullName || '',
+          phone: customerData.phone || '',
+          citizenId: customerData.citizenId || '',
+          nationality: customerData.nationality || 'Việt Nam',
+          gender: customerData.gender || 'Male'
         });
       } else {
         // Reset form cho chế độ thêm mới
         setFormData({
-          TenKH: '',
-          SDT: '',
-          CCCD_Passport: '',
-          QuocTich: 'Việt Nam',
-          GioiTinh: 'Nam'
+          fullName: '',
+          phone: '',
+          citizenId: '',
+          nationality: 'Việt Nam',
+          gender: 'Male'
         });
       }
       setErrors({});
@@ -75,18 +75,18 @@ const CustomerFormDialog = ({
     const newErrors = {};
 
     // Tên khách hàng (required)
-    if (!formData.TenKH.trim()) {
-      newErrors.TenKH = 'Vui lòng nhập tên khách hàng';
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = 'Vui lòng nhập tên khách hàng';
     }
 
     // Số điện thoại (optional, nhưng nếu có thì validate)
-    if (formData.SDT && !/^[0-9]{10,11}$/.test(formData.SDT)) {
-      newErrors.SDT = 'Số điện thoại không hợp lệ (10-11 chữ số)';
+    if (formData.phone && !/^[0-9]{10,11}$/.test(formData.phone)) {
+      newErrors.phone = 'Số điện thoại không hợp lệ (10-11 chữ số)';
     }
 
     // CCCD/Passport (optional, nhưng nếu có thì validate)
-    if (formData.CCCD_Passport && formData.CCCD_Passport.length < 9) {
-      newErrors.CCCD_Passport = 'CCCD/Passport phải có ít nhất 9 ký tự';
+    if (formData.citizenId && formData.citizenId.length < 9) {
+      newErrors.citizenId = 'CCCD/Passport phải có ít nhất 9 ký tự';
     }
 
     setErrors(newErrors);
@@ -100,7 +100,6 @@ const CustomerFormDialog = ({
     if (!validateForm()) {
       return;
     }
-
     onSubmit(formData);
   };
 
@@ -132,7 +131,7 @@ const CustomerFormDialog = ({
               </h2>
               {editMode === 'edit' && customerData && (
                 <p className="font-body-sm text-body-sm text-on-surface-variant">
-                  ID: #{customerData.IdKH}
+                  ID: #{customerData.customerId}
                 </p>
               )}
             </div>
@@ -160,23 +159,23 @@ const CustomerFormDialog = ({
             </label>
             <input
               type="text"
-              name="TenKH"
-              value={formData.TenKH}
+              name="fullName"
+              value={formData.fullName}
               onChange={handleInputChange}
               className={cn(
                 'w-full px-space-md py-space-sm rounded-lg',
                 'bg-surface-container-highest border',
-                errors.TenKH ? 'border-error' : 'border-outline',
+                errors.fullName ? 'border-error' : 'border-outline',
                 'font-body-md text-body-md text-on-surface',
                 'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent',
                 'transition-all'
               )}
               placeholder="Nhập họ và tên khách hàng"
             />
-            {errors.TenKH && (
+            {errors.fullName && (
               <p className="font-body-sm text-body-sm text-error flex items-center gap-space-xs">
                 <span className="material-symbols-outlined text-[16px]">error</span>
-                {errors.TenKH}
+                {errors.fullName}
               </p>
             )}
           </div>
@@ -191,23 +190,23 @@ const CustomerFormDialog = ({
             </label>
             <input
               type="tel"
-              name="SDT"
-              value={formData.SDT}
+              name="phone"
+              value={formData.phone}
               onChange={handleInputChange}
               className={cn(
                 'w-full px-space-md py-space-sm rounded-lg',
                 'bg-surface-container-highest border',
-                errors.SDT ? 'border-error' : 'border-outline',
+                errors.phone ? 'border-error' : 'border-outline',
                 'font-body-md text-body-md text-on-surface',
                 'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent',
                 'transition-all'
               )}
               placeholder="0123456789"
             />
-            {errors.SDT && (
+            {errors.phone && (
               <p className="font-body-sm text-body-sm text-error flex items-center gap-space-xs">
                 <span className="material-symbols-outlined text-[16px]">error</span>
-                {errors.SDT}
+                {errors.phone}
               </p>
             )}
           </div>
@@ -222,23 +221,23 @@ const CustomerFormDialog = ({
             </label>
             <input
               type="text"
-              name="CCCD_Passport"
-              value={formData.CCCD_Passport}
+              name="citizenId"
+              value={formData.citizenId}
               onChange={handleInputChange}
               className={cn(
                 'w-full px-space-md py-space-sm rounded-lg',
                 'bg-surface-container-highest border',
-                errors.CCCD_Passport ? 'border-error' : 'border-outline',
+                errors.citizenId ? 'border-error' : 'border-outline',
                 'font-body-md text-body-md text-on-surface',
                 'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent',
                 'transition-all'
               )}
               placeholder="001234567890 hoặc AB1234567"
             />
-            {errors.CCCD_Passport && (
+            {errors.citizenId && (
               <p className="font-body-sm text-body-sm text-error flex items-center gap-space-xs">
                 <span className="material-symbols-outlined text-[16px]">error</span>
-                {errors.CCCD_Passport}
+                {errors.citizenId}
               </p>
             )}
           </div>
@@ -254,8 +253,8 @@ const CustomerFormDialog = ({
                 Quốc tịch
               </label>
               <select
-                name="QuocTich"
-                value={formData.QuocTich}
+                name="nationality"
+                value={formData.nationality}
                 onChange={handleInputChange}
                 className={cn(
                   'w-full px-space-md py-space-sm rounded-lg',
@@ -290,8 +289,8 @@ const CustomerFormDialog = ({
                 Giới tính
               </label>
               <select
-                name="GioiTinh"
-                value={formData.GioiTinh}
+                name="gender"
+                value={formData.gender}
                 onChange={handleInputChange}
                 className={cn(
                   'w-full px-space-md py-space-sm rounded-lg',
@@ -301,9 +300,9 @@ const CustomerFormDialog = ({
                   'transition-all'
                 )}
               >
-                <option value="Nam">Nam</option>
-                <option value="Nữ">Nữ</option>
-                <option value="Khác">Khác</option>
+                <option value="Male">Nam</option>
+                <option value="Female">Nữ</option>
+                <option value="Other">Khác</option>
               </select>
             </div>
           </div>

@@ -24,7 +24,7 @@ const DeleteConfirmDialog = ({
   if (roomData.note) {
     itemDetails.push({
       label: "Ghi chú",
-      value: roomData.GhiChu,
+      value: roomData.note,
       highlight: false,
     });
   }
