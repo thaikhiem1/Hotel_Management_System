@@ -80,9 +80,7 @@ const QuanLyPhongPage = () => {
     setSelectedRoom(null);
     setIsFormDialogOpen(true);
   };
-  /**
-   * @param {Object} room - Đối tượng phòng được chọn
-   */
+  
   const handleEdit = (room) => {
     setEditMode('edit');
     setSelectedRoom(room);
@@ -91,7 +89,6 @@ const QuanLyPhongPage = () => {
 
   /**
    * Mở dialog xác nhận xóa
-   * @param {Object} room - Đối tượng phòng cần xóa
    */
   const handleDelete = (room) => {
     setSelectedRoom(room);
@@ -100,7 +97,6 @@ const QuanLyPhongPage = () => {
 
   /**
    * Xử lý submit form (thêm mới hoặc cập nhật)
-   * @param {Object} roomData - Dữ liệu phòng từ form
    */
   const handleSubmitForm = async (roomData) => {
 
@@ -108,17 +104,16 @@ const QuanLyPhongPage = () => {
     try {
       if (editMode === 'add') {
         // Gọi API thêm mới
-        const newRoom = await roomAPI.create(roomData);
-        await fetchRooms();
+        const response = await roomAPI.create(roomData);
+        setRooms([...rooms, response]);
         showSuccess("add success");
-        console.log('add success: ', newRoom);
       } else {
         // Gọi API cập nhật
-        const updatedRoom = await roomAPI.update(selectedRoom.room_id, roomData);
-        // Reload lại danh sách phòng sau khi cập nhật thành công
-        await fetchRooms();
+        const response = await roomAPI.update(selectedRoom.room_id, roomData);
+        setRooms(rooms.map(r => 
+          r.room_id === selectedRoom.room_id ? response : r
+        ));
         showSuccess("update success");
-        console.log('update success: ', updatedRoom);
       }
       setIsFormDialogOpen(false);
       setSelectedRoom(null);
@@ -137,7 +132,9 @@ const QuanLyPhongPage = () => {
     try {
       // Gọi API xóa phòng
       await roomAPI.delete(selectedRoom.room_id);
-      await fetchRooms();
+      setRooms(rooms.filter(r => 
+        rooms.room_id != selectedRoom.room_id
+      ));
       setIsDeleteDialogOpen(false);
       setSelectedRoom(null);
       // Điều chỉnh trang nếu trang hiện tại không còn dữ liệu

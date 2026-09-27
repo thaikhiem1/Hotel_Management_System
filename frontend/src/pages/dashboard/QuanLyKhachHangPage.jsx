@@ -143,19 +143,19 @@ const QuanLyKhachHangPage = () => {
 
   try {
     // Chuyển dữ liệu từ form sang đúng format CustomerRequest của Backend
-    console.log('Customer payload:', formData);
-
     if (editMode === 'add') {
-      await customerAPI.create(formData);
-
+      const response = await customerAPI.create(formData);
+      setCustomers([...customers, response]);
       showSuccess(
         'Thêm khách hàng thành công',
         `Khách hàng ${formData.fullName} đã được thêm`
       );
     } else {
-      await customerAPI.update(selectedCustomer.customerId,formData
+      const response = await customerAPI.update(selectedCustomer.customerId,formData
       );
-
+      setCustomers(customers.map(kh =>
+        kh.customerId === selectedCustomer.customerId ? response : kh
+      ))
       showSuccess(
         'Cập nhật thành công',
         `Thông tin khách hàng ${formData.fullName} đã được cập nhật`
@@ -165,10 +165,6 @@ const QuanLyKhachHangPage = () => {
     // Đóng dialog
     setIsFormDialogOpen(false);
     setSelectedCustomer(null);
-
-    // Lấy lại dữ liệu thật từ database
-    await fetchCustomers();
-
   } catch (error) {
     console.error('Error submitting customer:', error);
     handleApiError(error);
@@ -186,8 +182,10 @@ const QuanLyKhachHangPage = () => {
     setIsLoading(true);
     try {
       // Gọi API xóa khách hàng
-      await customerAPI.delete(selectedCustomer.customerId);
-      
+     const response =  await customerAPI.delete(selectedCustomer.customerId);
+      setCustomers(customers.filter(kh => 
+        kh.customerId != selectedCustomer.customerId
+      ))
       // Điều chỉnh trang nếu trang hiện tại không còn dữ liệu
       const newTotalPages = Math.ceil((customers.length - 1) / itemsPerPage);
       if (currentPage > newTotalPages && newTotalPages > 0) {
@@ -196,7 +194,6 @@ const QuanLyKhachHangPage = () => {
       showSuccess('Xóa khách hàng thành công');
       setIsDeleteDialogOpen(false);
       setSelectedCustomer(null);
-      await fetchCustomers();
     } catch (error) {
       console.error('Error deleting customer:', error);
       handleApiError(error);

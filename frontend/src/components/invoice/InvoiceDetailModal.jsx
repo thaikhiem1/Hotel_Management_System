@@ -1,24 +1,31 @@
-import React from 'react';
-import { cn } from '@/utils/lib/util';
+import React from "react";
+import { cn } from "@/utils/lib/util";
 
 /**
  * InvoiceDetailModal - Modal xem chi tiết hóa đơn đã tạo
  * Hiển thị đầy đủ thông tin hóa đơn đã thanh toán
- * 
+ *
  * Props:
  * - invoice: Thông tin hóa đơn đầy đủ
  * - isOpen: Trạng thái modal
  * - onClose: Callback đóng modal
  * - onPrint: Callback in hóa đơn
  */
-const InvoiceDetailModal = ({ invoice, isOpen, onClose, onPrint }) => {
+const InvoiceDetailModal = ({
+  invoice,
+  isOpen,
+  onClose,
+  onPrint,
+  onPayment,
+  isLoading,
+}) => {
   if (!isOpen || !invoice) return null;
 
   // Format ngày
   const formatDate = (dateStr) => {
-    if (!dateStr) return '';
+    if (!dateStr) return "";
     const date = new Date(dateStr);
-    return date.toLocaleDateString('vi-VN');
+    return date.toLocaleDateString("vi-VN");
   };
 
   // Lấy thông tin từ rental_receipt và booking_details
@@ -28,23 +35,26 @@ const InvoiceDetailModal = ({ invoice, isOpen, onClose, onPrint }) => {
   const employee = invoice.employee || {};
 
   // Tính toán chi tiết
-  const roomTotal = bookingDetails.reduce((sum, bd) => sum + (bd.total_amount || 0), 0);
+  const roomTotal = bookingDetails.reduce(
+    (sum, bd) => sum + (bd.total_amount || 0),
+    0,
+  );
   const servicesTotal = invoice.total_amount - roomTotal;
 
   // Trạng thái thanh toán
   const statusConfig = {
     PAID: {
-      label: 'Đã thanh toán',
-      bgClass: 'bg-tertiary',
-      textClass: 'text-on-tertiary',
-      icon: 'check_circle'
+      label: "Đã thanh toán",
+      bgClass: "bg-tertiary",
+      textClass: "text-on-tertiary",
+      icon: "check_circle",
     },
     UNPAID: {
-      label: 'Chưa thanh toán',
-      bgClass: 'bg-error',
-      textClass: 'text-on-error',
-      icon: 'pending'
-    }
+      label: "Chưa thanh toán",
+      bgClass: "bg-error",
+      textClass: "text-on-error",
+      icon: "pending",
+    },
   };
 
   const status = statusConfig[invoice.payment_status] || statusConfig.UNPAID;
@@ -60,17 +70,29 @@ const InvoiceDetailModal = ({ invoice, isOpen, onClose, onPrint }) => {
             </span>
             <div>
               <h2 className="font-headline-lg text-headline-lg font-bold">
-                Chi tiết Hóa đơn #{String(invoice.invoice_id).padStart(6, '0')}
+                Chi tiết Hóa đơn #{String(invoice.invoice_id).padStart(6, "0")}
               </h2>
               <div className="flex items-center gap-space-sm mt-space-xs">
-                <div className={cn(
-                  'flex items-center gap-space-xs px-space-md py-space-xs rounded-full',
-                  status.bgClass
-                )}>
-                  <span className={cn('material-symbols-outlined text-[16px]', status.textClass)}>
+                <div
+                  className={cn(
+                    "flex items-center gap-space-xs px-space-md py-space-xs rounded-full",
+                    status.bgClass,
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "material-symbols-outlined text-[16px]",
+                      status.textClass,
+                    )}
+                  >
                     {status.icon}
                   </span>
-                  <span className={cn('font-label-sm text-label-sm font-semibold', status.textClass)}>
+                  <span
+                    className={cn(
+                      "font-label-sm text-label-sm font-semibold",
+                      status.textClass,
+                    )}
+                  >
                     {status.label}
                   </span>
                 </div>
@@ -101,21 +123,27 @@ const InvoiceDetailModal = ({ invoice, isOpen, onClose, onPrint }) => {
               </div>
               <div className="space-y-space-sm">
                 <div>
-                  <p className="text-body-sm text-on-primary-container/70">Họ và tên:</p>
+                  <p className="text-body-sm text-on-primary-container/70">
+                    Họ và tên:
+                  </p>
                   <p className="font-semibold text-on-primary-container">
-                    {customer.full_name || 'N/A'}
+                    {customer.full_name || "N/A"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-body-sm text-on-primary-container/70">Số điện thoại:</p>
+                  <p className="text-body-sm text-on-primary-container/70">
+                    Số điện thoại:
+                  </p>
                   <p className="font-semibold text-on-primary-container">
-                    {customer.phone || 'N/A'}
+                    {customer.phone || "N/A"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-body-sm text-on-primary-container/70">CCCD/Passport:</p>
+                  <p className="text-body-sm text-on-primary-container/70">
+                    CCCD/Passport:
+                  </p>
                   <p className="font-semibold text-on-primary-container">
-                    {customer.citizen_id_passport || 'N/A'}
+                    {customer.citizen_id_passport || "N/A"}
                   </p>
                 </div>
               </div>
@@ -133,15 +161,19 @@ const InvoiceDetailModal = ({ invoice, isOpen, onClose, onPrint }) => {
               </div>
               <div className="space-y-space-sm">
                 <div>
-                  <p className="text-body-sm text-on-secondary-container/70">Họ và tên:</p>
+                  <p className="text-body-sm text-on-secondary-container/70">
+                    Họ và tên:
+                  </p>
                   <p className="font-semibold text-on-secondary-container">
-                    {employee.full_name || 'N/A'}
+                    {employee.full_name || "N/A"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-body-sm text-on-secondary-container/70">Chức vụ:</p>
+                  <p className="text-body-sm text-on-secondary-container/70">
+                    Chức vụ:
+                  </p>
                   <p className="font-semibold text-on-secondary-container">
-                    {employee.position || 'N/A'}
+                    {employee.position || "N/A"}
                   </p>
                 </div>
               </div>
@@ -159,19 +191,25 @@ const InvoiceDetailModal = ({ invoice, isOpen, onClose, onPrint }) => {
               </div>
               <div className="space-y-space-sm">
                 <div>
-                  <p className="text-body-sm text-on-tertiary-container/70">Mã phiếu thuê:</p>
+                  <p className="text-body-sm text-on-tertiary-container/70">
+                    Mã phiếu thuê:
+                  </p>
                   <p className="font-semibold text-on-tertiary-container">
-                    PT{String(invoice.rental_receipt_id).padStart(6, '0')}
+                    PT{String(invoice.rental_receipt_id).padStart(6, "0")}
                   </p>
                 </div>
                 <div>
-                  <p className="text-body-sm text-on-tertiary-container/70">Ngày lập:</p>
+                  <p className="text-body-sm text-on-tertiary-container/70">
+                    Ngày lập:
+                  </p>
                   <p className="font-semibold text-on-tertiary-container">
                     {formatDate(rentalReceipt.rental_date)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-body-sm text-on-tertiary-container/70">Ngày thanh toán:</p>
+                  <p className="text-body-sm text-on-tertiary-container/70">
+                    Ngày thanh toán:
+                  </p>
                   <p className="font-semibold text-on-tertiary-container">
                     {formatDate(invoice.invoice_date)}
                   </p>
@@ -207,19 +245,25 @@ const InvoiceDetailModal = ({ invoice, isOpen, onClose, onPrint }) => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-space-md">
                       <div className="space-y-space-sm">
                         <div className="flex justify-between">
-                          <span className="text-on-surface-variant">Mã phòng:</span>
+                          <span className="text-on-surface-variant">
+                            Mã phòng:
+                          </span>
                           <span className="font-semibold text-on-surface">
-                            {bd.room?.room_code || 'N/A'}
+                            {bd.room?.room_code || "N/A"}
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-on-surface-variant">Loại phòng:</span>
+                          <span className="text-on-surface-variant">
+                            Loại phòng:
+                          </span>
                           <span className="font-semibold text-on-surface">
-                            {bd.room?.room_type?.room_type_name || 'N/A'}
+                            {bd.room?.room_type?.room_type_name || "N/A"}
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-on-surface-variant">Số khách:</span>
+                          <span className="text-on-surface-variant">
+                            Số khách:
+                          </span>
                           <span className="font-semibold text-on-surface">
                             {bd.number_of_guests} người
                           </span>
@@ -227,21 +271,27 @@ const InvoiceDetailModal = ({ invoice, isOpen, onClose, onPrint }) => {
                       </div>
                       <div className="space-y-space-sm">
                         <div className="flex justify-between">
-                          <span className="text-on-surface-variant">Check-in:</span>
+                          <span className="text-on-surface-variant">
+                            Check-in:
+                          </span>
                           <span className="font-semibold text-on-surface">
                             {formatDate(bd.check_in_date)}
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-on-surface-variant">Check-out:</span>
+                          <span className="text-on-surface-variant">
+                            Check-out:
+                          </span>
                           <span className="font-semibold text-on-surface">
                             {formatDate(bd.check_out_date)}
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-on-surface-variant">Thành tiền:</span>
+                          <span className="text-on-surface-variant">
+                            Thành tiền:
+                          </span>
                           <span className="font-semibold text-primary">
-                            {bd.total_amount?.toLocaleString('vi-VN')}đ
+                            {bd.total_amount?.toLocaleString("vi-VN")}đ
                           </span>
                         </div>
                       </div>
@@ -261,7 +311,7 @@ const InvoiceDetailModal = ({ invoice, isOpen, onClose, onPrint }) => {
                     Tiền phòng:
                   </span>
                   <span className="font-title-lg text-title-lg font-semibold text-on-surface">
-                    {roomTotal.toLocaleString('vi-VN')}đ
+                    {roomTotal.toLocaleString("vi-VN")}đ
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -269,7 +319,7 @@ const InvoiceDetailModal = ({ invoice, isOpen, onClose, onPrint }) => {
                     Tiền dịch vụ:
                   </span>
                   <span className="font-title-lg text-title-lg font-semibold text-on-surface">
-                    {servicesTotal.toLocaleString('vi-VN')}đ
+                    {servicesTotal.toLocaleString("vi-VN")}đ
                   </span>
                 </div>
               </div>
@@ -282,7 +332,7 @@ const InvoiceDetailModal = ({ invoice, isOpen, onClose, onPrint }) => {
                   TỔNG THANH TOÁN:
                 </span>
                 <span className="font-headline-lg text-headline-lg font-bold text-on-primary">
-                  {invoice.total_amount?.toLocaleString('vi-VN')}đ
+                  {invoice.total_amount?.toLocaleString("vi-VN")}đ
                 </span>
               </div>
             </div>
@@ -297,13 +347,29 @@ const InvoiceDetailModal = ({ invoice, isOpen, onClose, onPrint }) => {
           >
             Đóng
           </button>
-          <button
-            onClick={() => onPrint && onPrint(invoice)}
-            className="px-space-xl py-space-md rounded-lg bg-primary hover:bg-primary/90 text-on-primary font-label-lg text-label-lg font-bold transition-colors shadow-lg flex items-center gap-space-sm"
-          >
-            <span className="material-symbols-outlined">print</span>
-            <span>In hóa đơn</span>
-          </button>
+
+          {invoice.payment_status === "UNPAID" ? (
+            <button
+              onClick={() => onPayment && onPayment(invoice)}
+              disabled={isLoading}
+              className="px-space-xl py-space-md rounded-lg bg-tertiary hover:bg-tertiary/90 text-on-tertiary font-label-lg text-label-lg font-bold transition-colors shadow-lg flex items-center gap-space-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span className="material-symbols-outlined">payments</span>
+
+              <span>
+                {isLoading ? "Đang thanh toán..." : "Xác nhận thanh toán"}
+              </span>
+            </button>
+          ) : (
+            <button
+              onClick={() => onPrint && onPrint(invoice)}
+              className="px-space-xl py-space-md rounded-lg bg-primary hover:bg-primary/90 text-on-primary font-label-lg text-label-lg font-bold transition-colors shadow-lg flex items-center gap-space-sm"
+            >
+              <span className="material-symbols-outlined">print</span>
+
+              <span>In hóa đơn</span>
+            </button>
+          )}
         </div>
       </div>
     </div>

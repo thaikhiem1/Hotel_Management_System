@@ -29,8 +29,9 @@ const QuanLyHoaDonPage = () => {
   // Response: Array of invoices with relations: employee, rental_receipt (with customer, booking_details)
   
   // Mock data - Chuẩn hóa theo Database.md
-  const mockInvoices = [
-    {
+  const  [invoices, setInvoices] = useState([
+  // giữ nguyên toàn bộ mockInvoices của bạn ở đây
+  {
       invoice_id: 1,
       invoice_date: '2026-09-25',
       total_amount: 5450000,
@@ -80,7 +81,7 @@ const QuanLyHoaDonPage = () => {
       total_amount: 3200000,
       employee_id: 2,
       rental_receipt_id: 2,
-      payment_status: 'PAID',
+      payment_status: 'UNPAID',
       employee: {
         employee_id: 2,
         full_name: 'Lê Văn C',
@@ -162,8 +163,8 @@ const QuanLyHoaDonPage = () => {
         ]
       }
     }
-  ];
-
+]);
+    
   // Lọc theo ngày
   const dateFilteredInvoices = useMemo(() => {
     const today = new Date();
@@ -171,7 +172,7 @@ const QuanLyHoaDonPage = () => {
 
     switch (dateFilter) {
       case 'today':
-        return mockInvoices.filter(inv => {
+        return invoices.filter(inv => {
           const invDate = new Date(inv.invoice_date);
           invDate.setHours(0, 0, 0, 0);
           return invDate.getTime() === today.getTime();
@@ -180,7 +181,7 @@ const QuanLyHoaDonPage = () => {
       case 'week':
         const weekAgo = new Date(today);
         weekAgo.setDate(weekAgo.getDate() - 7);
-        return mockInvoices.filter(inv => {
+        return invoices.filter(inv => {
           const invDate = new Date(inv.invoice_date);
           return invDate >= weekAgo && invDate <= today;
         });
@@ -188,13 +189,13 @@ const QuanLyHoaDonPage = () => {
       case 'month':
         const monthAgo = new Date(today);
         monthAgo.setMonth(monthAgo.getMonth() - 1);
-        return mockInvoices.filter(inv => {
+        return invoices.filter(inv => {
           const invDate = new Date(inv.invoice_date);
           return invDate >= monthAgo && invDate <= today;
         });
       
       default:
-        return mockInvoices;
+        return invoices;
     }
   }, [dateFilter]);
 
@@ -228,15 +229,15 @@ const QuanLyHoaDonPage = () => {
 
   // Thống kê
   const statistics = useMemo(() => {
-    const total = mockInvoices.length;
-    const paid = mockInvoices.filter(inv => inv.payment_status === 'PAID').length;
-    const unpaid = mockInvoices.filter(inv => inv.payment_status === 'UNPAID').length;
-    const totalRevenue = mockInvoices
+    const total = invoices.length;
+    const paid = invoices.filter(inv => inv.payment_status === 'PAID').length;
+    const unpaid = invoices.filter(inv => inv.payment_status === 'UNPAID').length;
+    const totalRevenue = invoices
       .filter(inv => inv.payment_status === 'PAID')
       .reduce((sum, inv) => sum + inv.total_amount, 0);
 
     return { total, paid, unpaid, totalRevenue };
-  }, []);
+  }, [invoices]);
 
   const handleViewDetail = (invoice) => {
     setSelectedInvoice(invoice);
@@ -257,7 +258,33 @@ const QuanLyHoaDonPage = () => {
       setIsLoading(false);
     }, 600);
   };
+const handlePayment = (invoice) => {
+  setIsLoading(true);
 
+  setTimeout(() => {
+    const updatedInvoice = {
+      ...invoice,
+      payment_status: 'PAID',
+      payment_at: new Date().toISOString(),
+    };
+
+    setInvoices(prevInvoices =>
+      prevInvoices.map(inv =>
+        inv.invoice_id === invoice.invoice_id
+          ? updatedInvoice
+          : inv
+      )
+    );
+
+    setSelectedInvoice(updatedInvoice);
+
+    setIsLoading(false);
+
+    alert(
+      `Thanh toán hóa đơn #${String(invoice.invoice_id).padStart(6, '0')} thành công`
+    );
+  }, 600);
+};
   return (
     <div className="w-full space-y-space-lg">
       {/* Page Header */}
@@ -461,6 +488,8 @@ const QuanLyHoaDonPage = () => {
           setSelectedInvoice(null);
         }}
         onPrint={handlePrintInvoice}
+        onPayment={handlePayment}
+        isLoading={isLoading}
       />
     </div>
   );

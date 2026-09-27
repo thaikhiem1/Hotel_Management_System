@@ -77,27 +77,18 @@ const QuanLyLoaiPhongPage = () => {
     setIsFormDialogOpen(true);
   };
 
-  /**
-   * @param {Object} roomType 
-   */
-  const handleEdit = (roomType) => {
+  const handleEdit = (roomTypeData) => {
     setEditMode('edit');
-    setSelectedRoomType(roomType);
+    setSelectedRoomType(roomTypeData);
     setIsFormDialogOpen(true);
   };
 
-  /**
-   * @param {Object} roomType 
-   */
-  const handleDelete = (roomType) => {
-    setSelectedRoomType(roomType);
+
+  const handleDelete = (roomTypeData) => {
+    setSelectedRoomType(roomTypeData);
     setIsDeleteDialogOpen(true);
   };
 
-  /**
-   * Xử lý submit form (thêm mới hoặc cập nhật)
-   * @param {Object} roomTypeData 
-   */
   const handleSubmitForm = async (roomTypeData) => {
     setIsLoading(true);
     
@@ -122,9 +113,7 @@ const QuanLyLoaiPhongPage = () => {
 
       setIsFormDialogOpen(false);
       setSelectedRoomType(null);
-      
-      await fetchRoomTypes();
-      
+          
     } catch (error) {
       console.error('Error submitting room type:', error);
       handleApiError(error);
@@ -150,9 +139,7 @@ const QuanLyLoaiPhongPage = () => {
       }
       
       showSuccess('delete success!');
-      
-      await fetchRoomTypes();
-      
+       
     } catch (error) {
       console.error('Error deleting room type:', error);
       handleApiError(error);
