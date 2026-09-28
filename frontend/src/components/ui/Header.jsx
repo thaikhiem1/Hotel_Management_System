@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import ThemeToggle from './ThemeToggle';
-import UserProfileMenu from './UserProfileMenu';
-import { EmployeeProfileDialog } from '@/components/employee-management';
-
+import React, { useEffect, useState } from "react";
+import ThemeToggle from "./ThemeToggle";
+import UserProfileMenu from "./UserProfileMenu";
+import { EmployeeProfileDialog } from "@/components/employee-management";
+import avatar from "@/assets/ronaldo_01.jpg";
 const Header = ({ sidebarWidth = 384 }) => {
   const [time, setTime] = useState(new Date());
   const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
@@ -18,17 +18,17 @@ const Header = ({ sidebarWidth = 384 }) => {
   // Mock current user - TODO: Get from auth context
   const mockCurrentUser = {
     idNV: 1,
-    tenNV: 'Alexandre de Montes',
-    chucVu: 'Tổng Giám Đốc',
+    tenNV: "Sir Alex Fergusion",
+    chucVu: "Tổng Giám Đốc",
     luong: 50000000,
-    sdt: '0901234567',
-    cccd: '001234567890',
-    ngaySinh: '1980-05-15',
-    gioiTinh: 'Nam',
-    diaChi: '123 Nguyễn Huệ, Quận 1, TP.HCM',
-    email: 'alexandre@grandpalace.com',
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA84QaAnq1uM-ytFYqrkEE55SPKO5rKzTBOJZvgi2cFcmWk3b2i-fBEunEYOcrQjjHJBlEXXJvxGmr9E6-niSdqmwcg6CASYunMSo8vd23_Wcv83qg9CeGvj8CoqXWzji9wDOW4keonHDlwJ2aRlCkEYa9r16PUY_SnMHCt3XkVLiCMA171dx0NNIHrhW55GgTxbgvOd5B4_IVBtSmQ7ViWwar6ezjYkmmuWT-4gjdoq7VY8jfzsVDkpA',
-    isWorking: true
+    sdt: "0901234567",
+    cccd: "001234567890",
+    ngaySinh: "1980-05-15",
+    gioiTinh: "Nam",
+    diaChi: "123 Nguyễn Huệ, Quận 1, TP.HCM",
+    email: "",
+    avatar: avatar,
+    isWorking: true,
   };
 
   const handleOpenProfile = (user) => {
@@ -38,14 +38,14 @@ const Header = ({ sidebarWidth = 384 }) => {
 
   const handleUpdateProfile = async (formData) => {
     // TODO: Call API to update profile
-    console.log('Update profile:', formData);
+    console.log("Update profile:", formData);
     setIsProfileDialogOpen(false);
     setCurrentUser(null);
   };
 
   return (
     <>
-      <header 
+      <header
         style={{ left: `${sidebarWidth}px` }}
         className="fixed top-0 right-0 h-20 bg-surface-container-lowest/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 flex items-center justify-between px-gutter-lg"
       >
@@ -62,10 +62,11 @@ const Header = ({ sidebarWidth = 384 }) => {
             </span>
           </div>
           <div className="flex items-center gap-space-sm bg-surface-container-high px-space-md py-space-sm rounded-lg">
-            Hôm nay là ngày: {time.toLocaleDateString('vi-VN', {
-              day: '2-digit',
-              month: '2-digit',
-              year: '2-digit'
+            Hôm nay là ngày:{" "}
+            {time.toLocaleDateString("vi-VN", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "2-digit",
             })}
           </div>
           <div className="hidden lg:flex items-center gap-space-xs text-on-surface-variant bg-surface-container-low px-space-md py-space-sm rounded-lg">
@@ -73,9 +74,9 @@ const Header = ({ sidebarWidth = 384 }) => {
               schedule
             </span>
             <span className="font-label-md text-label-md tracking-wider text-on-surface">
-              {time.toLocaleTimeString('vi-VN', {
-                hour12: false
-              })} 
+              {time.toLocaleTimeString("vi-VN", {
+                hour12: false,
+              })}
             </span>
           </div>
         </div>
@@ -88,8 +89,8 @@ const Header = ({ sidebarWidth = 384 }) => {
             <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-primary shadow-[0_0_8px_rgba(242,202,80,0.6)]"></span>
           </button>
           <div className="h-8 w-[1px] bg-surface-container-high"></div>
-          <UserProfileMenu 
-            currentUser={mockCurrentUser} 
+          <UserProfileMenu
+            currentUser={mockCurrentUser}
             onOpenProfile={handleOpenProfile}
           />
         </div>

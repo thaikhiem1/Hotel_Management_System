@@ -1,3 +1,4 @@
+import bgr from "@/assets/hotelbackground.jpg";
 function LoginLeftPanel() {
   return (
     <div className="relative lg:col-span-6 flex flex-col justify-between p-8 sm:p-12 lg:p-16 min-h-[520px] lg:min-h-screen overflow-hidden">
@@ -5,8 +6,7 @@ function LoginLeftPanel() {
       <div
         className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 ease-out scale-105 hover:scale-100 z-0"
         style={{
-          backgroundImage:
-            "url('https://lh3.googleusercontent.com/aida-public/AB6AXuDHcA53nvLnNZrAh5Qoq9pdRHCa3OW_f9hniZgvl4NUzrokDxhzPmFq6twh0yJK2js_TjnZu4uJlaQNhpi2A04ym7j4ULPN6jxQ08q3-GeNtmUrYVZWwjc-QWHNNsD6IhrqHIvJ6FW0ltatbuBjIkQASaESV9qKXLIHko2vhTd9rwq7Rfb4H5d7VmpgQZv3RmSK6W8RId7KOve4PYdnNmpZD0C8Z_d3EwmEY6kLk1czqh1wfpUgepPK')",
+          backgroundImage: `url(${bgr})`,
         }}
         role="img"
         aria-label="Sumptuous interior of luxury five-star hotel lobby Grand Astoria with warm golden ambient chandelier lighting, polished Italian marble floors, ornate classical staircase, intimate concierge counter, and guests relaxing in velvet armchairs with deep emerald and obsidian tones."
