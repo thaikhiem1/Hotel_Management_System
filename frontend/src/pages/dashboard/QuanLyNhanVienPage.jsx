@@ -1,473 +1,211 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+
 import {
   EmployeeCard,
   EmployeeProfileDialog,
 } from "@/components/employee-management";
-import { cn } from "@/utils/lib/util";
 
-import avartar_admin from "@/assets/avatar.jpg"
-import avartar_02 from "@/assets/ronaldo_02.jpg"
-import avartar_03 from "@/assets/ronaldo_03.jpg"
-import avartar_04 from "@/assets/ronaldo_04.webp"
-import avartar_05 from "@/assets/ronaldo_05.jpg"
-import avartar_06 from "@/assets/ronaldo_06.jpg"
-import avartar_07 from "@/assets/ronaldo_07.webp"
-import avartar_08 from "@/assets/ronaldo_08.jpg"
-import avartar_09 from "@/assets/ronaldo_09.jpg"
-import avartar_10 from "@/assets/ronaldo_10.webp"
-import avartar_11 from "@/assets/ronaldo_11.webp"
-import avartar_12 from "@/assets/ronaldo_12.webp"
-import avartar_13 from "@/assets/ronaldo_13.webp"
-import avartar_14 from "@/assets/ronaldo_14.jpg"
-import avartar_15 from "@/assets/ronaldo_15.jpg"
-import avartar_16 from "@/assets/ronaldo_16.jpg"
-import avartar_17 from "@/assets/ronaldo_17.webp"
-import avartar_18 from "@/assets/ronaldo_18.jpg"
-import avartar_19 from "@/assets/ronaldo_19.jpg"
-import avartar_20 from "@/assets/ronaldo_20.jpg"
-import avartar_21 from "@/assets/ronaldo_21.jpg"
-import avartar_22 from "@/assets/ronaldo_22.jpg"
-import avartar_23 from "@/assets/ronaldo_23.jpg"
-import avartar_1 from "@/assets/ronaldo_01.jpg"
-/**
- * QuanLyNhanVienPage - Trang quản lý nhân viên
- * Hiển thị danh sách nhân viên dạng grid card với phân trang
- * Mỗi trang hiển thị tối đa 16 cards (4 dòng x 4 cột)
- *
- * TODO: Khi có API backend:
- * - Import employeeAPI từ @/services/api
- * - Implement fetchEmployees(), handleSubmit(), handleDelete()
- * - Thêm trường isWorking vào database
- */
+import { cn } from "@/utils/lib/util";
+import { employeeAPI } from "@/services/api";
+
 const QuanLyNhanVienPage = () => {
-  // State quản lý dữ liệu nhân viên
   const [employees, setEmployees] = useState([]);
 
-  // State quản lý dialog
   const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
-  const [dialogMode, setDialogMode] = useState("view"); // 'view' | 'edit' | 'add'
+  const [dialogMode, setDialogMode] = useState("view");
 
-  // State loading
   const [isLoading, setIsLoading] = useState(false);
 
-  // State filter và search
+  const [searchInput, setSearchInput] = useState("");
+
+  // Giá trị search đã được submit
+  // Chỉ state này mới được gửi lên API
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterStatus, setFilterStatus] = useState("all"); // 'all' | 'working' | 'resigned'
-  const [filterPosition, setFilterPosition] = useState("all"); // 'all' | 'Tổng Giám Đốc' | 'Quản Lý' | 'Nhân Viên'
 
-  // State phân trang
+  const [filterStatus, setFilterStatus] = useState("all");
+
+  const [filterPosition, setFilterPosition] = useState("all");
+
+  // Frontend dùng page bắt đầu từ 1
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 16; // 4 rows x 4 columns
 
-  // Mock data - TODO: Replace with API call
-  useEffect(() => {
-    fetchEmployees();
-  }, []);
+  // Backend Spring Page dùng page bắt đầu từ 0
+  const itemsPerPage = 16;
 
-  /**
-   * Fetch danh sách nhân viên từ API
-   * TODO: Implement API call
-   */
-  const fetchEmployees = async () => {
+  const [totalElements, setTotalElements] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
+  const fetchEmployees = useCallback(async () => {
     setIsLoading(true);
-    try {
-      // Mock data với nhiều nhân viên để test phân trang
-      const mockData = [
-        {
-          idNV: 1,
-          tenNV: "Trần Thái Khiêm",
-          chucVu: "Tổng Giám Đốc",
-          luong: 50000000,
-          sdt: "0901234567",
-          cccd: "001234567890",
-          ngaySinh: "2006-07-11",
-          gioiTinh: "Nam",
-          diaChi: "123 Nguyễn Huệ, Quận 1, TP.HCM",
-          email: "tranthaikhiem@grandpalace.com",
-          avatar: avartar_admin,
-          isWorking: true,
-        },
-        {
-          idNV: 2,
-          tenNV: "Ronaldo Bồ đào nha",
-          chucVu: "Quản Lý",
-          luong: 30000000,
-          sdt: "0912345678",
-          cccd: "001234567891",
-          ngaySinh: "1985-08-20",
-          gioiTinh: "Nam",
-          diaChi: "456 Lê Lợi, Quận 1, TP.HCM",
-          email: "an.nguyen@grandpalace.com",
-          avatar: avartar_02,
-          isWorking: true,
-        },
-        {
-          idNV: 3,
-          tenNV: "Ronaldo Bồ đào nha",
-          chucVu: "Quản Lý",
-          luong: 30000000,
-          sdt: "0912345678",
-          cccd: "001234567891",
-          ngaySinh: "1985-08-20",
-          gioiTinh: "Nam",
-          diaChi: "456 Lê Lợi, Quận 1, TP.HCM",
-          email: "an.nguyen@grandpalace.com",
-          avatar: avartar_03,
-          isWorking: true,
-        },
-       {
-          idNV: 4,
-          tenNV: "Ronaldo Bồ đào nha",
-          chucVu: "Quản Lý",
-          luong: 30000000,
-          sdt: "0912345678",
-          cccd: "001234567891",
-          ngaySinh: "1985-08-20",
-          gioiTinh: "Nam",
-          diaChi: "456 Lê Lợi, Quận 1, TP.HCM",
-          email: "an.nguyen@grandpalace.com",
-          avatar: avartar_03,
-          isWorking: true,
-        },
-        {
-          idNV: 5,
-          tenNV: "Ronaldo Bồ đào nha",
-          chucVu: "Quản Lý",
-          luong: 30000000,
-          sdt: "0912345678",
-          cccd: "001234567891",
-          ngaySinh: "1985-08-20",
-          gioiTinh: "Nam",
-          diaChi: "456 Lê Lợi, Quận 1, TP.HCM",
-          email: "an.nguyen@grandpalace.com",
-          avatar: avartar_04,
-          isWorking: true,
-        },
-       {
-          idNV: 6,
-          tenNV: "Ronaldo Bồ đào nha",
-          chucVu: "Quản Lý",
-          luong: 30000000,
-          sdt: "0912345678",
-          cccd: "001234567891",
-          ngaySinh: "1985-08-20",
-          gioiTinh: "Nam",
-          diaChi: "456 Lê Lợi, Quận 1, TP.HCM",
-          email: "an.nguyen@grandpalace.com",
-          avatar: avartar_05,
-          isWorking: true,
-        },
-        {
-          idNV: 7,
-          tenNV: "Ronaldo Bồ đào nha",
-          chucVu: "Quản Lý",
-          luong: 30000000,
-          sdt: "0912345678",
-          cccd: "001234567891",
-          ngaySinh: "1985-08-20",
-          gioiTinh: "Nam",
-          diaChi: "456 Lê Lợi, Quận 1, TP.HCM",
-          email: "an.nguyen@grandpalace.com",
-          avatar: avartar_06,
-          isWorking: true,
-        },
-       {
-          idNV: 8,
-          tenNV: "Ronaldo Real Madrid",
-          chucVu: "Nhân Viên Kỹ Thuật",
-          luong: 30000000,
-          sdt: "0912345678",
-          cccd: "001234567891",
-          ngaySinh: "1985-08-20",
-          gioiTinh: "Nam",
-          diaChi: "456 Lê Lợi, Quận 1, TP.HCM",
-          email: "an.nguyen@grandpalace.com",
-          avatar: avartar_07,
-          isWorking: true,
-        },
-        {
-          idNV: 9,
-          tenNV: "Ronaldo Real Madrid",
-          chucVu: "Nhân Viên Kỹ Thuật",
-          luong: 30000000,
-          sdt: "0912345678",
-          cccd: "001234567891",
-          ngaySinh: "1985-08-20",
-          gioiTinh: "Nam",
-          diaChi: "456 Lê Lợi, Quận 1, TP.HCM",
-          email: "an.nguyen@grandpalace.com",
-          avatar: avartar_08,
-          isWorking: true,
-        },
-       {
-          idNV: 10,
-          tenNV: "Ronaldo Real Madrid",
-          chucVu: "Nhân Viên Kỹ Thuật",
-          luong: 30000000,
-          sdt: "0912345678",
-          cccd: "001234567891",
-          ngaySinh: "1985-08-20",
-          gioiTinh: "Nam",
-          diaChi: "456 Lê Lợi, Quận 1, TP.HCM",
-          email: "an.nguyen@grandpalace.com",
-          avatar: avartar_09,
-          isWorking: true,
-        },
-       {
-          idNV: 11,
-          tenNV: "Ronaldo Real Madrid",
-          chucVu: "Nhân Viên Kỹ Thuật",
-          luong: 30000000,
-          sdt: "0912345678",
-          cccd: "001234567891",
-          ngaySinh: "1985-08-20",
-          gioiTinh: "Nam",
-          diaChi: "456 Lê Lợi, Quận 1, TP.HCM",
-          email: "an.nguyen@grandpalace.com",
-          avatar: avartar_10,
-          isWorking: true,
-        },
-       {
-          idNV: 12,
-          tenNV: "Ronaldo Real Madrid",
-          chucVu: "Nhân Viên Kỹ Thuật",
-          luong: 30000000,
-          sdt: "0912345678",
-          cccd: "001234567891",
-          ngaySinh: "1985-08-20",
-          gioiTinh: "Nam",
-          diaChi: "456 Lê Lợi, Quận 1, TP.HCM",
-          email: "an.nguyen@grandpalace.com",
-          avatar: avartar_11,
-          isWorking: true,
-        },
-       {
-          idNV: 12,
-          tenNV: "Ronaldo Manchester United",
-          chucVu: "Nhân Viên Lễ Tân",
-          luong: 30000000,
-          sdt: "0912345678",
-          cccd: "001234567891",
-          ngaySinh: "1985-08-20",
-          gioiTinh: "Nam",
-          diaChi: "456 Lê Lợi, Quận 1, TP.HCM",
-          email: "an.nguyen@grandpalace.com",
-          avatar: avartar_12,
-          isWorking: true,
-        },
-         {
-          idNV: 13,
-          tenNV: "Ronaldo Manchester United",
-          chucVu: "Nhân Viên Lễ Tân",
-          luong: 30000000,
-          sdt: "0912345678",
-          cccd: "001234567891",
-          ngaySinh: "1985-08-20",
-          gioiTinh: "Nam",
-          diaChi: "456 Lê Lợi, Quận 1, TP.HCM",
-          email: "an.nguyen@grandpalace.com",
-          avatar: avartar_13,
-          isWorking: true,
-        },
-         {
-          idNV: 14,
-          tenNV: "Ronaldo Manchester United",
-          chucVu: "Nhân Viên Lễ Tân",
-          luong: 30000000,
-          sdt: "0912345678",
-          cccd: "001234567891",
-          ngaySinh: "1985-08-20",
-          gioiTinh: "Nam",
-          diaChi: "456 Lê Lợi, Quận 1, TP.HCM",
-          email: "an.nguyen@grandpalace.com",
-          avatar: avartar_14,
-          isWorking: true,
-        },
-        {
-          idNV: 15,
-          tenNV: "Ronaldo Manchester United",
-          chucVu: "Nhân Viên Lễ Tân",
-          luong: 30000000,
-          sdt: "0912345678",
-          cccd: "001234567891",
-          ngaySinh: "1985-08-20",
-          gioiTinh: "Nam",
-          diaChi: "456 Lê Lợi, Quận 1, TP.HCM",
-          email: "an.nguyen@grandpalace.com",
-          avatar: avartar_15,
-          isWorking: true,
-        },
-        {
-          idNV: 16,
-          tenNV: "Ronaldo Manchester United",
-          chucVu: "Nhân Viên Lễ Tân",
-          luong: 30000000,
-          sdt: "0912345678",
-          cccd: "001234567891",
-          ngaySinh: "1985-08-20",
-          gioiTinh: "Nam",
-          diaChi: "456 Lê Lợi, Quận 1, TP.HCM",
-          email: "an.nguyen@grandpalace.com",
-          avatar: avartar_16,
-          isWorking: true,
-        },
-      ];
 
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      setEmployees(mockData);
+    try {
+      // Chuyển filter trạng thái của frontend
+      // sang Boolean mà backend cần
+      const isActive =
+        filterStatus === "working"
+          ? true
+          : filterStatus === "resigned"
+            ? false
+            : null;
+
+      // "all" thì không gửi position
+      const position = filterPosition === "all" ? "" : filterPosition;
+
+      const response = await employeeAPI.getAll({
+        page: currentPage - 1,
+        size: itemsPerPage,
+        search: searchQuery.trim(),
+        isActive,
+        position,
+      });
+
+      // Dữ liệu của trang hiện tại
+      setEmployees(response.content || []);
+
+      // Tổng số record trong database sau filter/search
+      setTotalElements(response.totalElements || 0);
+
+      // Tổng số page backend tính được
+      setTotalPages(response.totalPages || 0);
     } catch (error) {
       console.error("Error fetching employees:", error);
-      // TODO: Show error notification
+      setEmployees([]);
+      setTotalElements(0);
+      setTotalPages(0);
     } finally {
       setIsLoading(false);
     }
+  }, [currentPage, searchQuery, filterStatus, filterPosition]);
+
+  useEffect(() => {
+    fetchEmployees();
+  }, [fetchEmployees]);
+
+  const handleSearch = () => {
+    const keyword = searchInput.trim();
+
+    // Nếu đang ở page khác page 1,
+    // đưa về page 1 cùng lúc với search
+    setCurrentPage(1);
+    // Chỉ lúc này search mới được sử dụng để gọi API
+    setSearchQuery(keyword);
   };
 
-  /**
-   * Filter và search nhân viên
-   */
-  const filteredEmployees = useMemo(() => {
-    return employees.filter((emp) => {
-      // Filter by status
-      if (filterStatus === "working" && !emp.isWorking) return false;
-      if (filterStatus === "resigned" && emp.isWorking) return false;
+  const handleSearchKeyDown = (event) => {
+    if (event.key === "Enter") {
+      handleSearch();
+    }
+  };
 
-      // Filter by position
-      if (filterPosition !== "all" && emp.chucVu !== filterPosition)
-        return false;
+  const handleStatusChange = (event) => {
+    const value = event.target.value;
 
-      // Search by name, email, phone, cccd
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        return (
-          emp.tenNV.toLowerCase().includes(query) ||
-          emp.email.toLowerCase().includes(query) ||
-          emp.sdt.includes(query) ||
-          (emp.cccd && emp.cccd.includes(query))
-        );
-      }
+    // Filter mới luôn bắt đầu từ page 1
+    setCurrentPage(1);
 
-      return true;
-    });
-  }, [employees, searchQuery, filterStatus, filterPosition]);
+    setFilterStatus(value);
+  };
 
-  /**
-   * Phân trang - Lấy dữ liệu cho trang hiện tại
-   */
-  const paginatedEmployees = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return filteredEmployees.slice(startIndex, endIndex);
-  }, [filteredEmployees, currentPage, itemsPerPage]);
+  const handlePositionChange = (event) => {
+    const value = event.target.value;
 
-  // Tính tổng số trang
-  const totalPages = Math.ceil(filteredEmployees.length / itemsPerPage);
+    // Filter mới luôn bắt đầu từ page 1
+    setCurrentPage(1);
 
-  /**
-   * Thống kê nhân viên
-   */
+    setFilterPosition(value);
+  };
+
   const stats = useMemo(() => {
-    const total = employees.length;
-    const working = employees.filter((e) => e.isWorking).length;
-    const resigned = total - working;
-    const managers = employees.filter(
-      (e) =>
-        (e.chucVu === "Quản Lý" || e.chucVu === "Tổng Giám Đốc") && e.isWorking,
+    const working = employees.filter(
+      (employee) => employee.isActive === true,
     ).length;
 
-    return { total, working, resigned, managers };
-  }, [employees]);
+    const resigned = employees.filter(
+      (employee) => employee.isActive === false,
+    ).length;
 
-  /**
-   * Mở dialog thêm nhân viên mới
-   */
+    const managers = employees.filter(
+      (employee) =>
+        employee.isActive === true &&
+        (employee.position === "Manager" || employee.position === "Admin"),
+    ).length;
+
+    return {
+      total: totalElements,
+      working,
+      resigned,
+      managers,
+    };
+  }, [employees, totalElements]);
+
   const handleAddNew = () => {
     setDialogMode("add");
     setSelectedEmployee(null);
     setIsProfileDialogOpen(true);
   };
 
-  /**
-   * Mở dialog xem thông tin nhân viên
-   */
   const handleViewEmployee = (employee) => {
     setDialogMode("view");
     setSelectedEmployee(employee);
     setIsProfileDialogOpen(true);
   };
 
-  /**
-   * Xử lý submit form (thêm mới hoặc cập nhật)
-   */
   const handleSubmitForm = async (formData) => {
     setIsLoading(true);
+
     try {
       if (dialogMode === "add") {
-        // TODO: Gọi API thêm mới
-        console.log("Thêm nhân viên mới:", formData);
-
-        // Mock: Thêm vào state
-        const newEmployee = {
-          idNV: employees.length + 1,
-          ...formData,
-        };
-        setEmployees((prev) => [...prev, newEmployee]);
-
-        // TODO: Show success notification
-      } else {
-        // TODO: Gọi API cập nhật
-        console.log("Cập nhật nhân viên:", selectedEmployee.idNV, formData);
-
-        // Mock: Cập nhật state
-        setEmployees((prev) =>
-          prev.map((emp) =>
-            emp.idNV === selectedEmployee.idNV ? { ...emp, ...formData } : emp,
-          ),
-        );
-
-        // TODO: Show success notification
+        await employeeAPI.create(formData);
+      } else if (dialogMode === "edit") {
+        await employeeAPI.update(selectedEmployee.employeeId, formData);
       }
 
+      // Sau khi thêm/sửa thành công:
+      // load lại danh sách từ database
+      await fetchEmployees();
       setIsProfileDialogOpen(false);
       setSelectedEmployee(null);
     } catch (error) {
       console.error("Error submitting employee:", error);
-      // TODO: Show error notification
     } finally {
       setIsLoading(false);
     }
   };
 
-  /**
-   * Xử lý thay đổi trang
-   */
+  // Page change
+
   const handlePageChange = (newPage) => {
+    if (newPage < 1 || newPage > totalPages) {
+      return;
+    }
+
     setCurrentPage(newPage);
-    // Scroll to top khi chuyển trang
-    window.scrollTo({ top: 0, behavior: "smooth" });
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
   };
 
-  // Reset về trang 1 khi filter hoặc search thay đổi
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, filterStatus, filterPosition]);
+  const handleCloseDialog = () => {
+    setIsProfileDialogOpen(false);
+    setSelectedEmployee(null);
+  };
 
   return (
     <div className="w-full space-y-space-lg">
-      {/* Page Header */}
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-lg font-headline-lg text-headline-lg text-on-surface">
             Quản lý nhân viên
           </h1>
+
           <p className="text-lg mt-space-xs font-body-md text-body-md text-on-surface-variant">
             Quản lý thông tin nhân viên, chức vụ và trạng thái làm việc
           </p>
         </div>
 
-        {/* Nút thêm mới - TODO: AUTHORIZATION - Chỉ Admin và Quản lý có quyền */}
         <button
           onClick={handleAddNew}
           className={cn(
@@ -482,21 +220,24 @@ const QuanLyNhanVienPage = () => {
           <span className="material-symbols-outlined text-[20px]">
             person_add
           </span>
+
           <span>Thêm nhân viên</span>
         </button>
       </div>
 
-      {/* Thống kê tổng quan */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md">
+        {/* Total */}
         <div className="px-space-lg py-space-md rounded-lg bg-surface-container-low border border-outline-variant">
           <div className="flex items-center gap-space-sm">
             <span className="material-symbols-outlined text-primary text-[24px]">
               group
             </span>
+
             <div>
               <p className="text-lg font-label-sm text-label-sm text-on-surface-variant">
                 Tổng nhân viên
               </p>
+
               <p className="font-headline-md text-headline-md text-on-surface">
                 {stats.total}
               </p>
@@ -504,15 +245,18 @@ const QuanLyNhanVienPage = () => {
           </div>
         </div>
 
+        {/* Working */}
         <div className="px-space-lg py-space-md rounded-lg bg-surface-container-low border border-outline-variant">
           <div className="flex items-center gap-space-sm">
             <span className="material-symbols-outlined text-tertiary text-[24px]">
               how_to_reg
             </span>
+
             <div>
               <p className="text-lg font-label-sm text-label-sm text-on-surface-variant">
                 Đang làm việc
               </p>
+
               <p className="font-headline-md text-headline-md text-on-surface">
                 {stats.working}
               </p>
@@ -520,15 +264,18 @@ const QuanLyNhanVienPage = () => {
           </div>
         </div>
 
+        {/* Resigned */}
         <div className="px-space-lg py-space-md rounded-lg bg-surface-container-low border border-outline-variant">
           <div className="flex items-center gap-space-sm">
             <span className="material-symbols-outlined text-error text-[24px]">
               person_off
             </span>
+
             <div>
               <p className="text-lg font-label-sm text-label-sm text-on-surface-variant">
                 Đã nghỉ việc
               </p>
+
               <p className="font-headline-md text-headline-md text-on-surface">
                 {stats.resigned}
               </p>
@@ -536,15 +283,18 @@ const QuanLyNhanVienPage = () => {
           </div>
         </div>
 
+        {/* Managers */}
         <div className="px-space-lg py-space-md rounded-lg bg-surface-container-low border border-outline-variant">
           <div className="flex items-center gap-space-sm">
             <span className="material-symbols-outlined text-secondary text-[24px]">
               admin_panel_settings
             </span>
+
             <div>
               <p className="text-lg font-label-sm text-label-sm text-on-surface-variant">
                 Ban quản lý
               </p>
+
               <p className="font-headline-md text-headline-md text-on-surface">
                 {stats.managers}
               </p>
@@ -553,34 +303,54 @@ const QuanLyNhanVienPage = () => {
         </div>
       </div>
 
-      {/* Filter và Search */}
-      <div className="flex flex-col sm:flex-row gap-space-md">
+      <div className="flex flex-col lg:flex-row gap-space-md">
         {/* Search */}
         <div className="flex-1">
-          <div className="relative">
-            <span className="absolute left-space-md top-1/2 -translate-y-1/2 material-symbols-outlined text-[20px] text-on-surface-variant">
-              search
-            </span>
-            <input
-              type="text"
-              placeholder="Tìm kiếm theo tên, email, SĐT, CCCD..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+          <div className="flex gap-space-sm">
+            <div className="relative flex-1">
+              <span className="absolute left-space-md top-1/2 -translate-y-1/2 material-symbols-outlined text-[20px] text-on-surface-variant">
+                search
+              </span>
+
+              <input
+                type="text"
+                placeholder="Tìm kiếm theo tên, email, SĐT, CCCD..."
+                value={searchInput}
+                onChange={(event) => setSearchInput(event.target.value)}
+                onKeyDown={handleSearchKeyDown}
+                className={cn(
+                  "w-full pl-12 pr-space-md py-space-sm rounded-lg",
+                  "bg-surface-container-highest border border-outline",
+                  "font-body-md text-body-md text-on-surface",
+                  "focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent",
+                  "transition-all",
+                )}
+              />
+            </div>
+            <button
+              type="button"
+              onClick={handleSearch}
+              disabled={isLoading}
               className={cn(
-                "w-full pl-12 pr-space-md py-space-sm rounded-lg",
-                "bg-surface-container-highest border border-outline",
-                "font-body-md text-body-md text-on-surface",
-                "focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent",
-                "transition-all",
+                "flex items-center justify-center gap-space-xs",
+                "px-space-md py-space-sm rounded-lg",
+                "bg-primary text-on-primary",
+                "hover:bg-primary/90 transition-colors",
+                "disabled:opacity-60 disabled:cursor-not-allowed",
+                "whitespace-nowrap",
               )}
-            />
+            >
+              <span className="material-symbols-outlined text-[20px]">
+                search
+              </span>
+              <span>Tìm kiếm</span>
+            </button>
           </div>
         </div>
-
-        {/* Filter by Status */}
+        {/* Filter Status */}
         <select
           value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
+          onChange={handleStatusChange}
           className={cn(
             "px-space-md py-space-sm rounded-lg",
             "bg-surface-container-highest border border-outline",
@@ -590,14 +360,16 @@ const QuanLyNhanVienPage = () => {
           )}
         >
           <option value="all">Tất cả trạng thái</option>
+
           <option value="working">Đang làm việc</option>
+
           <option value="resigned">Đã nghỉ việc</option>
         </select>
 
-        {/* Filter by Position */}
+        {/* Filter Position */}
         <select
           value={filterPosition}
-          onChange={(e) => setFilterPosition(e.target.value)}
+          onChange={handlePositionChange}
           className={cn(
             "px-space-md py-space-sm rounded-lg",
             "bg-surface-container-highest border border-outline",
@@ -607,20 +379,22 @@ const QuanLyNhanVienPage = () => {
           )}
         >
           <option value="all">Tất cả chức vụ</option>
-          <option value="Tổng Giám Đốc">Tổng Giám Đốc</option>
-          <option value="Quản Lý">Quản Lý</option>
-          <option value="Nhân Viên">Nhân Viên</option>
+
+          <option value="Admin">Admin</option>
+
+          <option value="Manager">Manager</option>
+
+          <option value="Receptionist">Receptionist</option>
         </select>
       </div>
 
-      {/* Results Count */}
       <div className="flex items-center justify-between">
         <p className="font-body-md text-body-md text-on-surface-variant">
           Hiển thị{" "}
           <span className="font-semibold text-on-surface">
-            {paginatedEmployees.length}
+            {employees.length}
           </span>{" "}
-          / {filteredEmployees.length} nhân viên
+          / {totalElements} nhân viên
           {totalPages > 1 && (
             <span className="ml-space-sm">
               (Trang {currentPage} / {totalPages})
@@ -629,35 +403,37 @@ const QuanLyNhanVienPage = () => {
         </p>
       </div>
 
-      {/* Employee Grid */}
       {isLoading ? (
         <div className="flex items-center justify-center py-24">
           <div className="flex flex-col items-center gap-space-md">
             <span className="material-symbols-outlined text-[48px] text-primary animate-spin">
               progress_activity
             </span>
+
             <p className="font-body-lg text-body-lg text-on-surface-variant">
               Đang tải dữ liệu...
             </p>
           </div>
         </div>
-      ) : filteredEmployees.length === 0 ? (
+      ) : employees.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 px-space-lg">
           <span className="material-symbols-outlined text-[64px] text-on-surface-variant mb-space-md">
             person_search
           </span>
+
           <h3 className="font-headline-sm text-headline-sm text-on-surface mb-space-xs">
             Không tìm thấy nhân viên
           </h3>
+
           <p className="font-body-md text-body-md text-on-surface-variant text-center">
             Không có nhân viên nào phù hợp với bộ lọc hiện tại
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-space-md">
-          {paginatedEmployees.map((employee) => (
+          {employees.map((employee) => (
             <EmployeeCard
-              key={employee.idNV}
+              key={employee.employeeId}
               employee={employee}
               onClick={handleViewEmployee}
             />
@@ -665,19 +441,21 @@ const QuanLyNhanVienPage = () => {
         </div>
       )}
 
-      {/* Phân trang */}
-      {totalPages > 1 && !isLoading && filteredEmployees.length > 0 && (
+      {totalPages > 1 && !isLoading && employees.length > 0 && (
         <div
-          className="flex items-center justify-between px-space-md py-space-sm
-                      bg-surface-container-low rounded-lg border border-outline-variant"
+          className={cn(
+            "flex items-center justify-between",
+            "px-space-md py-space-sm",
+            "bg-surface-container-low rounded-lg",
+            "border border-outline-variant",
+          )}
         >
           <p className="font-body-sm text-body-sm text-on-surface-variant">
-            Trang {currentPage} / {totalPages} (Tổng {filteredEmployees.length}{" "}
-            nhân viên)
+            Trang {currentPage} / {totalPages} (Tổng {totalElements} nhân viên)
           </p>
 
           <div className="flex items-center gap-space-xs">
-            {/* Previous button */}
+            {/* Previous */}
             <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
@@ -692,49 +470,51 @@ const QuanLyNhanVienPage = () => {
               </span>
             </button>
 
-            {/* Page numbers */}
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
-              // Hiển thị trang đầu, trang cuối, trang hiện tại và các trang xung quanh
-              const showPage =
-                page === 1 ||
-                page === totalPages ||
-                (page >= currentPage - 1 && page <= currentPage + 1);
+            {/* Page Numbers */}
+            {Array.from({ length: totalPages }, (_, index) => index + 1).map(
+              (page) => {
+                const showPage =
+                  page === 1 ||
+                  page === totalPages ||
+                  (page >= currentPage - 1 && page <= currentPage + 1);
 
-              const showEllipsis =
-                (page === currentPage - 2 && currentPage > 3) ||
-                (page === currentPage + 2 && currentPage < totalPages - 2);
+                const showEllipsis =
+                  (page === currentPage - 2 && currentPage > 3) ||
+                  (page === currentPage + 2 && currentPage < totalPages - 2);
 
-              if (showEllipsis) {
+                if (showEllipsis) {
+                  return (
+                    <span
+                      key={page}
+                      className="px-space-xs font-label-md text-label-md text-on-surface-variant"
+                    >
+                      ...
+                    </span>
+                  );
+                }
+                if (!showPage) {
+                  return null;
+                }
                 return (
-                  <span
+                  <button
                     key={page}
-                    className="px-space-xs font-label-md text-label-md text-on-surface-variant"
+                    onClick={() => handlePageChange(page)}
+                    className={cn(
+                      "min-w-[32px] h-[32px] rounded-lg",
+                      "font-label-md text-label-md",
+                      "transition-colors",
+
+                      page === currentPage
+                        ? "bg-primary text-on-primary"
+                        : "hover:bg-surface-container-high text-on-surface",
+                    )}
                   >
-                    ...
-                  </span>
+                    {page}
+                  </button>
                 );
-              }
-
-              if (!showPage) return null;
-
-              return (
-                <button
-                  key={page}
-                  onClick={() => handlePageChange(page)}
-                  className={cn(
-                    "min-w-[32px] h-[32px] rounded-lg font-label-md text-label-md",
-                    "transition-colors",
-                    page === currentPage
-                      ? "bg-primary text-on-primary"
-                      : "hover:bg-surface-container-high text-on-surface",
-                  )}
-                >
-                  {page}
-                </button>
-              );
-            })}
-
-            {/* Next button */}
+              },
+            )}
+            {/* Next */}
             <button
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
@@ -752,18 +532,14 @@ const QuanLyNhanVienPage = () => {
         </div>
       )}
 
-      {/* Profile Dialog */}
       <EmployeeProfileDialog
         isOpen={isProfileDialogOpen}
-        onClose={() => {
-          setIsProfileDialogOpen(false);
-          setSelectedEmployee(null);
-        }}
+        onClose={handleCloseDialog}
         onSubmit={handleSubmitForm}
         employeeData={selectedEmployee}
         mode={dialogMode}
         isLoading={isLoading}
-        canEdit={true} // TODO: Check authorization
+        canEdit={true}
       />
     </div>
   );

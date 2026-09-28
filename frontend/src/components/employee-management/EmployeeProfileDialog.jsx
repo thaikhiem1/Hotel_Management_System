@@ -26,17 +26,17 @@ const EmployeeProfileDialog = ({
   );
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [formData, setFormData] = useState({
-    tenNV: "",
-    chucVu: "Nhân Viên",
-    luong: "",
-    sdt: "",
-    cccd: "",
-    ngaySinh: "",
-    gioiTinh: "Nam",
-    diaChi: "",
+    fullName: "",
+    position: "Nhân Viên",
+    salary: "",
+    phone: "",
+    citizenId: "",
+    dateOfBirth: "",
+    gender: "Nam",
+    address: "",
     email: "",
     avatar: "",
-    isWorking: true,
+    isActive: true,
   });
 
   // Reset form khi dialog mở/đóng hoặc data thay đổi
@@ -44,33 +44,33 @@ const EmployeeProfileDialog = ({
     if (isOpen) {
       if (employeeData) {
         setFormData({
-          tenNV: employeeData.tenNV || "",
-          chucVu: employeeData.chucVu || "Nhân Viên",
-          luong: employeeData.luong || "",
-          sdt: employeeData.sdt || "",
-          cccd: employeeData.cccd || "",
-          ngaySinh: employeeData.ngaySinh || "",
-          gioiTinh: employeeData.gioiTinh || "Nam",
-          diaChi: employeeData.diaChi || "",
+          fullName: employeeData.fullName || "",
+          position: employeeData.position || "Nhân Viên",
+          salary: employeeData.salary || "",
+          phone: employeeData.phone || "",
+          citizenId: employeeData.citizenId || "",
+          dateOfBirth: employeeData.dateOfBirth || "",
+          gender: employeeData.gender || "Nam",
+          address: employeeData.address || "",
           email: employeeData.email || "",
           avatar: employeeData.avatar || "",
-          isWorking: employeeData.isWorking ?? true,
+          isActive: employeeData.isActive ?? true,
         });
         setAvatarPreview(employeeData.avatar);
       } else {
         // Reset form cho chế độ thêm mới
         setFormData({
-          tenNV: "",
-          chucVu: "Nhân Viên",
-          luong: "",
-          sdt: "",
-          cccd: "",
-          ngaySinh: "",
-          gioiTinh: "Nam",
-          diaChi: "",
+          fullName: "",
+          position: "Nhân Viên",
+          salary: "",
+          phone: "",
+          citizenId: "",
+          dateOfBirth: "",
+          gender: "Nam",
+          address: "",
           email: "",
           avatar: "",
-          isWorking: true,
+          isActive: true,
         });
         setAvatarPreview(null);
       }
@@ -121,7 +121,7 @@ const EmployeeProfileDialog = ({
     e.preventDefault();
 
     // Validation
-    if (!formData.tenNV.trim()) {
+    if (!formData.fullName.trim()) {
       alert("Vui lòng nhập tên nhân viên!");
       return;
     }
@@ -131,7 +131,7 @@ const EmployeeProfileDialog = ({
       return;
     }
 
-    if (!formData.sdt.trim()) {
+    if (!formData.phone.trim()) {
       alert("Vui lòng nhập số điện thoại!");
       return;
     }
@@ -178,7 +178,7 @@ const EmployeeProfileDialog = ({
               </h2>
               {employeeData && (
                 <p className="font-body-sm text-body-sm text-on-surface-variant">
-                  ID: #{employeeData.idNV}
+                  ID: #{employeeData.employeeId}
                 </p>
               )}
             </div>
@@ -274,7 +274,7 @@ const EmployeeProfileDialog = ({
               <input
                 type="text"
                 name="tenNV"
-                value={formData.tenNV}
+                value={formData.fullName}
                 onChange={handleInputChange}
                 disabled={!isEditMode}
                 className={cn(
@@ -297,7 +297,7 @@ const EmployeeProfileDialog = ({
               </label>
               <select
                 name="chucVu"
-                value={formData.chucVu}
+                value={formData.position}
                 onChange={handleInputChange}
                 disabled={!isEditMode}
                 className={cn(
@@ -346,8 +346,8 @@ const EmployeeProfileDialog = ({
               </label>
               <input
                 type="tel"
-                name="sdt"
-                value={formData.sdt}
+                name="phone"
+                value={formData.phone}
                 onChange={handleInputChange}
                 disabled={!isEditMode}
                 className={cn(
@@ -370,8 +370,8 @@ const EmployeeProfileDialog = ({
               </label>
               <input
                 type="text"
-                name="cccd"
-                value={formData.cccd}
+                name="citizenId"
+                value={formData.citizenId}
                 onChange={handleInputChange}
                 disabled={!isEditMode}
                 className={cn(
@@ -393,8 +393,8 @@ const EmployeeProfileDialog = ({
               </label>
               <input
                 type="date"
-                name="ngaySinh"
-                value={formData.ngaySinh}
+                name="dateOfBirth"
+                value={formData.dateOfBirth}
                 onChange={handleInputChange}
                 disabled={!isEditMode}
                 className={cn(
@@ -414,8 +414,8 @@ const EmployeeProfileDialog = ({
                 Giới tính
               </label>
               <select
-                name="gioiTinh"
-                value={formData.gioiTinh}
+                name="gender"
+                value={formData.gender}
                 onChange={handleInputChange}
                 disabled={!isEditMode}
                 className={cn(
@@ -440,8 +440,8 @@ const EmployeeProfileDialog = ({
               </label>
               <input
                 type="number"
-                name="luong"
-                value={formData.luong}
+                name="salary"
+                value={formData.salary}
                 onChange={handleInputChange}
                 disabled={!isEditMode}
                 className={cn(
@@ -464,8 +464,8 @@ const EmployeeProfileDialog = ({
                 Địa chỉ
               </label>
               <textarea
-                name="diaChi"
-                value={formData.diaChi}
+                name="address"
+                value={formData.address}
                 onChange={handleInputChange}
                 disabled={!isEditMode}
                 rows="3"
@@ -486,8 +486,8 @@ const EmployeeProfileDialog = ({
               <label className="flex items-center gap-space-sm cursor-pointer">
                 <input
                   type="checkbox"
-                  name="isWorking"
-                  checked={formData.isWorking}
+                  name="isActive"
+                  checked={formData.isActive}
                   onChange={handleInputChange}
                   disabled={!isEditMode}
                   className={cn(

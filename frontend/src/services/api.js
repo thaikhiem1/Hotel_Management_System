@@ -1,16 +1,16 @@
 /**
  * API Service - Centralized API calls
  * Hotel Management System
- * 
+ *
  * Base URL: http://localhost:8080/api
  */
 
-import axios from 'axios';
+import axios from "axios";
 
 // ============================================
 // Cấu hình base URL
 // ============================================
-const BASE_URL = 'http://localhost:8080/api';
+const BASE_URL = "http://localhost:8080/api";
 
 // ============================================
 // Tạo axios instance với config mặc định
@@ -18,7 +18,7 @@ const BASE_URL = 'http://localhost:8080/api';
 const apiClient = axios.create({
   baseURL: BASE_URL,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
   timeout: 10000, // 10 seconds
 });
@@ -29,19 +29,19 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use(
   (config) => {
     // TODO: Lấy token từ localStorage hoặc sessionStorage
-    const token = localStorage.getItem('accessToken');
-    
+    const token = localStorage.getItem("accessToken");
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    
+
     console.log(`API Request: ${config.method.toUpperCase()} ${config.url}`);
     return config;
   },
   (error) => {
-    console.error('Request Error:', error);
+    console.error("Request Error:", error);
     return Promise.reject(error);
-  }
+  },
 );
 
 // ============================================
@@ -53,41 +53,41 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error) => {
-    console.error('Response Error:', error.response || error);
-    
+    console.error("Response Error:", error.response || error);
+
     // Xử lý các lỗi HTTP khác nhau
     if (error.response) {
       switch (error.response.status) {
         case 401:
           // Unauthorized - Chuyển về trang login
-          console.error('Unauthorized - Please login');
+          console.error("Unauthorized - Please login");
           // TODO: Redirect to login page
           break;
         case 403:
           // Forbidden - Không có quyền
-          console.error('Forbidden - You do not have permission');
+          console.error("Forbidden - You do not have permission");
           break;
         case 404:
           // Not Found
-          console.error('Resource not found');
+          console.error("Resource not found");
           break;
         case 500:
           // Server Error
-          console.error('Internal server error');
+          console.error("Internal server error");
           break;
         default:
-          console.error('An error occurred');
+          console.error("An error occurred");
       }
     } else if (error.request) {
       // Request được gửi nhưng không nhận được response
-      console.error('No response from server');
+      console.error("No response from server");
     } else {
       // Lỗi khi setup request
-      console.error('Error setting up request:', error.message);
+      console.error("Error setting up request:", error.message);
     }
-    
+
     return Promise.reject(error);
-  }
+  },
 );
 
 // ============================================
@@ -100,7 +100,7 @@ export const roomTypeAPI = {
    */
   getAll: async () => {
     try {
-      const response = await apiClient.get('/roomtype');
+      const response = await apiClient.get("/roomtype");
       return response.data;
     } catch (error) {
       throw error;
@@ -123,7 +123,7 @@ export const roomTypeAPI = {
   /**
    * Tạo loại phòng mới
    * POST /api/roomtype
-   * 
+   *
    * @param {Object} data - Dữ liệu loại phòng
    * @param {string} data.TenLPH - Tên loại phòng
    * @param {number} data.SoGiuong - Số giường
@@ -133,7 +133,7 @@ export const roomTypeAPI = {
    */
   create: async (data) => {
     try {
-      const response = await apiClient.post('/roomtype', data);
+      const response = await apiClient.post("/roomtype", data);
       return response.data;
     } catch (error) {
       throw error;
@@ -164,7 +164,7 @@ export const roomTypeAPI = {
     } catch (error) {
       throw error;
     }
-  }
+  },
 };
 
 // ============================================
@@ -177,7 +177,7 @@ export const roomAPI = {
    */
   getAll: async () => {
     try {
-      const response = await apiClient.get('/room');
+      const response = await apiClient.get("/room");
       return response.data;
     } catch (error) {
       throw error;
@@ -203,7 +203,7 @@ export const roomAPI = {
    */
   create: async (data) => {
     try {
-      const response = await apiClient.post('/room', data);
+      const response = await apiClient.post("/room", data);
       return response.data;
     } catch (error) {
       throw error;
@@ -234,7 +234,7 @@ export const roomAPI = {
     } catch (error) {
       throw error;
     }
-  }
+  },
 };
 
 // ============================================
@@ -243,7 +243,7 @@ export const roomAPI = {
 export const customerAPI = {
   getAll: async () => {
     try {
-      const response = await apiClient.get('/customer');
+      const response = await apiClient.get("/customer");
       return response.data;
     } catch (error) {
       throw error;
@@ -261,7 +261,7 @@ export const customerAPI = {
 
   create: async (data) => {
     try {
-      const response = await apiClient.post('/customer', data);
+      const response = await apiClient.post("/customer", data);
       return response.data;
     } catch (error) {
       throw error;
@@ -284,22 +284,43 @@ export const customerAPI = {
     } catch (error) {
       throw error;
     }
-  }
+  },
 };
 
 // ============================================
 // NHÂN VIÊN API (Employee)
 // ============================================
 export const employeeAPI = {
-  getAll: async () => {
-    try {
-      const response = await apiClient.get('/employee');
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
+  getAll: async ({
+    page = 0,
+    size = 16,
+    search = "",
+    isActive = null,
+    position = "",
+  } = {}) => {
+    const params = {
+      page,
+      size,
+    };
 
+    if (search.trim()) {
+      params.search = search.trim();
+    }
+
+    if (isActive !== null) {
+      params.isActive = isActive;
+    }
+
+    if (position) {
+      params.position = position;
+    }
+
+    const response = await apiClient.get("/employee", {
+      params,
+    });
+
+    return response.data;
+  },
   getById: async (id) => {
     try {
       const response = await apiClient.get(`/employee/${id}`);
@@ -311,7 +332,7 @@ export const employeeAPI = {
 
   create: async (data) => {
     try {
-      const response = await apiClient.post('/employee', data);
+      const response = await apiClient.post("/employee", data);
       return response.data;
     } catch (error) {
       throw error;
@@ -334,7 +355,7 @@ export const employeeAPI = {
     } catch (error) {
       throw error;
     }
-  }
+  },
 };
 
 // ============================================
@@ -343,7 +364,7 @@ export const employeeAPI = {
 export const bookingAPI = {
   getAll: async () => {
     try {
-      const response = await apiClient.get('/booking');
+      const response = await apiClient.get("/booking");
       return response.data;
     } catch (error) {
       throw error;
@@ -361,7 +382,7 @@ export const bookingAPI = {
 
   create: async (data) => {
     try {
-      const response = await apiClient.post('/booking', data);
+      const response = await apiClient.post("/booking", data);
       return response.data;
     } catch (error) {
       throw error;
@@ -384,7 +405,7 @@ export const bookingAPI = {
     } catch (error) {
       throw error;
     }
-  }
+  },
 };
 
 // ============================================
@@ -393,7 +414,7 @@ export const bookingAPI = {
 export const invoiceAPI = {
   getAll: async () => {
     try {
-      const response = await apiClient.get('/invoice');
+      const response = await apiClient.get("/invoice");
       return response.data;
     } catch (error) {
       throw error;
@@ -411,7 +432,7 @@ export const invoiceAPI = {
 
   create: async (data) => {
     try {
-      const response = await apiClient.post('/invoice', data);
+      const response = await apiClient.post("/invoice", data);
       return response.data;
     } catch (error) {
       throw error;
@@ -434,7 +455,7 @@ export const invoiceAPI = {
     } catch (error) {
       throw error;
     }
-  }
+  },
 };
 
 // ============================================
@@ -443,7 +464,7 @@ export const invoiceAPI = {
 export const serviceAPI = {
   getAll: async () => {
     try {
-      const response = await apiClient.get('/service');
+      const response = await apiClient.get("/service");
       return response.data;
     } catch (error) {
       throw error;
@@ -461,7 +482,7 @@ export const serviceAPI = {
 
   create: async (data) => {
     try {
-      const response = await apiClient.post('/service', data);
+      const response = await apiClient.post("/service", data);
       return response.data;
     } catch (error) {
       throw error;
@@ -484,7 +505,7 @@ export const serviceAPI = {
     } catch (error) {
       throw error;
     }
-  }
+  },
 };
 
 // ============================================
