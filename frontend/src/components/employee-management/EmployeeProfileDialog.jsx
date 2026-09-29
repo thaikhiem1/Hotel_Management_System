@@ -50,7 +50,7 @@ const EmployeeProfileDialog = ({
           phone: employeeData.phone || "",
           citizenId: employeeData.citizenId || "",
           dateOfBirth: employeeData.dateOfBirth || "",
-          gender: employeeData.gender || "Nam",
+          gender: employeeData.gender || "Male",
           address: employeeData.address || "",
           email: employeeData.email || "",
           avatar: employeeData.avatar || "",
@@ -61,12 +61,12 @@ const EmployeeProfileDialog = ({
         // Reset form cho chế độ thêm mới
         setFormData({
           fullName: "",
-          position: "Nhân Viên",
+          position: "Nhân Viên Lễ Tân",
           salary: "",
           phone: "",
           citizenId: "",
           dateOfBirth: "",
-          gender: "Nam",
+          gender: "Male",
           address: "",
           email: "",
           avatar: "",
@@ -223,12 +223,12 @@ const EmployeeProfileDialog = ({
                 src={
                   avatarPreview ||
                   formData.avatar ||
-                  "https://via.placeholder.com/150"
+                  "@/assets\images\profileNam.jpg"
                 }
                 alt="Avatar"
                 className="w-32 h-32 rounded-full object-cover ring-4 ring-primary/20"
                 onError={(e) => {
-                  e.target.src = "https://via.placeholder.com/150?text=Avatar";
+                  e.target.src = "@/assets\images\profileNam.jpg";
                 }}
               />
               {isEditMode && (
@@ -273,7 +273,7 @@ const EmployeeProfileDialog = ({
               </label>
               <input
                 type="text"
-                name="tenNV"
+                name="fullName"
                 value={formData.fullName}
                 onChange={handleInputChange}
                 disabled={!isEditMode}
@@ -296,7 +296,7 @@ const EmployeeProfileDialog = ({
                 Chức vụ <span className="text-error">*</span>
               </label>
               <select
-                name="chucVu"
+                name="position"
                 value={formData.position}
                 onChange={handleInputChange}
                 disabled={!isEditMode}
@@ -310,8 +310,11 @@ const EmployeeProfileDialog = ({
                 )}
                 required
               >
-                <option value="Nhân Viên">Nhân Viên</option>
-                <option value="Quản Lý">Quản Lý</option>
+                <option value="Nhân Viên Lễ Tân">Nhân Viên Lễ Tân</option>
+                <option value="Nhân Viên Kỹ Thuật">Nhân Viên Kỹ Thuật</option>
+                <option value="Nhân Viên Buồng">Nhân Viên Buồng</option>
+                <option value="Nhân Viên Bếp">Nhân Viên Bếp</option>
+                <option value="Quản Lý Khách Sạn">Quản Lý Khách Sạn</option>
               </select>
             </div>
 
@@ -427,9 +430,9 @@ const EmployeeProfileDialog = ({
                   "transition-all",
                 )}
               >
-                <option value="Nam">Nam</option>
-                <option value="Nữ">Nữ</option>
-                <option value="Khác">Khác</option>
+                <option value="Male">Nam</option>
+                <option value="Female">Nữ</option>
+                <option value="Other">Khác</option>
               </select>
             </div>
 

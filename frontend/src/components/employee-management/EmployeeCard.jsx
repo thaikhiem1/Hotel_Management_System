@@ -1,14 +1,12 @@
 import React from "react";
 
 import { cn } from "@/utils/lib/util";
+
 import avatar from "@/assets/ronaldo_01.jpg";
-/**
- * @param {Object} employee - Dữ liệu nhân viên
- * @param {Function} onClick - Hàm xử lý khi click vào card
- */
+import defaultMale from "@/assets/images/profileNam.jpg";
+import defaultFemale from "@/assets/images/profileNu.jpg";
 
 const EmployeeCard = ({ employee, onClick }) => {
-  // Xác định màu sắc badge theo trạng thái làm việc
   const getStatusBadge = (isActive) => {
     if (isActive) {
       return {
@@ -27,7 +25,6 @@ const EmployeeCard = ({ employee, onClick }) => {
     };
   };
 
-  // Xác định màu sắc theo chức vụ
   const getPositionColor = (position) => {
     const positions = {
       Receptionist: "text-primary",
@@ -37,6 +34,24 @@ const EmployeeCard = ({ employee, onClick }) => {
 
     return positions[position] || "text-on-surface-variant";
   };
+
+  // Avatar mặc định khi employee.avatar = null
+  const getDefaultAvatar = (gender) => {
+    switch (gender) {
+      case "Male":
+        return defaultMale;
+
+      case "Female":
+        return defaultFemale;
+
+      default:
+        return avatar;
+    }
+  };
+
+  // Có avatar thật → dùng avatar thật
+  // Không có avatar → dùng avatar mặc định theo gender
+  const avatarSrc = employee.avatar || getDefaultAvatar(employee.gender);
 
   const status = getStatusBadge(employee.isActive);
   const positionColor = getPositionColor(employee.position);
@@ -81,7 +96,7 @@ const EmployeeCard = ({ employee, onClick }) => {
 
       {/* Avatar và thông tin chính */}
       <div className="flex flex-col items-center gap-space-md pt-space-md">
-        {/* Avatar với border gradient effect */}
+        {/* Avatar */}
         <div className="relative">
           <div
             className={cn(
@@ -92,7 +107,7 @@ const EmployeeCard = ({ employee, onClick }) => {
           />
 
           <img
-            src={employee.avatar || avatar}
+            src={avatarSrc}
             alt={employee.fullName}
             className={cn(
               "relative w-24 h-24 rounded-full object-cover",
@@ -100,11 +115,11 @@ const EmployeeCard = ({ employee, onClick }) => {
               "group-hover:ring-primary/20 transition-all duration-300",
             )}
             onError={(e) => {
-              e.target.src = avatar;
+              e.currentTarget.src = avatar;
             }}
           />
 
-          {/* Status indicator dot */}
+          {/* Status indicator */}
           <div
             className={cn(
               "absolute bottom-1 right-1 w-4 h-4 rounded-full border-2 border-surface-container-low",
@@ -131,7 +146,6 @@ const EmployeeCard = ({ employee, onClick }) => {
 
         {/* Thông tin liên hệ */}
         <div className="w-full space-y-space-sm">
-          {/* Email */}
           {employee.email && (
             <div className="flex items-center gap-space-xs px-space-sm py-space-xs rounded-lg bg-surface-container-highest/50">
               <span className="material-symbols-outlined text-[18px] text-primary">
@@ -144,7 +158,6 @@ const EmployeeCard = ({ employee, onClick }) => {
             </div>
           )}
 
-          {/* Số điện thoại */}
           {employee.phone && (
             <div className="flex items-center gap-space-xs px-space-sm py-space-xs rounded-lg bg-surface-container-highest/50">
               <span className="material-symbols-outlined text-[18px] text-secondary">
@@ -157,7 +170,6 @@ const EmployeeCard = ({ employee, onClick }) => {
             </div>
           )}
 
-          {/* CCCD */}
           {employee.citizenId && (
             <div className="flex items-center gap-space-xs px-space-sm py-space-xs rounded-lg bg-surface-container-highest/50">
               <span className="material-symbols-outlined text-[18px] text-tertiary">
@@ -171,7 +183,7 @@ const EmployeeCard = ({ employee, onClick }) => {
           )}
         </div>
 
-        {/* Lương - chỉ hiển thị cho admin/quản lý */}
+        {/* Lương */}
         {employee.salary && (
           <div className="w-full pt-space-sm border-t border-outline-variant">
             <div className="flex items-center justify-between px-space-sm">
@@ -190,7 +202,7 @@ const EmployeeCard = ({ employee, onClick }) => {
         )}
       </div>
 
-      {/* Hover effect overlay */}
+      {/* Hover effect */}
       <div
         className={cn(
           "absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100",
