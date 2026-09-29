@@ -10,7 +10,7 @@ public interface ICustomerService {
 
     CustomerResponse CreateCustomer(CustomerRequest request);
 
-    CustomerResponse UpdateCustomer(Integer idkh, CustomerRequest request);
+    CustomerResponse UpdateCustomer(Integer customerId, CustomerRequest request);
 
-    void DeleteCustomData(Integer idkh);
+    void DeleteCustomData(Integer customerId);
 }

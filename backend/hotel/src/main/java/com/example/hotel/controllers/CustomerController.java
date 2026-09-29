@@ -17,9 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.hotel.models.dto.request.CustomerRequest;
 import com.example.hotel.models.dto.response.CustomerResponse;
 import com.example.hotel.services.ICustomerService;
-import com.example.hotel.services.impl.CustomerService;
 
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController

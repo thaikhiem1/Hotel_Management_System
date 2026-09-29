@@ -2,7 +2,6 @@ package com.example.hotel.services.impl;
 
 import java.util.List;
 import org.springframework.stereotype.Service;
-import com.example.hotel.repositorys.*;
 import com.example.hotel.mapper.*;
 import com.example.hotel.models.dto.request.RoomTypeRequest;
 import com.example.hotel.models.dto.response.RoomTypeResponse;
@@ -28,7 +27,7 @@ public class RoomTypesService implements IRoomTypesService {
     @Override
     public RoomTypeResponse CreateRoomType(RoomTypeRequest request) {
         if (_RoomTypeRepository.existsByRoomTypeName(request.getRoomTypeName())) {
-            throw new IllegalArgumentException("Tên loại phòng đã tồn tại");
+            throw new IllegalArgumentException("This room type name existed");
         }
         room_types RoomType = _roomTypeMapper.toEntities(request);
         if (RoomType == null) {
@@ -47,12 +46,15 @@ public class RoomTypesService implements IRoomTypesService {
 
     @Override
     public RoomTypeResponse UpdateRoomType(Integer IdLPH, RoomTypeRequest request) {
+        if(IdLPH == null){
+            throw new IllegalArgumentException("Room type ID is require");
+        }
         room_types existsRoom_types = _RoomTypeRepository.findById(IdLPH).orElseThrow(() -> {
-            throw new RuntimeException("ID loại phòng không tồn tại" + IdLPH);
+            throw new RuntimeException("Room type ID not exists");
         });
         if (!existsRoom_types.getRoomTypeName().equals(request.getRoomTypeName())
                 && _RoomTypeRepository.existsByRoomTypeName(request.getRoomTypeName())) {
-            throw new IllegalArgumentException("Tên loại phòng này đã tồn tại");
+            throw new IllegalArgumentException("This room type name existed");
         }
         existsRoom_types.setRoomTypeName(request.getRoomTypeName());
         existsRoom_types.setDailyRate(request.getDailyRate());
@@ -65,14 +67,19 @@ public class RoomTypesService implements IRoomTypesService {
 
     @Override
     public void DeletedRoomType(Integer idLPH) {
+        if(idLPH == null){
+            return;
+        }
         room_types existsRoom_types = _RoomTypeRepository.findById(idLPH).orElseThrow(() -> {
-            throw new RuntimeException("Loại phòng này chưa tồn tại");
+            throw new IllegalArgumentException("Loại phòng này chưa tồn tại");
         });
-
+        if(existsRoom_types == null){
+            throw new IllegalArgumentException("This room type not exists");
+        }
         boolean existsRoom = _RoomRepository.existsByRoomTypesRoomTypeId(idLPH);
 
         if (existsRoom) {
-            throw new RuntimeException(
+            throw new IllegalArgumentException(
                     "Không thể xóa loại phòng vì đang có phòng sử dụng loại phòng này");
         }
 

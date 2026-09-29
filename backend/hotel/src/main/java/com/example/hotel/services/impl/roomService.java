@@ -26,14 +26,15 @@ public class RoomService implements IRoomService {
 
     @Override
     public RoomResponse CreateRoom(RoomRequest request) {
-
         if (_RoomRepository.existsByRoomCode(request.getRoomCode())) {
             throw new IllegalArgumentException("Room label not exists");
         }
-
-        room_types roomType = _RoomTypeRepository.findById(request.getRoomTypeId())
+        Integer roomTypeId = request.getRoomTypeId();
+        if (roomTypeId == null) {
+            throw new IllegalArgumentException("Room type ID is required");
+        }
+        room_types roomType = _RoomTypeRepository.findById(roomTypeId)
                 .orElseThrow(() -> new RuntimeException("Room Type not exists"));
-
         rooms room = _RoomMapper.toEntity(request);
         room.setRoomTypes(roomType);
         rooms savedRoom = _RoomRepository.save(room);
@@ -49,16 +50,23 @@ public class RoomService implements IRoomService {
     }
 
     @Override
-    public RoomResponse UpdateRoom(Integer id, RoomRequest request) {
-        rooms existsRoom = _RoomRepository.findById(id).orElseThrow(() -> {
-            throw new IllegalArgumentException("Phòng này không tồn tại");
+    public RoomResponse UpdateRoom(Integer roomId, RoomRequest request) {
+        if(roomId == null){
+            throw new IllegalArgumentException("Room ID is require");
+        }
+        rooms existsRoom = _RoomRepository.findById(roomId).orElseThrow(() -> {
+            throw new IllegalArgumentException("This room code not exists");
         });
         if (!existsRoom.getRoomCode().equals(request.getRoomCode())
                 && _RoomRepository.existsByRoomCode(request.getRoomCode())) {
-            throw new RuntimeException("Mã phòng này đã tồn tại");
+            throw new RuntimeException("This room code existed");
         }
-        room_types existsRoomTypes = _RoomTypeRepository.findById(request.getRoomTypeId()).orElseThrow(() -> {
-            throw new IllegalArgumentException("Loại phòng này không tồn tại");
+        Integer roomTypeId = request.getRoomTypeId();
+        if(roomTypeId == null){
+            throw new IllegalArgumentException("Room type ID is require");
+        }
+        room_types existsRoomTypes = _RoomTypeRepository.findById(roomTypeId).orElseThrow(() -> {
+            throw new IllegalArgumentException("This room type not exists");
         });
         existsRoom.setRoomTypes(existsRoomTypes);
         existsRoom.setRoomStatus(request.getRoomStatus());
@@ -67,10 +75,16 @@ public class RoomService implements IRoomService {
     }
 
     @Override
-    public void DeletedRoom(Integer id) {
-        rooms existsRoom = _RoomRepository.findById(id).orElseThrow(() -> {
-            throw new IllegalArgumentException("Phòng này chưa tồn tại");
+    public void DeletedRoom(Integer roomId) {
+        if(roomId == null){
+            throw new IllegalArgumentException("Room ID is require");
+        }
+        rooms existsRoom = _RoomRepository.findById(roomId).orElseThrow(() -> {
+            throw new IllegalArgumentException("This room not exists");
         });
+        if(existsRoom == null){
+            throw new IllegalArgumentException("This room not exists");
+        }
         _RoomRepository.delete(existsRoom);
     }
 }

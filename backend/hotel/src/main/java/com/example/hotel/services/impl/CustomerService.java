@@ -35,13 +35,19 @@ public class CustomerService implements ICustomerService {
             throw new IllegalArgumentException("Mã định danh này đã tồn tại");
         }
         customers Customer = _CustomerMapper.toEntities(request);
+        if(Customer == null){
+            return null;
+        }
         customers SaveCustomer = _CustomerRepository.save(Customer);
         return _CustomerMapper.toCustomerResponse(SaveCustomer);
     }
 
     @Override
-    public CustomerResponse UpdateCustomer(Integer idkh, CustomerRequest request) {
-        customers existsCustomers = _CustomerRepository.findById(idkh).orElseThrow(() -> {
+    public CustomerResponse UpdateCustomer(Integer customerId, CustomerRequest request) {
+        if(customerId == null){
+            return null;
+        }
+        customers existsCustomers = _CustomerRepository.findById(customerId).orElseThrow(() -> {
             throw new IllegalArgumentException("Khách hàng này chưa tồn tại");
         });
         if (!existsCustomers.getPhone().equals(request.getPhone())
@@ -62,10 +68,16 @@ public class CustomerService implements ICustomerService {
     }
 
     @Override
-    public void DeleteCustomData(Integer idkh) {
-        customers updatedCustomers = _CustomerRepository.findById(idkh).orElseThrow(() -> {
+    public void DeleteCustomData(Integer customerId) {
+        if(customerId == null){
+            return;
+        }
+        customers updatedCustomers = _CustomerRepository.findById(customerId).orElseThrow(() -> {
             throw new RuntimeException("Khách hàng này chưa tồn");
         });
+        if(updatedCustomers == null){
+            return ;
+        }
         _CustomerRepository.delete(updatedCustomers);
     }
 }

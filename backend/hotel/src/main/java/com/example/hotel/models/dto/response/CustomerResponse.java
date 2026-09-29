@@ -1,7 +1,6 @@
 package com.example.hotel.models.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

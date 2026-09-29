@@ -1,7 +1,5 @@
 package com.example.hotel.specification;
 
-import javax.swing.Spring;
-
 import org.springframework.data.jpa.domain.Specification;
 
 import com.example.hotel.models.entities.employees;
