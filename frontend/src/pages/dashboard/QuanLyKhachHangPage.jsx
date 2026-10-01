@@ -4,7 +4,6 @@ import { GenericDeleteDialog } from '@/components/shared';
 import { showSuccess, handleApiError } from '@/utils/notification';
 import { customerAPI } from '@/services/api';
 import { cn } from '@/utils/lib/util';
-import { FolderMinus } from 'lucide-react';
 
 const QuanLyKhachHangPage = () => {
   // State quản lý dữ liệu khách hàng
@@ -144,24 +143,21 @@ const QuanLyKhachHangPage = () => {
   try {
     // Chuyển dữ liệu từ form sang đúng format CustomerRequest của Backend
     if (editMode === 'add') {
-      const response = await customerAPI.create(formData);
-      setCustomers([...customers, response]);
+       await customerAPI.create(formData);
       showSuccess(
         'Thêm khách hàng thành công',
         `Khách hàng ${formData.fullName} đã được thêm`
       );
     } else {
-      const response = await customerAPI.update(selectedCustomer.customerId,formData
+       await customerAPI.update(selectedCustomer.customerId,formData
       );
-      setCustomers(customers.map(kh =>
-        kh.customerId === selectedCustomer.customerId ? response : kh
-      ))
       showSuccess(
         'Cập nhật thành công',
         `Thông tin khách hàng ${formData.fullName} đã được cập nhật`
       );
     }
 
+    await fetchCustomers();
     // Đóng dialog
     setIsFormDialogOpen(false);
     setSelectedCustomer(null);
@@ -182,16 +178,14 @@ const QuanLyKhachHangPage = () => {
     setIsLoading(true);
     try {
       // Gọi API xóa khách hàng
-     const response =  await customerAPI.delete(selectedCustomer.customerId);
-      setCustomers(customers.filter(kh => 
-        kh.customerId != selectedCustomer.customerId
-      ))
+    await customerAPI.delete(selectedCustomer.customerId);
       // Điều chỉnh trang nếu trang hiện tại không còn dữ liệu
       const newTotalPages = Math.ceil((customers.length - 1) / itemsPerPage);
       if (currentPage > newTotalPages && newTotalPages > 0) {
         setCurrentPage(newTotalPages);
       }
       showSuccess('Xóa khách hàng thành công');
+      await fetchCustomers();
       setIsDeleteDialogOpen(false);
       setSelectedCustomer(null);
     } catch (error) {
