@@ -51,7 +51,7 @@ public class RoomService implements IRoomService {
 
     @Override
     public RoomResponse UpdateRoom(Integer roomId, RoomRequest request) {
-        if(roomId == null){
+        if (roomId == null) {
             throw new IllegalArgumentException("Room ID is require");
         }
         rooms existsRoom = _RoomRepository.findById(roomId).orElseThrow(() -> {
@@ -62,7 +62,7 @@ public class RoomService implements IRoomService {
             throw new RuntimeException("This room code existed");
         }
         Integer roomTypeId = request.getRoomTypeId();
-        if(roomTypeId == null){
+        if (roomTypeId == null) {
             throw new IllegalArgumentException("Room type ID is require");
         }
         room_types existsRoomTypes = _RoomTypeRepository.findById(roomTypeId).orElseThrow(() -> {
@@ -76,13 +76,13 @@ public class RoomService implements IRoomService {
 
     @Override
     public void DeletedRoom(Integer roomId) {
-        if(roomId == null){
+        if (roomId == null) {
             throw new IllegalArgumentException("Room ID is require");
         }
         rooms existsRoom = _RoomRepository.findById(roomId).orElseThrow(() -> {
             throw new IllegalArgumentException("This room not exists");
         });
-        if(existsRoom == null){
+        if (existsRoom == null) {
             throw new IllegalArgumentException("This room not exists");
         }
         _RoomRepository.delete(existsRoom);

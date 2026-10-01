@@ -13,7 +13,6 @@ import com.example.hotel.models.dto.response.EmployeeResponse;
 import com.example.hotel.services.IEmployeeService;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 
 import lombok.RequiredArgsConstructor;
