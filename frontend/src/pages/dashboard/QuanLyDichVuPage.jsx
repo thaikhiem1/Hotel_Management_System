@@ -1,8 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { cn } from '@/utils/lib/util';
 import ServiceModal from '@/components/service-management/ServiceModal';
 import CategoryModal from '@/components/service-management/CategoryModal';
 import DeleteConfirmModal from '@/components/shared/DeleteConfirmModal';
+import { serviceCategoryAPI } from '@/services/api';
 
 const QuanLyDichVuPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -15,17 +16,29 @@ const QuanLyDichVuPage = () => {
   const [selectedService, setSelectedService] = useState(null);
   const [selectedCategoryToDelete, setSelectedCategoryToDelete] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [serviceCategories, setServiceCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const itemsPerPage = 10;
 
-  // Mock LoaiDichVu - TODO: API GET /api/service-categories
-  const [serviceCategories, setServiceCategories] = useState([
-    { IdLDV: 1, TenLDV: 'Ăn uống' },
-    { IdLDV: 2, TenLDV: 'Giặt ủi' },
-    { IdLDV: 3, TenLDV: 'Spa & Massage' },
-    { IdLDV: 4, TenLDV: 'Vận chuyển' },
-    { IdLDV: 5, TenLDV: 'Giải trí' },
-    { IdLDV: 6, TenLDV: 'Khác' }
-  ]);
+  // Fetch service categories from backend
+  useEffect(() => {
+    fetchServiceCategories();
+  }, []);
+
+  const fetchServiceCategories = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await serviceCategoryAPI.getAll();
+      setServiceCategories(data);
+    } catch (err) {
+      console.error('Error fetching service categories:', err);
+      setError('Không thể tải danh sách loại dịch vụ');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Mock DichVu - TODO: API GET /api/services
   // Table: DichVu { IdDV, TenDV, DonGia, DonVi, SLTon, IdLDV }
@@ -113,25 +126,85 @@ const QuanLyDichVuPage = () => {
     setSelectedService(null);
   };
 
-  const handleAddCategory = (tenLDV) => {
-    console.log('Adding category:', tenLDV);
-    const newCategory = {
-      IdLDV: serviceCategories.length + 1,
-      TenLDV: tenLDV
-    };
-    setServiceCategories([...serviceCategories, newCategory]);
-    setIsCategoryModalOpen(false);
+  // CRUD Handlers for Categories
+  const handleAddCategory = async (categoryName) => {
+    try {
+      const newCategory = await serviceCategoryAPI.create({ 
+        serviceCategoryName: categoryName 
+      });
+      setServiceCategories([...serviceCategories, newCategory]);
+      setIsCategoryModalOpen(false);
+    } catch (err) {
+      console.error('Error adding category:', err);
+      alert('Không thể thêm loại dịch vụ. Vui lòng thử lại.');
+    }
   };
 
-  const handleDeleteCategory = () => {
-    console.log('Deleting category:', selectedCategoryToDelete);
-    setServiceCategories(serviceCategories.filter(c => c.IdLDV !== selectedCategoryToDelete.IdLDV));
-    setIsDeleteCategoryModalOpen(false);
-    setSelectedCategoryToDelete(null);
+  const handleEditCategory = async (id, categoryName) => {
+    try {
+      const updatedCategory = await serviceCategoryAPI.update(id, { 
+        serviceCategoryName: categoryName 
+      });
+      setServiceCategories(
+        serviceCategories.map(cat => 
+          cat.serviceCategoryId === id ? updatedCategory : cat
+        )
+      );
+    } catch (err) {
+      console.error('Error updating category:', err);
+      alert('Không thể cập nhật loại dịch vụ. Vui lòng thử lại.');
+    }
+  };
+
+  const handleDeleteCategory = async () => {
+    try {
+      await serviceCategoryAPI.delete(selectedCategoryToDelete.serviceCategoryId);
+      setServiceCategories(
+        serviceCategories.filter(c => c.serviceCategoryId !== selectedCategoryToDelete.serviceCategoryId)
+      );
+      setIsDeleteCategoryModalOpen(false);
+      setSelectedCategoryToDelete(null);
+    } catch (err) {
+      console.error('Error deleting category:', err);
+      alert('Không thể xóa loại dịch vụ. Vui lòng thử lại.');
+      setIsDeleteCategoryModalOpen(false);
+      setSelectedCategoryToDelete(null);
+    }
   };
 
   return (
     <div className="w-full space-y-space-lg">
+      {/* Loading State */}
+      {loading && (
+        <div className="flex items-center justify-center py-20">
+          <div className="flex flex-col items-center gap-space-md">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
+            <p className="font-body-lg text-on-surface-variant">Đang tải dữ liệu...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && !loading && (
+        <div className="bg-error/10 border-2 border-error rounded-lg p-space-lg">
+          <div className="flex items-center gap-space-md">
+            <span className="material-symbols-outlined text-error text-[32px]">error</span>
+            <div>
+              <p className="font-title-lg font-semibold text-error">Lỗi</p>
+              <p className="font-body-md text-on-surface">{error}</p>
+            </div>
+          </div>
+          <button
+            onClick={fetchServiceCategories}
+            className="mt-space-md px-space-lg py-space-md rounded-lg bg-error hover:bg-error/80 text-on-error font-label-md font-semibold transition-colors"
+          >
+            Thử lại
+          </button>
+        </div>
+      )}
+
+      {!loading && !error && (
+        <>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -240,21 +313,21 @@ const QuanLyDichVuPage = () => {
         
         {serviceCategories.map(cat => (
           <button
-            key={cat.IdLDV}
-            onClick={() => setSelectedCategory(String(cat.IdLDV))}
+            key={cat.serviceCategoryId}
+            onClick={() => setSelectedCategory(String(cat.serviceCategoryId))}
             className={cn(
               'flex items-center gap-space-sm px-space-lg py-space-md rounded-full whitespace-nowrap font-label-lg font-semibold transition-all shadow-md',
-              selectedCategory === String(cat.IdLDV)
+              selectedCategory === String(cat.serviceCategoryId)
                 ? 'bg-gradient-to-r from-[#D4AF37] to-[#B8941E] text-white'
                 : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high'
             )}
           >
-            <span>{cat.TenLDV}</span>
+            <span>{cat.serviceCategoryName}</span>
             <span className={cn(
               'px-space-sm py-space-xs rounded-full text-label-sm font-bold',
-              selectedCategory === String(cat.IdLDV) ? 'bg-white/20 text-white' : 'bg-surface-container-highest'
+              selectedCategory === String(cat.serviceCategoryId) ? 'bg-white/20 text-white' : 'bg-surface-container-highest'
             )}>
-              {services.filter(s => s.IdLDV === cat.IdLDV).length}
+              {services.filter(s => s.IdLDV === cat.serviceCategoryId).length}
             </span>
           </button>
         ))}
@@ -275,7 +348,7 @@ const QuanLyDichVuPage = () => {
           </thead>
           <tbody className="divide-y divide-outline-variant">
             {paginatedServices.map((service) => {
-              const category = serviceCategories.find(c => c.IdLDV === service.IdLDV);
+              const category = serviceCategories.find(c => c.serviceCategoryId === service.IdLDV);
               return (
                 <tr key={service.IdDV} className="hover:bg-surface-container-low/50 transition-colors">
                   <td className="px-space-lg py-space-lg">
@@ -283,7 +356,7 @@ const QuanLyDichVuPage = () => {
                   </td>
                   <td className="px-space-lg py-space-lg">
                     <span className="inline-flex px-space-md py-space-sm rounded-full bg-secondary/20 text-secondary font-label-sm font-semibold">
-                      {category?.TenLDV}
+                      {category?.serviceCategoryName || 'N/A'}
                     </span>
                   </td>
                   <td className="px-space-lg py-space-lg text-right">
@@ -411,6 +484,7 @@ const QuanLyDichVuPage = () => {
         isOpen={isCategoryModalOpen}
         onClose={() => setIsCategoryModalOpen(false)}
         onAddCategory={handleAddCategory}
+        onEditCategory={handleEditCategory}
         categories={serviceCategories}
         onDeleteCategory={(cat) => {
           setSelectedCategoryToDelete(cat);
@@ -426,8 +500,10 @@ const QuanLyDichVuPage = () => {
         }}
         onConfirm={handleDeleteCategory}
         title="Xóa loại dịch vụ"
-        message={`Bạn có chắc muốn xóa loại "${selectedCategoryToDelete?.TenLDV}"?`}
+        message={`Bạn có chắc muốn xóa loại "${selectedCategoryToDelete?.serviceCategoryName}"?`}
       />
+        </>
+      )}
     </div>
   );
 };

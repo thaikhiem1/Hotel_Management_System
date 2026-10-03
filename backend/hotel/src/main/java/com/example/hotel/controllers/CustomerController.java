@@ -21,7 +21,7 @@ import com.example.hotel.services.ICustomerService;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("api/customer")
+@RequestMapping("api/customers")
 @RequiredArgsConstructor
 public class CustomerController {
     @Autowired

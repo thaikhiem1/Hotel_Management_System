@@ -19,7 +19,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/room")
+@RequestMapping("/api/rooms")
 @CrossOrigin(origins = { "http://localhost:5173" })
 @RequiredArgsConstructor
 public class RoomController {

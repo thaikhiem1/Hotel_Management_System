@@ -18,7 +18,7 @@ import org.springframework.http.ResponseEntity;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("api/employee")
+@RequestMapping("api/employees")
 @CrossOrigin(origins = { "http://localhost:5173" })
 @RequiredArgsConstructor
 public class EmployeeController {

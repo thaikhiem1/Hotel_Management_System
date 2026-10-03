@@ -34,7 +34,7 @@ public class ServiceCategoriesController {
     public ResponseEntity<List<ServiceCategoriesResponse>> getAll(){
         return ResponseEntity.ok(_CategoriesService.getAll());
     }
-    @PatchMapping 
+    @PatchMapping("/{id}")
     public  ResponseEntity<ServiceCategoriesResponse> update(
         @PathVariable Integer id, @Valid @RequestBody  ServiceCategoriesRequest request
     ){

@@ -459,6 +459,66 @@ export const invoiceAPI = {
 };
 
 // ============================================
+// LOẠI DỊCH VỤ API (Service Categories)
+// ============================================
+export const serviceCategoryAPI = {
+  /**
+   * Lấy danh sách tất cả loại dịch vụ
+   * GET /api/service-categories
+   */
+  getAll: async () => {
+    try {
+      const response = await apiClient.get("/service-categories");
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Tạo loại dịch vụ mới
+   * POST /api/service-categories
+   * 
+   * @param {Object} data - Dữ liệu loại dịch vụ
+   * @param {string} data.serviceCategoryName - Tên loại dịch vụ
+   */
+  create: async (data) => {
+    try {
+      const response = await apiClient.post("/service-categories", data);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Cập nhật loại dịch vụ
+   * PATCH /api/service-categories/{id}
+   */
+  update: async (id, data) => {
+    try {
+      const response = await apiClient.patch(`/service-categories/${id}`, data);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Xóa loại dịch vụ
+   * DELETE /api/service-categories/{id}
+   */
+  delete: async (id) => {
+    try {
+      const response = await apiClient.delete(`/service-categories/${id}`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+};
+
+// ============================================
 // DỊCH VỤ API (Service)
 // ============================================
 export const serviceAPI = {
