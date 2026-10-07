@@ -7,6 +7,10 @@ import com.example.hotel.models.dto.response.ServiceCategoriesResponse;
 
 public interface IServiceCategoriesService {
     ServiceCategoriesResponse create(ServiceCategoriesRequest request);
+
     List<ServiceCategoriesResponse> getAll();
+
     ServiceCategoriesResponse update(Integer Id, ServiceCategoriesRequest request);
+
+    void Delete(Integer Id);
 }
