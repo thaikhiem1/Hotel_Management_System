@@ -2,10 +2,6 @@ import React from "react";
 
 import { cn } from "@/utils/lib/util";
 
-import avatar from "@/assets/ronaldo_01.jpg";
-import defaultMale from "@/assets/images/profileNam.jpg";
-import defaultFemale from "@/assets/images/profileNu.jpg";
-
 const EmployeeCard = ({ employee, onClick }) => {
   const getStatusBadge = (isActive) => {
     if (isActive) {
@@ -35,24 +31,7 @@ const EmployeeCard = ({ employee, onClick }) => {
     return positions[position] || "text-on-surface-variant";
   };
 
-  // Avatar mặc định khi employee.avatar = null
-  const getDefaultAvatar = (gender) => {
-    switch (gender) {
-      case "Male":
-        return defaultMale;
-
-      case "Female":
-        return defaultFemale;
-
-      default:
-        return avatar;
-    }
-  };
-
-  // Có avatar thật → dùng avatar thật
-  // Không có avatar → dùng avatar mặc định theo gender
-  const avatarSrc = employee.avatar || getDefaultAvatar(employee.gender);
-
+  const avatarSrc = employee.avatar
   const status = getStatusBadge(employee.isActive);
   const positionColor = getPositionColor(employee.position);
 
@@ -114,9 +93,6 @@ const EmployeeCard = ({ employee, onClick }) => {
               "ring-4 ring-surface-container-highest",
               "group-hover:ring-primary/20 transition-all duration-300",
             )}
-            onError={(e) => {
-              e.currentTarget.src = avatar;
-            }}
           />
 
           {/* Status indicator */}

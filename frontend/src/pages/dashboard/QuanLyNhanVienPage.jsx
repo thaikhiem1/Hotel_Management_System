@@ -7,6 +7,8 @@ import {
 
 import { cn } from "@/utils/lib/util";
 import { employeeAPI } from "@/services/api";
+import { showSuccess, handleApiError } from "@/utils/notification";
+
 const QuanLyNhanVienPage = () => {
   const [employees, setEmployees] = useState([]);
 
@@ -155,18 +157,21 @@ const QuanLyNhanVienPage = () => {
 
     try {
       if (dialogMode === "add") {
-        await employeeAPI.create(formData);
+        const response = await employeeAPI.create(formData);
+        // ApiResponse structure: { status, message, data }
+        showSuccess(response.message || "Thêm nhân viên thành công");
       } else if (dialogMode === "edit") {
-        await employeeAPI.update(selectedEmployee.employeeId, formData);
+        const response = await employeeAPI.update(selectedEmployee.employeeId, formData);
+        showSuccess(response.message || "Cập nhật nhân viên thành công");
       }
 
-      // Sau khi thêm/sửa thành công:
-      // load lại danh sách từ database
+      // Sau khi thêm/sửa thành công: load lại danh sách từ database
       await fetchEmployees();
       setIsProfileDialogOpen(false);
       setSelectedEmployee(null);
     } catch (error) {
-      console.error("Error submitting employee:", error);
+      // Error sẽ được xử lý bởi handleApiError trong notification.js
+      handleApiError(error);
     } finally {
       setIsLoading(false);
     }
@@ -379,11 +384,11 @@ const QuanLyNhanVienPage = () => {
         >
           <option value="all">Tất cả chức vụ</option>
 
-          <option value="Admin">Admin</option>
-
-          <option value="Manager">Manager</option>
-
-          <option value="Receptionist">Receptionist</option>
+          <option value="Nhân Viên Lễ Tân">Nhân Viên Lễ Tân</option>
+          <option value="Nhân Viên Kỹ Thuật">Nhân Viên Kỹ Thuật</option>
+          <option value="Nhân Viên Buồng">Nhân Viên Buồng</option>
+          <option value="Nhân Viên Bếp">Nhân Viên Bếp</option>
+          <option value="Quản Lý Khách Sạn">Quản Lý Khách Sạn</option>
         </select>
       </div>
 

@@ -1,20 +1,13 @@
-/**
- * API Service - Centralized API calls
- * Hotel Management System
- *
- * Base URL: http://localhost:8080/api
- */
-
 import axios from "axios";
 
-// ============================================
+
 // Cấu hình base URL
-// ============================================
+
 const BASE_URL = "http://localhost:8080/api";
 
-// ============================================
+
 // Tạo axios instance với config mặc định
-// ============================================
+
 const apiClient = axios.create({
   baseURL: BASE_URL,
   headers: {
@@ -23,76 +16,58 @@ const apiClient = axios.create({
   timeout: 10000, // 10 seconds
 });
 
-// ============================================
 // Request Interceptor - Thêm token vào header
-// ============================================
 apiClient.interceptors.request.use(
   (config) => {
-    // TODO: Lấy token từ localStorage hoặc sessionStorage
+    // Lấy token từ localStorage hoặc sessionStorage
     const token = localStorage.getItem("accessToken");
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
 
-    console.log(`API Request: ${config.method.toUpperCase()} ${config.url}`);
     return config;
   },
   (error) => {
-    console.error("Request Error:", error);
     return Promise.reject(error);
   },
 );
 
-// ============================================
 // Response Interceptor - Xử lý response và error
-// ============================================
+
 apiClient.interceptors.response.use(
   (response) => {
-    console.log(`API Response: ${response.config.url}`, response.data);
     return response;
   },
   (error) => {
-    console.error("Response Error:", error.response || error);
-
     // Xử lý các lỗi HTTP khác nhau
     if (error.response) {
       switch (error.response.status) {
         case 401:
           // Unauthorized - Chuyển về trang login
-          console.error("Unauthorized - Please login");
-          // TODO: Redirect to login page
           break;
         case 403:
           // Forbidden - Không có quyền
-          console.error("Forbidden - You do not have permission");
           break;
         case 404:
           // Not Found
-          console.error("Resource not found");
           break;
         case 500:
           // Server Error
-          console.error("Internal server error");
           break;
         default:
-          console.error("An error occurred");
+          // Other errors
+          break;
       }
-    } else if (error.request) {
-      // Request được gửi nhưng không nhận được response
-      console.error("No response from server");
-    } else {
-      // Lỗi khi setup request
-      console.error("Error setting up request:", error.message);
     }
 
     return Promise.reject(error);
   },
 );
 
-// ============================================
+
 // LOẠI PHÒNG API (RoomType)
-// ============================================
+
 export const roomTypeAPI = {
   /**
    * Lấy danh sách tất cả loại phòng
@@ -167,9 +142,9 @@ export const roomTypeAPI = {
   },
 };
 
-// ============================================
+
 // PHÒNG API (Room)
-// ============================================
+
 export const roomAPI = {
   /**
    * Lấy danh sách tất cả phòng
@@ -237,13 +212,30 @@ export const roomAPI = {
   },
 };
 
-// ============================================
+
 // KHÁCH HÀNG API (Customer)
-// ============================================
+
 export const customerAPI = {
-  getAll: async () => {
+  /**
+   * GET /api/customers?page=0&size=16&search=keyword&gender=Nam&nationality=Việt Nam
+   */
+  getAll: async ({ page = 0, size = 16, search = "", gender = "", nationality = "" } = {}) => {
     try {
-      const response = await apiClient.get("/customers");
+      const params = { page, size };
+      
+      if (search && search.trim()) {
+        params.search = search.trim();
+      }
+      
+      if (gender && gender.trim()) {
+        params.gender = gender.trim();
+      }
+      
+      if (nationality && nationality.trim()) {
+        params.nationality = nationality.trim();
+      }
+      
+      const response = await apiClient.get("/customers", { params });
       return response.data;
     } catch (error) {
       throw error;
@@ -287,9 +279,8 @@ export const customerAPI = {
   },
 };
 
-// ============================================
 // NHÂN VIÊN API (Employee)
-// ============================================
+
 export const employeeAPI = {
   getAll: async ({
     page = 0,
@@ -358,9 +349,8 @@ export const employeeAPI = {
   },
 };
 
-// ============================================
 // PHIẾU THUÊ API (Booking)
-// ============================================
+
 export const bookingAPI = {
   getAll: async () => {
     try {
@@ -408,9 +398,8 @@ export const bookingAPI = {
   },
 };
 
-// ============================================
 // HÓA ĐƠN API (Invoice)
-// ============================================
+
 export const invoiceAPI = {
   getAll: async () => {
     try {
@@ -458,9 +447,8 @@ export const invoiceAPI = {
   },
 };
 
-// ============================================
 // LOẠI DỊCH VỤ API (Service Categories)
-// ============================================
+
 export const serviceCategoryAPI = {
   /**
    * Lấy danh sách tất cả loại dịch vụ
@@ -518,9 +506,8 @@ export const serviceCategoryAPI = {
   },
 };
 
-// ============================================
 // DỊCH VỤ API (Service)
-// ============================================
+
 export const serviceAPI = {
   getAll: async () => {
     try {
@@ -568,7 +555,91 @@ export const serviceAPI = {
   },
 };
 
-// ============================================
-// Export default axios instance
-// ============================================
+// TÀI KHOẢN API (Account)
+
+export const accountAPI = {
+  /**
+   * UC-ACC-001: Tạo tài khoản mới
+   * POST /api/accounts
+   * 
+   * @param {Object} data - Dữ liệu tài khoản
+   * @param {string} data.username - Tên đăng nhập
+   * @param {string} data.password - Mật khẩu
+   * @param {number} data.employeeId - ID nhân viên
+   */
+  create: async (data) => {
+    try {
+      const response = await apiClient.post("/accounts", data);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy danh sách tất cả tài khoản có phân trang
+   * GET /api/accounts?page=0&size=16&isActive=true
+   */
+  getAll: async ({ page = 0, size = 16, isActive = null } = {}) => {
+    try {
+      const params = { page, size };
+      
+      // Chỉ thêm isActive vào params nếu có giá trị
+      if (isActive !== null && isActive !== undefined) {
+        params.isActive = isActive;
+      }
+      
+      const response = await apiClient.get("/accounts", { params });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy thông tin tài khoản theo username
+   * GET /api/accounts/{username}
+   */
+  getByUsername: async (username) => {
+    try {
+      const response = await apiClient.get(`/accounts/${username}`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * REQ-ACC-002 & REQ-ACC-003: Cập nhật tài khoản
+   * PUT /api/accounts/{username}
+   * 
+   * @param {string} username - Tên đăng nhập hiện tại
+   * @param {Object} data - Dữ liệu cập nhật
+   * @param {string} data.newPassword - Mật khẩu mới (optional)
+   * @param {string} data.role - Vai trò mới (ADMIN/MANAGER/RECEPTIONIST) (optional)
+   * @param {boolean} data.isActive - Trạng thái tài khoản (optional)
+   */
+  update: async (username, data) => {
+    try {
+      const response = await apiClient.put(`/accounts/${username}`, data);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy danh sách nhân viên chưa có tài khoản
+   * GET /api/accounts/available-employees
+   */
+  getAvailableEmployees: async () => {
+    try {
+      const response = await apiClient.get("/accounts/available-employees");
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+};
+
 export default apiClient;

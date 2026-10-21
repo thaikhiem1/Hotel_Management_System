@@ -21,92 +21,69 @@ const QuanLyKhachHangPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   
   // State search và filter
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchInput, setSearchInput] = useState(''); // Input của user
+  const [searchQuery, setSearchQuery] = useState(''); // Từ khóa đã submit để gọi API
   const [filterGender, setFilterGender] = useState('all'); 
   const [filterNationality, setFilterNationality] = useState('all');
   
   // State phân trang
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [currentPage, setCurrentPage] = useState(0); // Backend page bắt đầu từ 0
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
+  const itemsPerPage = 16;
 
-  // Load dữ liệu khi component mount
+  // Load dữ liệu khi component mount hoặc khi filters thay đổi
   useEffect(() => {
     fetchCustomers();
-  }, []);
+  }, [currentPage, searchQuery, filterGender, filterNationality]);
 
   const fetchCustomers = async () => {
     setIsLoading(true);
     try {
-      const data = await customerAPI.getAll();
-      const mappedData = data.map(item => ({
-        customerId: item.customer_id,
-        fullName: item.full_name,
-        phone: item.phone,
-        citizenId: item.citizen_id_passport,
-        nationality: item.nationality,
-        gender: item.gender 
-      }));
-      setCustomers(mappedData);
+      // UC-CUS-003: Tra cứu thông tin khách hàng với phân trang
+      const response = await customerAPI.getAll({
+        page: currentPage,
+        size: itemsPerPage,
+        search: searchQuery,
+        gender: filterGender === 'all' ? '' : filterGender,
+        nationality: filterNationality === 'all' ? '' : filterNationality
+      });
+      
+      // Spring Data Page response structure
+      setCustomers(response.content || []);
+      setTotalPages(response.totalPages || 0);
+      setTotalElements(response.totalElements || 0);
     } catch (error) {
-      console.error('Error fetching customers:', error);
       handleApiError(error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const filteredCustomers = useMemo(() => {
-    return customers.filter(customer => {
-      // Filter by gender
-      if (filterGender !== 'all' && customer.gender !== filterGender) {
-        return false;
-      }
-      
-      // Filter by nationality
-      if (filterNationality === 'Việt Nam' && customer.nationality !== 'Việt Nam') {
-        return false;
-      }
-      if (filterNationality === 'Nước ngoài' && customer.nationality === 'Việt Nam') {
-        return false;
-      }
-      
-      // Search by name, phone, CCCD/Passport
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        return (
-          customer.fullName?.toLowerCase().includes(query) ||
-          (customer.phone && customer.phone.includes(query)) ||
-          (customer.citizenId && customer.citizenId.toLowerCase().includes(query))
-        );
-      }
-      
-      return true;
-    });
-  }, [customers, searchQuery, filterGender, filterNationality]);
-
   /**
-   * Phân trang
+   * Xử lý thay đổi trang (UC-CUS-003: Bước 10 - Chuyển trang)
    */
-  const paginatedCustomers = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return filteredCustomers.slice(startIndex, endIndex);
-  }, [filteredCustomers, currentPage, itemsPerPage]);
-
-  const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage);
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   /**
    * Thống kê khách hàng
    */
   const stats = useMemo(() => {
-    const total = customers.length;
+    const total = totalElements; // Dùng totalElements từ server thay vì length của mảng local
     const vietnamese = customers.filter(c => c.nationality === 'Việt Nam').length;
-    const foreign = total - vietnamese;
-    const male = customers.filter(c => c.gender === 'Nam' || c.gender === 'Male').length;
-    const female = customers.filter(c => c.gender === 'Nữ' || c.gender === 'Female').length;
+    const foreign = customers.filter(c => c.nationality !== 'Việt Nam').length;
+    const male = customers.filter(c => c.gender === 'Nam').length;
+    const female = customers.filter(c => c.gender === 'Nữ').length;
     
     return { total, vietnamese, foreign, male, female };
-  }, [customers]);
+  }, [totalElements, customers]);
+
+  // Không cần filter và paginate ở client nữa, server đã xử lý
+  // Dữ liệu từ API đã được filter và paginate sẵn
+  const paginatedCustomers = customers;
 
   /**
    * Mở dialog thêm khách hàng mới
@@ -162,7 +139,6 @@ const QuanLyKhachHangPage = () => {
     setIsFormDialogOpen(false);
     setSelectedCustomer(null);
   } catch (error) {
-    console.error('Error submitting customer:', error);
     handleApiError(error);
   } finally {
     setIsLoading(false);
@@ -189,7 +165,6 @@ const QuanLyKhachHangPage = () => {
       setIsDeleteDialogOpen(false);
       setSelectedCustomer(null);
     } catch (error) {
-      console.error('Error deleting customer:', error);
       handleApiError(error);
     } finally {
       setIsLoading(false);
@@ -197,16 +172,41 @@ const QuanLyKhachHangPage = () => {
   };
 
   /**
-   * Xử lý thay đổi trang
+   * Xử lý tìm kiếm - chỉ gọi API khi nhấn nút Tìm kiếm
+   * UC-CUS-003: Bước 5 - Nhân viên nhấn nút Tìm kiếm
    */
-  const handlePageChange = (newPage) => {
-    setCurrentPage(newPage);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  const handleSearch = () => {
+    const keyword = searchInput.trim();
+    
+    // Reset về trang đầu và cập nhật search query
+    setCurrentPage(0);
+    setSearchQuery(keyword);
   };
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, filterGender, filterNationality]);
+  /**
+   * Xử lý nhấn Enter trong ô tìm kiếm
+   */
+  const handleSearchKeyDown = (event) => {
+    if (event.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
+  /**
+   * Xử lý thay đổi filter giới tính
+   */
+  const handleGenderChange = (event) => {
+    setFilterGender(event.target.value);
+    setCurrentPage(0); // Reset về trang đầu
+  };
+
+  /**
+   * Xử lý thay đổi filter quốc tịch
+   */
+  const handleNationalityChange = (event) => {
+    setFilterNationality(event.target.value);
+    setCurrentPage(0); // Reset về trang đầu
+  };
 
   return (
     <div className="w-full space-y-space-lg">
@@ -324,16 +324,17 @@ const QuanLyKhachHangPage = () => {
       {/* Search và Filter */}
       <div className="flex flex-col sm:flex-row gap-space-md">
         {/* Search */}
-        <div className="flex-1">
-          <div className="relative">
+        <div className="flex-1 flex gap-space-sm">
+          <div className="relative flex-1">
             <span className="absolute left-space-md top-1/2 -translate-y-1/2 material-symbols-outlined text-[20px] text-on-surface-variant">
               search
             </span>
             <input
               type="text"
               placeholder="Tìm kiếm theo tên, SĐT, CCCD/Passport..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onKeyDown={handleSearchKeyDown}
               className={cn(
                 'w-full pl-12 pr-space-md py-space-sm rounded-lg',
                 'bg-surface-container-highest border border-outline',
@@ -343,18 +344,36 @@ const QuanLyKhachHangPage = () => {
               )}
             />
           </div>
+          
+          {/* Nút Tìm kiếm */}
+          <button
+            onClick={handleSearch}
+            disabled={isLoading}
+            className={cn(
+              'flex items-center gap-space-xs px-space-lg py-space-sm rounded-lg',
+              'bg-primary text-on-primary font-label-lg text-label-lg',
+              'hover:bg-primary/90 transition-colors',
+              'disabled:opacity-60 disabled:cursor-not-allowed'
+            )}
+          >
+            <span className="material-symbols-outlined text-[20px]">
+              search
+            </span>
+            <span>Tìm kiếm</span>
+          </button>
         </div>
 
         {/* Filter giới tính */}
         <select
           value={filterGender}
-          onChange={(e) => setFilterGender(e.target.value)}
+          onChange={handleGenderChange}
+          disabled={isLoading}
           className={cn(
             'px-space-md py-space-sm rounded-lg',
             'bg-surface-container-highest border border-outline',
             'font-body-md text-body-md text-on-surface',
             'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent',
-            'transition-all'
+            'transition-all disabled:opacity-60'
           )}
         >
           <option value="all">Tất cả giới tính</option>
@@ -366,13 +385,14 @@ const QuanLyKhachHangPage = () => {
         {/* Filter quốc tịch */}
         <select
           value={filterNationality}
-          onChange={(e) => setFilterNationality(e.target.value)}
+          onChange={handleNationalityChange}
+          disabled={isLoading}
           className={cn(
             'px-space-md py-space-sm rounded-lg',
             'bg-surface-container-highest border border-outline',
             'font-body-md text-body-md text-on-surface',
             'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent',
-            'transition-all'
+            'transition-all disabled:opacity-60'
           )}
         >
           <option value="all">Tất cả quốc tịch</option>
@@ -384,10 +404,10 @@ const QuanLyKhachHangPage = () => {
       {/* Results Count */}
       <div className="flex items-center justify-between">
         <p className="font-body-md text-body-md text-on-surface-variant">
-          Hiển thị <span className="font-semibold text-on-surface">{paginatedCustomers.length}</span> / {filteredCustomers.length} khách hàng
+          Hiển thị <span className="font-semibold text-on-surface">{paginatedCustomers.length}</span> / {totalElements} khách hàng
           {totalPages > 1 && (
             <span className="ml-space-sm">
-              (Trang {currentPage} / {totalPages})
+              (Trang {currentPage + 1} / {totalPages})
             </span>
           )}
         </p>
@@ -402,17 +422,17 @@ const QuanLyKhachHangPage = () => {
       />
 
       {/* Phân trang */}
-      {totalPages > 1 && !isLoading && filteredCustomers.length > 0 && (
+      {totalPages > 1 && !isLoading && paginatedCustomers.length > 0 && (
         <div className="flex items-center justify-between px-space-md py-space-sm
                      bg-surface-container-low rounded-lg border border-outline-variant">
           <p className="font-body-sm text-body-sm text-on-surface-variant">
-            Trang {currentPage} / {totalPages} (Tổng {filteredCustomers.length} khách hàng)
+            Trang {currentPage + 1} / {totalPages} (Tổng {totalElements} khách hàng)
           </p>
 
           <div className="flex items-center gap-space-xs">
             <button
               onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1 || isLoading}
+              disabled={currentPage === 0 || isLoading}
               className={cn(
                 'p-space-xs rounded-lg hover:bg-surface-container-high',
                 'disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
@@ -423,15 +443,15 @@ const QuanLyKhachHangPage = () => {
               </span>
             </button>
 
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
+            {Array.from({ length: totalPages }, (_, i) => i).map(page => {
               const showPage = 
-                page === 1 || 
-                page === totalPages || 
+                page === 0 || 
+                page === totalPages - 1 || 
                 (page >= currentPage - 1 && page <= currentPage + 1);
               
               const showEllipsis = 
-                (page === currentPage - 2 && currentPage > 3) ||
-                (page === currentPage + 2 && currentPage < totalPages - 2);
+                (page === currentPage - 2 && currentPage > 2) ||
+                (page === currentPage + 2 && currentPage < totalPages - 3);
 
               if (showEllipsis) {
                 return (
@@ -460,14 +480,14 @@ const QuanLyKhachHangPage = () => {
                     'disabled:opacity-50 disabled:cursor-not-allowed'
                   )}
                 >
-                  {page}
+                  {page + 1}
                 </button>
               );
             })}
 
             <button
               onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages || isLoading}
+              disabled={currentPage === totalPages - 1 || isLoading}
               className={cn(
                 'p-space-xs rounded-lg hover:bg-surface-container-high',
                 'disabled:opacity-50 disabled:cursor-not-allowed transition-colors'

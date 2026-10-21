@@ -14,6 +14,7 @@ import QuanLyKhachHangPage from "@/pages/dashboard/QuanLyKhachHangPage";
 import QuanLyHoaDonPage from "@/pages/dashboard/QuanLyHoaDonPage";
 import QuanLyDichVuPage from "@/pages/dashboard/QuanLyDichVuPage";
 import QuanLyNhanVienPage from "@/pages/dashboard/QuanLyNhanVienPage";
+import QuanLyTaiKhoanPage from "@/pages/dashboard/QuanLyTaiKhoanPage";
 import BaoCaoThongKePage from "@/pages/dashboard/BaoCaoThongKePage";
 
 function AppRoutes() {
@@ -36,6 +37,7 @@ function AppRoutes() {
         <Route path="/payments" element={<QuanLyHoaDonPage />} />
         <Route path="/services" element={<QuanLyDichVuPage />} />
         <Route path="/employees" element={<QuanLyNhanVienPage />} />
+        <Route path="/accounts" element={<QuanLyTaiKhoanPage />} />
         <Route path="/reports" element={<BaoCaoThongKePage />} />
       </Route>
     </Routes>

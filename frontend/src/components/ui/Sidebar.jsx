@@ -140,6 +140,11 @@ const Sidebar = ({ onWidthChange }) => {
           icon: "group",
         },
         {
+          path: "/accounts",
+          label: "Quản lý tài khoản",
+          icon: "manage_accounts",
+        },
+        {
           path: "/reports",
           label: "Báo cáo & Thống kê",
           icon: "insights",

@@ -24,12 +24,9 @@ export const initToastManager = (manager) => {
  * @param {number} duration - Thời gian hiển thị ms (optional)
  */
 export const showSuccess = (title, message = '', duration) => {
-  console.log('✅ SUCCESS:', title, message);
-  
   if (toastManager) {
     toastManager.success(title, message, duration);
   } else {
-    // Fallback nếu toast chưa được init
     alert(`✅ ${title}${message ? '\n' + message : ''}`);
   }
 };
@@ -41,8 +38,6 @@ export const showSuccess = (title, message = '', duration) => {
  * @param {number} duration - Thời gian hiển thị ms (optional)
  */
 export const showError = (title, message = '', duration) => {
-  console.error('❌ ERROR:', title, message);
-  
   if (toastManager) {
     toastManager.error(title, message, duration);
   } else {
@@ -57,8 +52,6 @@ export const showError = (title, message = '', duration) => {
  * @param {number} duration - Thời gian hiển thị ms (optional)
  */
 export const showWarning = (title, message = '', duration) => {
-  console.warn('⚠️ WARNING:', title, message);
-  
   if (toastManager) {
     toastManager.warning(title, message, duration);
   } else {
@@ -73,8 +66,6 @@ export const showWarning = (title, message = '', duration) => {
  * @param {number} duration - Thời gian hiển thị ms (optional)
  */
 export const showInfo = (title, message = '', duration) => {
-  console.info('ℹ️ INFO:', title, message);
-  
   if (toastManager) {
     toastManager.info(title, message, duration);
   } else {
@@ -94,33 +85,51 @@ export const handleApiError = (error) => {
     // Server trả về error response
     const { status, data } = error.response;
     
+    // Hiển thị mã HTTP trong title
+    const httpCode = `[${status}]`;
+    
     switch (status) {
       case 400:
-        title = 'Dữ liệu không hợp lệ';
-        message = data.message || 'Vui lòng kiểm tra lại thông tin';
+        title = `${httpCode} ${data.error || 'Dữ liệu không hợp lệ'}`;
+        
+        // Xử lý validation errors (fieldErrors)
+        if (data.fieldErrors && Object.keys(data.fieldErrors).length > 0) {
+          const fieldErrors = Object.entries(data.fieldErrors)
+            .map(([field, msg]) => `• ${msg}`)
+            .join('\n');
+          message = fieldErrors;
+        } else {
+          message = data.message || 'Vui lòng kiểm tra lại thông tin';
+        }
         break;
+        
       case 401:
-        title = 'Phiên đăng nhập hết hạn';
-        message = 'Vui lòng đăng nhập lại';
+        title = `${httpCode} ${data.error || 'Phiên đăng nhập hết hạn'}`;
+        message = data.message || 'Vui lòng đăng nhập lại';
         break;
+        
       case 403:
-        title = 'Không có quyền truy cập';
-        message = 'Bạn không có quyền thực hiện thao tác này';
+        title = `${httpCode} ${data.error || 'Không có quyền truy cập'}`;
+        message = data.message || 'Bạn không có quyền thực hiện thao tác này';
         break;
+        
       case 404:
-        title = 'Không tìm thấy';
-        message = 'Dữ liệu không tồn tại hoặc đã bị xóa';
+        title = `${httpCode} ${data.error || 'Không tìm thấy'}`;
+        message = data.message || 'Dữ liệu không tồn tại hoặc đã bị xóa';
         break;
+        
       case 409:
-        title = 'Dữ liệu đã tồn tại';
+        title = `${httpCode} ${data.error || 'Dữ liệu đã tồn tại'}`;
         message = data.message || 'Vui lòng kiểm tra lại';
         break;
+        
       case 500:
-        title = 'Lỗi máy chủ';
-        message = 'Vui lòng thử lại sau';
+        title = `${httpCode} ${data.error || 'Lỗi máy chủ'}`;
+        message = data.message || 'Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau';
         break;
+        
       default:
-        title = 'Lỗi';
+        title = `${httpCode} ${data.error || 'Lỗi'}`;
         message = data.message || 'Đã có lỗi xảy ra';
     }
   } else if (error.request) {
@@ -133,7 +142,7 @@ export const handleApiError = (error) => {
     message = error.message || 'Đã có lỗi xảy ra';
   }
   
-  showError(title, message, 6000); // Hiển thị lâu hơn cho error
+  showError(title, message, 6000);
 };
 
 /**
@@ -142,13 +151,10 @@ export const handleApiError = (error) => {
  * @returns {function} Function để dismiss loading
  */
 export const showLoading = (message = 'Đang xử lý...') => {
-  console.log('⏳ LOADING:', message);
-  
   // TODO: Implement loading spinner/overlay if needed
   
   // Return dismiss function
   return () => {
-    console.log('⏳ LOADING DISMISSED');
+    // Loading dismissed
   };
 };
-

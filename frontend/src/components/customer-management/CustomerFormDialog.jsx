@@ -23,7 +23,7 @@ const CustomerFormDialog = ({
     phone: '',
     citizenId: '',
     nationality: 'Việt Nam',
-    gender: 'Male'
+    gender: 'Nam'
   });
 
   const [errors, setErrors] = useState({});
@@ -37,7 +37,7 @@ const CustomerFormDialog = ({
           phone: customerData.phone || '',
           citizenId: customerData.citizenId || '',
           nationality: customerData.nationality || 'Việt Nam',
-          gender: customerData.gender || 'Male'
+          gender: customerData.gender || 'Nam'
         });
       } else {
         // Reset form cho chế độ thêm mới
@@ -46,7 +46,7 @@ const CustomerFormDialog = ({
           phone: '',
           citizenId: '',
           nationality: 'Việt Nam',
-          gender: 'Male'
+          gender: 'Nam'
         });
       }
       setErrors({});
@@ -74,20 +74,25 @@ const CustomerFormDialog = ({
   const validateForm = () => {
     const newErrors = {};
 
-    // Tên khách hàng (required)
+    // Họ và tên (bắt buộc)
     if (!formData.fullName.trim()) {
-      newErrors.fullName = 'Vui lòng nhập tên khách hàng';
+      newErrors.fullName = 'Họ và tên không được để trống';
     }
 
-    // Số điện thoại (optional, nhưng nếu có thì validate)
-    if (formData.phone && !/^[0-9]{10,11}$/.test(formData.phone)) {
-      newErrors.phone = 'Số điện thoại không hợp lệ (10-11 chữ số)';
-    }
+    // Số điện thoại (bắt buộc)
+    if (!formData.phone.trim()) {
+      newErrors.phone = 'Số điện thoại không được để trống';
+    } 
 
-    // CCCD/Passport (optional, nhưng nếu có thì validate)
-    if (formData.citizenId && formData.citizenId.length < 9) {
-      newErrors.citizenId = 'CCCD/Passport phải có ít nhất 9 ký tự';
-    }
+    // CCCD/Passport (bắt buộc)
+    if (!formData.citizenId.trim()) {
+      newErrors.citizenId = 'Số giấy tờ tùy thân/hộ chiếu không được để trống';
+    } 
+
+    // Quốc tịch (bắt buộc)
+    if (!formData.nationality.trim()) {
+      newErrors.nationality = 'Quốc tịch không được để trống';
+    } 
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -186,7 +191,7 @@ const CustomerFormDialog = ({
               <span className="material-symbols-outlined text-[20px]">
                 phone
               </span>
-              Số điện thoại
+              Số điện thoại <span className="text-error">*</span>
             </label>
             <input
               type="tel"
@@ -217,7 +222,7 @@ const CustomerFormDialog = ({
               <span className="material-symbols-outlined text-[20px]">
                 badge
               </span>
-              CCCD / Passport
+              CCCD / Passport <span className="text-error">*</span>
             </label>
             <input
               type="text"
@@ -250,7 +255,7 @@ const CustomerFormDialog = ({
                 <span className="material-symbols-outlined text-[20px]">
                   flag
                 </span>
-                Quốc tịch
+                Quốc tịch <span className="text-error">*</span>
               </label>
               <select
                 name="nationality"
@@ -258,7 +263,8 @@ const CustomerFormDialog = ({
                 onChange={handleInputChange}
                 className={cn(
                   'w-full px-space-md py-space-sm rounded-lg',
-                  'bg-surface-container-highest border border-outline',
+                  'bg-surface-container-highest border',
+                  errors.nationality ? 'border-error' : 'border-outline',
                   'font-body-md text-body-md text-on-surface',
                   'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent',
                   'transition-all'
@@ -278,6 +284,12 @@ const CustomerFormDialog = ({
                 <option value="Canada">Canada</option>
                 <option value="Khác">Khác</option>
               </select>
+              {errors.nationality && (
+                <p className="font-body-sm text-body-sm text-error flex items-center gap-space-xs">
+                  <span className="material-symbols-outlined text-[16px]">error</span>
+                  {errors.nationality}
+                </p>
+              )}
             </div>
 
             {/* Giới tính */}
@@ -286,7 +298,7 @@ const CustomerFormDialog = ({
                 <span className="material-symbols-outlined text-[20px]">
                   wc
                 </span>
-                Giới tính
+                Giới tính <span className="text-error">*</span>
               </label>
               <select
                 name="gender"
@@ -294,19 +306,25 @@ const CustomerFormDialog = ({
                 onChange={handleInputChange}
                 className={cn(
                   'w-full px-space-md py-space-sm rounded-lg',
-                  'bg-surface-container-highest border border-outline',
+                  'bg-surface-container-highest border',
+                  errors.gender ? 'border-error' : 'border-outline',
                   'font-body-md text-body-md text-on-surface',
                   'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent',
                   'transition-all'
                 )}
               >
-                <option value="Male">Nam</option>
-                <option value="Female">Nữ</option>
-                <option value="Other">Khác</option>
+                <option value="Nam">Nam</option>
+                <option value="Nữ">Nữ</option>
+                <option value="Khác">Khác</option>
               </select>
+              {errors.gender && (
+                <p className="font-body-sm text-body-sm text-error flex items-center gap-space-xs">
+                  <span className="material-symbols-outlined text-[16px]">error</span>
+                  {errors.gender}
+                </p>
+              )}
             </div>
           </div>
-
           {/* Action Buttons */}
           <div className="flex items-center justify-end gap-space-md pt-space-md border-t border-outline-variant">
             <button

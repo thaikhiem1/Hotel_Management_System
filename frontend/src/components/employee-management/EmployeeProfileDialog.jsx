@@ -1,16 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { cn } from "@/utils/lib/util";
 
-/**
- * EmployeeProfileDialog - Dialog hiển thị và chỉnh sửa profile nhân viên
- * @param {boolean} isOpen - Trạng thái mở/đóng dialog
- * @param {Function} onClose - Hàm đóng dialog
- * @param {Function} onSubmit - Hàm xử lý submit form
- * @param {Object} employeeData - Dữ liệu nhân viên (null nếu thêm mới)
- * @param {string} mode - 'view' | 'edit' | 'add'
- * @param {boolean} isLoading - Trạng thái loading
- * @param {boolean} canEdit - Quyền chỉnh sửa (admin/manager hoặc chính nhân viên đó)
- */
 const EmployeeProfileDialog = ({
   isOpen,
   onClose,
@@ -21,13 +11,16 @@ const EmployeeProfileDialog = ({
   canEdit = false,
 }) => {
   const fileInputRef = useRef(null);
+
   const [isEditMode, setIsEditMode] = useState(
     mode === "edit" || mode === "add",
   );
   const [avatarPreview, setAvatarPreview] = useState(null);
+  const [errors, setErrors] = useState({});
+
   const [formData, setFormData] = useState({
     fullName: "",
-    position: "Nhân Viên",
+    position: "Nhân Viên Lễ Tân",
     salary: "",
     phone: "",
     citizenId: "",
@@ -39,109 +32,233 @@ const EmployeeProfileDialog = ({
     isActive: true,
   });
 
-  // Reset form khi dialog mở/đóng hoặc data thay đổi
+  // Reset form khi dialog mở hoặc dữ liệu nhân viên thay đổi
   useEffect(() => {
-    if (isOpen) {
-      if (employeeData) {
-        setFormData({
-          fullName: employeeData.fullName || "",
-          position: employeeData.position || "Nhân Viên",
-          salary: employeeData.salary || "",
-          phone: employeeData.phone || "",
-          citizenId: employeeData.citizenId || "",
-          dateOfBirth: employeeData.dateOfBirth || "",
-          gender: employeeData.gender || "Male",
-          address: employeeData.address || "",
-          email: employeeData.email || "",
-          avatar: employeeData.avatar || "",
-          isActive: employeeData.isActive ?? true,
-        });
-        setAvatarPreview(employeeData.avatar);
-      } else {
-        // Reset form cho chế độ thêm mới
-        setFormData({
-          fullName: "",
-          position: "Nhân Viên Lễ Tân",
-          salary: "",
-          phone: "",
-          citizenId: "",
-          dateOfBirth: "",
-          gender: "Male",
-          address: "",
-          email: "",
-          avatar: "",
-          isActive: true,
-        });
-        setAvatarPreview(null);
-      }
-      setIsEditMode(mode === "edit" || mode === "add");
+    if (!isOpen) return;
+
+    if (employeeData) {
+      setFormData({
+        fullName: employeeData.fullName || "",
+        position: employeeData.position || "Nhân Viên Lễ Tân",
+        salary: employeeData.salary ?? "",
+        phone: employeeData.phone || "",
+        citizenId: employeeData.citizenId || "",
+        dateOfBirth: employeeData.dateOfBirth || "",
+        gender: employeeData.gender || "Nam",
+        address: employeeData.address || "",
+        email: employeeData.email || "",
+        avatar: employeeData.avatar || "",
+        isActive: employeeData.isActive ?? true,
+      });
+
+      setAvatarPreview(employeeData.avatar || null);
+    } else {
+      setFormData({
+        fullName: "",
+        position: "Nhân Viên Lễ Tân",
+        salary: "",
+        phone: "",
+        citizenId: "",
+        dateOfBirth: "",
+        gender: "Nam",
+        address: "",
+        email: "",
+        avatar: "",
+        isActive: true,
+      });
+
+      setAvatarPreview(null);
     }
+
+    setErrors({});
+    setIsEditMode(mode === "edit" || mode === "add");
   }, [isOpen, employeeData, mode]);
 
   // Xử lý thay đổi input
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
+
     setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
+
+    if (errors[name]) {
+      setErrors((prev) => ({
+        ...prev,
+        [name]: "",
+      }));
+    }
   };
 
   // Xử lý upload avatar
   const handleAvatarChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      // Validate file type
-      if (!file.type.startsWith("image/")) {
-        alert("Vui lòng chọn file ảnh!");
-        return;
-      }
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        alert("Kích thước ảnh không được vượt quá 5MB!");
-        return;
-      }
+    const allowedTypes = ["image/jpeg", "image/png", "image/gif"];
 
-      // Preview ảnh
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setAvatarPreview(reader.result);
-        setFormData((prev) => ({
-          ...prev,
-          avatar: reader.result, // Base64 string hoặc URL
-        }));
-      };
-      reader.readAsDataURL(file);
+    if (!allowedTypes.includes(file.type)) {
+      alert("Vui lòng chọn ảnh định dạng JPG, PNG hoặc GIF!");
+      e.target.value = "";
+      return;
     }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Kích thước ảnh không được vượt quá 5MB!");
+      e.target.value = "";
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onloadend = () => {
+      const result = reader.result;
+
+      setAvatarPreview(result);
+      setFormData((prev) => ({
+        ...prev,
+        avatar: result,
+      }));
+    };
+
+    reader.readAsDataURL(file);
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    // Họ tên
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = "Họ và tên không được để trống";
+    } else if (formData.fullName.trim().length > 100) {
+      newErrors.fullName = "Họ và tên không được vượt quá 100 ký tự";
+    } else if (!/^[\p{L}\s]+$/u.test(formData.fullName.trim())) {
+      newErrors.fullName = "Họ và tên chỉ được chứa chữ cái và khoảng trắng";
+    }
+
+    // Chức vụ
+    if (!formData.position.trim()) {
+      newErrors.position = "Chức vụ không được để trống";
+    } else if (formData.position.trim().length > 50) {
+      newErrors.position = "Chức vụ không được vượt quá 50 ký tự";
+    } else if (!/^[\p{L}\s]+$/u.test(formData.position.trim())) {
+      newErrors.position = "Chức vụ chỉ được chứa chữ cái và khoảng trắng";
+    }
+
+    // Lương
+    if (
+      formData.salary === "" ||
+      formData.salary === null ||
+      formData.salary === undefined
+    ) {
+      newErrors.salary = "Lương không được để trống";
+    } else {
+      const salaryText = String(formData.salary);
+      const salaryNum = Number(salaryText);
+
+      if (!Number.isFinite(salaryNum) || salaryNum < 0) {
+        newErrors.salary = "Lương không được âm";
+      } else if (!/^\d+(\.\d{1,2})?$/.test(salaryText)) {
+        newErrors.salary = "Lương có tối đa hai chữ số thập phân";
+      }
+    }
+
+    // Số điện thoại
+    if (!formData.phone.trim()) {
+      newErrors.phone = "Số điện thoại không được để trống";
+    } else if (!/^0\d{9}$/.test(formData.phone.trim())) {
+      newErrors.phone =
+        "Số điện thoại phải gồm đúng 10 chữ số và bắt đầu bằng số 0";
+    }
+
+    // CCCD
+    if (!formData.citizenId.trim()) {
+      newErrors.citizenId = "Số CCCD không được để trống";
+    } else if (!/^0\d{11}$/.test(formData.citizenId.trim())) {
+      newErrors.citizenId =
+        "Số CCCD phải gồm đúng 12 chữ số và bắt đầu bằng số 0";
+    }
+
+    // Email
+    if (!formData.email.trim()) {
+      newErrors.email = "Email không được để trống";
+    } else if (formData.email.trim().length > 100) {
+      newErrors.email = "Email không được vượt quá 100 ký tự";
+    } else if (
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())
+    ) {
+      newErrors.email = "Email không đúng định dạng";
+    }
+
+    // Ngày sinh
+    if (!formData.dateOfBirth) {
+      newErrors.dateOfBirth = "Ngày sinh không được để trống";
+    } else {
+      const dob = new Date(`${formData.dateOfBirth}T00:00:00`);
+      const today = new Date();
+
+      today.setHours(0, 0, 0, 0);
+
+      if (Number.isNaN(dob.getTime())) {
+        newErrors.dateOfBirth = "Ngày sinh không hợp lệ";
+      } else if (dob > today) {
+        newErrors.dateOfBirth = "Ngày sinh không được nằm trong tương lai";
+      } else {
+        let age = today.getFullYear() - dob.getFullYear();
+        const monthDiff = today.getMonth() - dob.getMonth();
+        const dayDiff = today.getDate() - dob.getDate();
+
+        if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
+          age--;
+        }
+
+        if (age < 18) {
+          newErrors.dateOfBirth = "Nhân viên phải đủ 18 tuổi";
+        }
+      }
+    }
+
+    // Giới tính
+    if (!formData.gender) {
+      newErrors.gender = "Giới tính không được để trống";
+    } else if (!["Nam", "Nữ", "Khác"].includes(formData.gender)) {
+      newErrors.gender = "Giới tính phải là Nam, Nữ hoặc Khác";
+    }
+
+    // Địa chỉ
+    if (
+      formData.address &&
+      formData.address.trim().length > 255
+    ) {
+      newErrors.address = "Địa chỉ không được vượt quá 255 ký tự";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   // Xử lý submit form
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Validation
-    if (!formData.fullName.trim()) {
-      alert("Vui lòng nhập tên nhân viên!");
-      return;
-    }
+    if (!validateForm()) return;
 
-    if (!formData.email.trim()) {
-      alert("Vui lòng nhập email!");
-      return;
-    }
-
-    if (!formData.phone.trim()) {
-      alert("Vui lòng nhập số điện thoại!");
-      return;
-    }
-
-    onSubmit(formData);
+    onSubmit({
+      ...formData,
+      fullName: formData.fullName.trim(),
+      position: formData.position.trim(),
+      phone: formData.phone.trim(),
+      citizenId: formData.citizenId.trim(),
+      email: formData.email.trim(),
+      address: formData.address.trim(),
+    });
   };
 
-  // Toggle edit mode
+  // Chuyển sang chế độ chỉnh sửa
   const handleToggleEdit = () => {
-    setIsEditMode(!isEditMode);
+    setIsEditMode((prev) => !prev);
+    setErrors({});
   };
 
   if (!isOpen) return null;
@@ -168,6 +285,7 @@ const EmployeeProfileDialog = ({
             <span className="material-symbols-outlined text-primary text-[28px]">
               {mode === "add" ? "person_add" : "badge"}
             </span>
+
             <div>
               <h2 className="font-headline-md text-headline-md text-on-surface">
                 {mode === "add"
@@ -176,6 +294,7 @@ const EmployeeProfileDialog = ({
                     ? "Chỉnh sửa thông tin"
                     : "Thông tin nhân viên"}
               </h2>
+
               {employeeData && (
                 <p className="font-body-sm text-body-sm text-on-surface-variant">
                   ID: #{employeeData.employeeId}
@@ -185,9 +304,10 @@ const EmployeeProfileDialog = ({
           </div>
 
           <div className="flex items-center gap-space-sm">
-            {/* Toggle Edit Button */}
+            {/* Nút chỉnh sửa */}
             {mode === "view" && canEdit && !isEditMode && (
               <button
+                type="button"
                 onClick={handleToggleEdit}
                 className={cn(
                   "flex items-center gap-space-xs px-space-md py-space-sm rounded-lg",
@@ -202,10 +322,12 @@ const EmployeeProfileDialog = ({
               </button>
             )}
 
-            {/* Close Button */}
+            {/* Nút đóng */}
             <button
+              type="button"
               onClick={onClose}
               className="p-space-sm rounded-lg hover:bg-surface-container-high transition-colors"
+              aria-label="Đóng"
             >
               <span className="material-symbols-outlined text-on-surface text-[24px]">
                 close
@@ -216,61 +338,68 @@ const EmployeeProfileDialog = ({
 
         {/* Form Content */}
         <form onSubmit={handleSubmit} className="p-space-lg space-y-space-lg">
-          {/* Avatar Section */}
-          <div className="flex flex-col items-center gap-space-md pb-space-lg border-b border-outline-variant">
-            <div className="relative">
-              <img
-                src={
-                  avatarPreview ||
-                  formData.avatar ||
-                  "@/assets\images\profileNam.jpg"
-                }
-                alt="Avatar"
-                className="w-32 h-32 rounded-full object-cover ring-4 ring-primary/20"
-                onError={(e) => {
-                  e.target.src = "@/assets\images\profileNam.jpg";
-                }}
-              />
+          {/* Avatar: ẩn khi thêm nhân viên mới */}
+          {mode !== "add" && (
+            <div className="flex flex-col items-center gap-space-md pb-space-lg border-b border-outline-variant">
+              <div className="relative">
+                <img
+                  src={
+                    avatarPreview ||
+                    formData.avatar ||
+                    "/avatars/default-male.png"
+                  }
+                  alt={`Ảnh đại diện ${formData.fullName || "nhân viên"}`}
+                  className="w-32 h-32 rounded-full object-cover ring-4 ring-primary/20"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = "/avatars/default-male.png";
+                  }}
+                />
+
+                {isEditMode && (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className={cn(
+                      "absolute bottom-0 right-0 p-space-sm rounded-full",
+                      "bg-primary text-on-primary shadow-lg",
+                      "hover:bg-primary/90 transition-colors",
+                    )}
+                  >
+                    <span className="material-symbols-outlined text-[20px]">
+                      photo_camera
+                    </span>
+                  </button>
+                )}
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/gif"
+                  className="hidden"
+                  onChange={handleAvatarChange}
+                  disabled={!isEditMode}
+                />
+              </div>
+
               {isEditMode && (
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className={cn(
-                    "absolute bottom-0 right-0 p-space-sm rounded-full",
-                    "bg-primary text-on-primary shadow-lg",
-                    "hover:bg-primary/90 transition-colors",
-                  )}
-                >
-                  <span className="material-symbols-outlined text-[20px]">
-                    photo_camera
-                  </span>
-                </button>
+                <p className="font-body-sm text-body-sm text-on-surface-variant text-center">
+                  Click vào icon camera để thay đổi ảnh đại diện
+                  <br />
+                  (Tối đa 5MB, định dạng: JPG, PNG, GIF)
+                </p>
               )}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleAvatarChange}
-                disabled={!isEditMode}
-              />
             </div>
-            {isEditMode && (
-              <p className="font-body-sm text-body-sm text-on-surface-variant text-center">
-                Click vào icon camera để thay đổi ảnh đại diện
-                <br />
-                (Tối đa 5MB, định dạng: JPG, PNG, GIF)
-              </p>
-            )}
-          </div>
+          )}
 
           {/* Form Fields Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-space-md">
-            {/* Tên nhân viên */}
+            {/* Họ tên */}
             <div className="space-y-space-xs">
               <label className="font-label-md text-label-md text-on-surface font-semibold">
                 Họ và tên <span className="text-error">*</span>
               </label>
+
               <input
                 type="text"
                 name="fullName"
@@ -284,10 +413,14 @@ const EmployeeProfileDialog = ({
                   "focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent",
                   "disabled:opacity-60 disabled:cursor-not-allowed",
                   "transition-all",
+                  errors.fullName && "border-error",
                 )}
                 placeholder="Nhập họ và tên"
-                required
               />
+
+              {errors.fullName && (
+                <p className="text-error text-sm">{errors.fullName}</p>
+              )}
             </div>
 
             {/* Chức vụ */}
@@ -295,6 +428,7 @@ const EmployeeProfileDialog = ({
               <label className="font-label-md text-label-md text-on-surface font-semibold">
                 Chức vụ <span className="text-error">*</span>
               </label>
+
               <select
                 name="position"
                 value={formData.position}
@@ -307,8 +441,8 @@ const EmployeeProfileDialog = ({
                   "focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent",
                   "disabled:opacity-60 disabled:cursor-not-allowed",
                   "transition-all",
+                  errors.position && "border-error",
                 )}
-                required
               >
                 <option value="Nhân Viên Lễ Tân">Nhân Viên Lễ Tân</option>
                 <option value="Nhân Viên Kỹ Thuật">Nhân Viên Kỹ Thuật</option>
@@ -316,6 +450,10 @@ const EmployeeProfileDialog = ({
                 <option value="Nhân Viên Bếp">Nhân Viên Bếp</option>
                 <option value="Quản Lý Khách Sạn">Quản Lý Khách Sạn</option>
               </select>
+
+              {errors.position && (
+                <p className="text-error text-sm">{errors.position}</p>
+              )}
             </div>
 
             {/* Email */}
@@ -323,6 +461,7 @@ const EmployeeProfileDialog = ({
               <label className="font-label-md text-label-md text-on-surface font-semibold">
                 Email <span className="text-error">*</span>
               </label>
+
               <input
                 type="email"
                 name="email"
@@ -336,10 +475,15 @@ const EmployeeProfileDialog = ({
                   "focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent",
                   "disabled:opacity-60 disabled:cursor-not-allowed",
                   "transition-all",
+                  errors.email && "border-error",
                 )}
                 placeholder="email@example.com"
-                required
+                maxLength={100}
               />
+
+              {errors.email && (
+                <p className="text-error text-sm">{errors.email}</p>
+              )}
             </div>
 
             {/* Số điện thoại */}
@@ -347,6 +491,7 @@ const EmployeeProfileDialog = ({
               <label className="font-label-md text-label-md text-on-surface font-semibold">
                 Số điện thoại <span className="text-error">*</span>
               </label>
+
               <input
                 type="tel"
                 name="phone"
@@ -360,17 +505,24 @@ const EmployeeProfileDialog = ({
                   "focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent",
                   "disabled:opacity-60 disabled:cursor-not-allowed",
                   "transition-all",
+                  errors.phone && "border-error",
                 )}
                 placeholder="0123456789"
-                required
+                maxLength={10}
               />
+
+              {errors.phone && (
+                <p className="text-error text-sm">{errors.phone}</p>
+              )}
             </div>
 
             {/* CCCD */}
             <div className="space-y-space-xs">
               <label className="font-label-md text-label-md text-on-surface font-semibold">
-                Căn cước công dân (CCCD)
+                Căn cước công dân (CCCD){" "}
+                <span className="text-error">*</span>
               </label>
+
               <input
                 type="text"
                 name="citizenId"
@@ -384,16 +536,23 @@ const EmployeeProfileDialog = ({
                   "focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent",
                   "disabled:opacity-60 disabled:cursor-not-allowed",
                   "transition-all",
+                  errors.citizenId && "border-error",
                 )}
                 placeholder="001234567890"
+                maxLength={12}
               />
+
+              {errors.citizenId && (
+                <p className="text-error text-sm">{errors.citizenId}</p>
+              )}
             </div>
 
             {/* Ngày sinh */}
             <div className="space-y-space-xs">
               <label className="font-label-md text-label-md text-on-surface font-semibold">
-                Ngày sinh
+                Ngày sinh <span className="text-error">*</span>
               </label>
+
               <input
                 type="date"
                 name="dateOfBirth"
@@ -407,15 +566,21 @@ const EmployeeProfileDialog = ({
                   "focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent",
                   "disabled:opacity-60 disabled:cursor-not-allowed",
                   "transition-all",
+                  errors.dateOfBirth && "border-error",
                 )}
               />
+
+              {errors.dateOfBirth && (
+                <p className="text-error text-sm">{errors.dateOfBirth}</p>
+              )}
             </div>
 
             {/* Giới tính */}
             <div className="space-y-space-xs">
               <label className="font-label-md text-label-md text-on-surface font-semibold">
-                Giới tính
+                Giới tính <span className="text-error">*</span>
               </label>
+
               <select
                 name="gender"
                 value={formData.gender}
@@ -428,19 +593,25 @@ const EmployeeProfileDialog = ({
                   "focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent",
                   "disabled:opacity-60 disabled:cursor-not-allowed",
                   "transition-all",
+                  errors.gender && "border-error",
                 )}
               >
-                <option value="Male">Nam</option>
-                <option value="Female">Nữ</option>
-                <option value="Other">Khác</option>
+                <option value="Nam">Nam</option>
+                <option value="Nữ">Nữ</option>
+                <option value="Khác">Khác</option>
               </select>
+
+              {errors.gender && (
+                <p className="text-error text-sm">{errors.gender}</p>
+              )}
             </div>
 
             {/* Lương */}
             <div className="space-y-space-xs">
               <label className="font-label-md text-label-md text-on-surface font-semibold">
-                Lương (VNĐ)
+                Lương (VNĐ) <span className="text-error">*</span>
               </label>
+
               <input
                 type="number"
                 name="salary"
@@ -454,24 +625,31 @@ const EmployeeProfileDialog = ({
                   "focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent",
                   "disabled:opacity-60 disabled:cursor-not-allowed",
                   "transition-all",
+                  errors.salary && "border-error",
                 )}
                 placeholder="10000000"
                 min="0"
-                step="100000"
+                step="0.01"
               />
+
+              {errors.salary && (
+                <p className="text-error text-sm">{errors.salary}</p>
+              )}
             </div>
 
-            {/* Địa chỉ - Full width */}
+            {/* Địa chỉ */}
             <div className="space-y-space-xs md:col-span-2">
               <label className="font-label-md text-label-md text-on-surface font-semibold">
                 Địa chỉ
               </label>
+
               <textarea
                 name="address"
                 value={formData.address}
                 onChange={handleInputChange}
                 disabled={!isEditMode}
-                rows="3"
+                rows={3}
+                maxLength={255}
                 className={cn(
                   "w-full px-space-md py-space-sm rounded-lg",
                   "bg-surface-container-highest border border-outline",
@@ -479,35 +657,44 @@ const EmployeeProfileDialog = ({
                   "focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent",
                   "disabled:opacity-60 disabled:cursor-not-allowed",
                   "transition-all resize-none",
+                  errors.address && "border-error",
                 )}
                 placeholder="Nhập địa chỉ đầy đủ"
               />
+
+              {errors.address && (
+                <p className="text-error text-sm">{errors.address}</p>
+              )}
             </div>
 
-            {/* Trạng thái làm việc */}
-            <div className="space-y-space-xs md:col-span-2">
-              <label className="flex items-center gap-space-sm cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="isActive"
-                  checked={formData.isActive}
-                  onChange={handleInputChange}
-                  disabled={!isEditMode}
-                  className={cn(
-                    "w-5 h-5 rounded border-2 border-outline",
-                    "text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2",
-                    "disabled:opacity-60 disabled:cursor-not-allowed",
-                    "transition-all",
-                  )}
-                />
-                <span className="font-label-md text-label-md text-on-surface font-semibold">
-                  Đang làm việc
-                </span>
-              </label>
-              <p className="font-body-sm text-body-sm text-on-surface-variant ml-7">
-                Bỏ chọn nếu nhân viên đã nghỉ việc
-              </p>
-            </div>
+            {/* Trạng thái làm việc: ẩn khi thêm nhân viên mới */}
+            {mode !== "add" && (
+              <div className="space-y-space-xs md:col-span-2">
+                <label className="flex items-center gap-space-sm cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="isActive"
+                    checked={formData.isActive}
+                    onChange={handleInputChange}
+                    disabled={!isEditMode}
+                    className={cn(
+                      "w-5 h-5 rounded border-2 border-outline",
+                      "text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2",
+                      "disabled:opacity-60 disabled:cursor-not-allowed",
+                      "transition-all",
+                    )}
+                  />
+
+                  <span className="font-label-md text-label-md text-on-surface font-semibold">
+                    Đang làm việc
+                  </span>
+                </label>
+
+                <p className="font-body-sm text-body-sm text-on-surface-variant ml-7">
+                  Bỏ chọn nếu nhân viên đã nghỉ việc
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Action Buttons */}
@@ -527,6 +714,7 @@ const EmployeeProfileDialog = ({
               >
                 Hủy
               </button>
+
               <button
                 type="submit"
                 disabled={isLoading}

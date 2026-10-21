@@ -9,8 +9,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.hotel.models.dto.request.EmployeeCreateRequest;
+import com.example.hotel.models.dto.response.ApiResponse;
 import com.example.hotel.models.dto.response.EmployeeResponse;
 import com.example.hotel.services.IEmployeeService;
+
+import jakarta.validation.Valid;
+
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +26,7 @@ import lombok.RequiredArgsConstructor;
 @CrossOrigin(origins = { "http://localhost:5173" })
 @RequiredArgsConstructor
 public class EmployeeController {
-    private final IEmployeeService _EmployeeService;
+    private final IEmployeeService employeeService;
 
     @GetMapping
     public Page<EmployeeResponse> getEmployees(
@@ -31,7 +35,7 @@ public class EmployeeController {
             @RequestParam(required = false) String search,
             @RequestParam(required = false) Boolean isActive,
             @RequestParam(required = false) String position) {
-        return _EmployeeService.getEmployees(
+        return employeeService.getEmployees(
                 page,
                 size,
                 search,
@@ -39,10 +43,18 @@ public class EmployeeController {
                 position);
     }
 
+    /**
+     * UC-EMP-001: Thêm nhân viên mới
+     * POST /api/employees
+     */
     @PostMapping
-    public ResponseEntity<EmployeeResponse> createEmloyee(
-            @RequestBody EmployeeCreateRequest request) {
-        EmployeeResponse response = _EmployeeService.createEmployee(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    public ResponseEntity<ApiResponse<EmployeeResponse>> createEmployee(
+            @Valid @RequestBody EmployeeCreateRequest request) {
+        
+        EmployeeResponse response = employeeService.createEmployee(request);
+        
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+            ApiResponse.success(HttpStatus.CREATED.value(), response, "Thêm nhân viên thành công")
+        );
     }
 }

@@ -4,15 +4,11 @@ import { cn } from '@/utils/lib/util';
 const CustomerTable = ({ customers, onEdit, onDelete, isLoading }) => {
   // Icon giới tính
   const getGenderIcon = (gender) => {
-    if (gender === 'Male') return 'male';
-    if (gender === 'Female') return 'female';
+    if (gender === 'Nam') return 'male';
+    if (gender === 'Nữ') return 'female';
     return 'transgender';
   };
-  const getFormatGender = (gender) => {
-    if(gender === 'Male') return 'Nam';
-    if(gender == 'Female') return 'Nữ'
-    return 'transgender';
-  }
+  
   // Badge màu cho quốc tịch
   const getNationalityBadge = (nationality) => {
     if (nationality === 'Việt Nam') {
@@ -156,14 +152,14 @@ const CustomerTable = ({ customers, onEdit, onDelete, isLoading }) => {
                 <div className="flex items-center gap-space-xs">
                   <span className={cn(
                     'material-symbols-outlined text-[20px]',
-                    customer.gender === 'Male' ? 'text-primary' : 
-                    customer.gender === 'Female' ? 'text-error' : 
+                    customer.gender === 'Nam' ? 'text-primary' : 
+                    customer.gender === 'Nữ' ? 'text-error' : 
                     'text-on-surface-variant'
                   )}>
                     {getGenderIcon(customer.gender)}
                   </span>
                   <span className="font-body-md text-body-md text-on-surface">
-                    {getFormatGender(customer.gender) || '-'}
+                    {customer.gender}
                   </span>
                 </div>
               </td>
