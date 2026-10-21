@@ -70,12 +70,19 @@ apiClient.interceptors.response.use(
 
 export const roomTypeAPI = {
   /**
-   * Lấy danh sách tất cả loại phòng
-   * GET /api/roomtype
+   * UC-RTY-004: Lấy danh sách loại phòng với phân trang
+   * GET /api/roomTypes?page=0&size=16
+   * 
+   * @param {Object} params - Tham số phân trang
+   * @param {number} params.page - Số trang (bắt đầu từ 0)
+   * @param {number} params.size - Số bản ghi mỗi trang
+   * @returns {Promise<ApiResponse<Page<RoomTypeResponse>>>}
    */
-  getAll: async () => {
+  getAll: async ({ page = 0, size = 16 } = {}) => {
     try {
-      const response = await apiClient.get("/roomTypes");
+      const response = await apiClient.get("/roomTypes", {
+        params: { page, size }
+      });
       return response.data;
     } catch (error) {
       throw error;
@@ -84,7 +91,10 @@ export const roomTypeAPI = {
 
   /**
    * Lấy chi tiết loại phòng theo ID
-   * GET /api/roomtype/{id}
+   * GET /api/roomTypes/{id}
+   * 
+   * @param {number} id - ID loại phòng
+   * @returns {Promise<ApiResponse<RoomTypeResponse>>}
    */
   getById: async (id) => {
     try {
@@ -96,15 +106,16 @@ export const roomTypeAPI = {
   },
 
   /**
-   * Tạo loại phòng mới
-   * POST /api/roomtype
+   * UC-RTY-001: Tạo loại phòng mới
+   * POST /api/roomTypes
    *
    * @param {Object} data - Dữ liệu loại phòng
-   * @param {string} data.TenLPH - Tên loại phòng
-   * @param {number} data.SoGiuong - Số giường
-   * @param {number} data.SoNguoiToiDa - Số người tối đa
-   * @param {number} data.GiaNgay - Giá ngày
-   * @param {number} data.GiaGio - Giá giờ
+   * @param {string} data.roomTypeName - Tên loại phòng (max 100 chars, chỉ chữ cái + khoảng trắng)
+   * @param {number} data.numberOfBeds - Số giường [1-10]
+   * @param {number} data.maximumOccupancy - Số người tối đa [2-20]
+   * @param {number} data.dailyRate - Giá ngày (>=0, max 2 chữ số thập phân)
+   * @param {number} data.hourlyRate - Giá giờ (>=0, max 2 chữ số thập phân)
+   * @returns {Promise<ApiResponse<RoomTypeResponse>>}
    */
   create: async (data) => {
     try {
@@ -116,8 +127,12 @@ export const roomTypeAPI = {
   },
 
   /**
-   * Cập nhật loại phòng
-   * PUT /api/roomtype/{id}
+   * UC-RTY-002: Cập nhật loại phòng
+   * PUT /api/roomTypes/{id}
+   * 
+   * @param {number} id - ID loại phòng
+   * @param {Object} data - Dữ liệu cập nhật
+   * @returns {Promise<ApiResponse<RoomTypeResponse>>}
    */
   update: async (id, data) => {
     try {
@@ -129,8 +144,13 @@ export const roomTypeAPI = {
   },
 
   /**
-   * Xóa loại phòng
-   * DELETE /api/roomtype/{id}
+   * UC-RTY-003: Xóa loại phòng
+   * DELETE /api/roomTypes/{id}
+   * 
+   * Chỉ xóa được nếu không có phòng nào đang sử dụng loại phòng này
+   * 
+   * @param {number} id - ID loại phòng
+   * @returns {Promise<ApiResponse<void>>}
    */
   delete: async (id) => {
     try {

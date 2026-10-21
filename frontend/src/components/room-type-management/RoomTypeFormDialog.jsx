@@ -8,39 +8,35 @@ const RoomTypeFormDialog = ({
   roomTypeData,
   isLoading,
 }) => {
-  const [formData, setFormData] = useState({
-    room_type_name: "",
-    number_of_beds: 1,
-    maximum_occupancy: 2,
-    daily_rate: 0,
-    hourly_rate: 0,
-  });
+  const initialFormData = {
+    roomTypeName: "",
+    numberOfBeds: 1,
+    maximumOccupancy: 2,
+    dailyRate: 0,
+    hourlyRate: 0,
+  };
 
+  const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState({});
 
   /**
-   * Binding dữ liệu khi mở form sửa
+   * Binding dữ liệu khi mở form thêm/sửa
    */
   useEffect(() => {
     if (!isOpen) return;
+
     if (editMode === "edit" && roomTypeData) {
       setFormData({
-        room_type_name: roomTypeData.room_type_name || "",
-        number_of_beds: roomTypeData.number_of_beds || 1,
-        maximum_occupancy: roomTypeData.maximum_occupancy || 2,
-        daily_rate: roomTypeData.daily_rate || 0,
-        hourly_rate: roomTypeData.hourly_rate || 0,
+        roomTypeName: roomTypeData.roomTypeName ?? "",
+        numberOfBeds: roomTypeData.numberOfBeds ?? 1,
+        maximumOccupancy: roomTypeData.maximumOccupancy ?? 2,
+        dailyRate: roomTypeData.dailyRate ?? 0,
+        hourlyRate: roomTypeData.hourlyRate ?? 0,
       });
     } else {
-      // Reset form khi thêm mới
-      setFormData({
-        room_type_name: "",
-        number_of_beds: 1,
-        maximum_occupancy: 2,
-        daily_rate: 0,
-        hourly_rate: 0,
-      });
+      setFormData({ ...initialFormData });
     }
+
     setErrors({});
   }, [isOpen, editMode, roomTypeData]);
 
@@ -49,44 +45,99 @@ const RoomTypeFormDialog = ({
    */
   const handleChange = (e) => {
     const { name, value, type } = e.target;
+
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "number" ? parseFloat(value) || "" : value,
+      [name]:
+        type === "number"
+          ? value === ""
+            ? ""
+            : Number(value)
+          : value,
     }));
 
-    // Xóa lỗi khi user bắt đầu nhập
+    // Xóa lỗi của trường đang được chỉnh sửa
     if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
+      setErrors((prev) => ({
+        ...prev,
+        [name]: "",
+      }));
     }
   };
 
   /**
-   * Validate form
+   * Kiểm tra dữ liệu trước khi gửi lên backend
    */
   const validate = () => {
     const newErrors = {};
 
-    if (!formData.room_type_name.trim()) {
-      newErrors.room_type_name = "Vui lòng nhập tên loại phòng";
+    // Tên loại phòng
+    const roomTypeName = formData.roomTypeName.trim();
+
+    if (!roomTypeName) {
+      newErrors.roomTypeName = "Vui lòng nhập tên loại phòng";
+    } else if (roomTypeName.length > 100) {
+      newErrors.roomTypeName =
+        "Tên loại phòng không được vượt quá 100 ký tự";
+    } else if (!/^[\p{L}]+(?:\s+[\p{L}]+)*$/u.test(roomTypeName)) {
+      newErrors.roomTypeName =
+        "Tên loại phòng chỉ được chứa chữ cái và khoảng trắng giữa các từ";
     }
 
-    if (formData.number_of_beds < 1) {
-      newErrors.number_of_beds = "Số giường phải lớn hơn 0";
+    // Số giường: số nguyên từ 1 đến 10
+    if (
+      formData.numberOfBeds === "" ||
+      !Number.isInteger(formData.numberOfBeds) ||
+      formData.numberOfBeds < 1 ||
+      formData.numberOfBeds > 10
+    ) {
+      newErrors.numberOfBeds =
+        "Số giường phải là số nguyên từ 1 đến 10";
     }
 
-    if (formData.maximum_occupancy < 1) {
-      newErrors.maximum_occupancy = "Số người tối đa phải lớn hơn 0";
+    // Sức chứa: số nguyên từ 2 đến 20
+    if (
+      formData.maximumOccupancy === "" ||
+      !Number.isInteger(formData.maximumOccupancy) ||
+      formData.maximumOccupancy < 2 ||
+      formData.maximumOccupancy > 20
+    ) {
+      newErrors.maximumOccupancy =
+        "Sức chứa phải là số nguyên từ 2 đến 20 người";
     }
 
-    if (formData.daily_rate <= 0) {
-      newErrors.daily_rate = "Giá ngày phải lớn hơn 0";
+    // Giá ngày
+    if (
+      formData.dailyRate === "" ||
+      !Number.isFinite(formData.dailyRate) ||
+      formData.dailyRate < 0
+    ) {
+      newErrors.dailyRate =
+        "Giá ngày phải là số lớn hơn hoặc bằng 0";
+    } else if (
+      !/^\d+(\.\d{1,2})?$/.test(String(formData.dailyRate))
+    ) {
+      newErrors.dailyRate =
+        "Giá ngày chỉ được có tối đa 2 chữ số thập phân";
     }
 
-    if (formData.hourly_rate < 0) {
-      newErrors.hourly_rate = "Giá giờ không được âm";
+    // Giá giờ
+    if (
+      formData.hourlyRate === "" ||
+      !Number.isFinite(formData.hourlyRate) ||
+      formData.hourlyRate < 0
+    ) {
+      newErrors.hourlyRate =
+        "Giá giờ phải là số lớn hơn hoặc bằng 0";
+    } else if (
+      !/^\d+(\.\d{1,2})?$/.test(String(formData.hourlyRate))
+    ) {
+      newErrors.hourlyRate =
+        "Giá giờ chỉ được có tối đa 2 chữ số thập phân";
     }
 
     setErrors(newErrors);
+
     return Object.keys(newErrors).length === 0;
   };
 
@@ -96,28 +147,58 @@ const RoomTypeFormDialog = ({
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    if (!validate()) {
-      return;
-    }
+    if (isLoading) return;
 
-    onSubmit(formData);
+    if (!validate()) return;
+
+    onSubmit({
+      ...formData,
+      roomTypeName: formData.roomTypeName.trim(),
+    });
   };
 
   /**
    * Xử lý đóng dialog
    */
   const handleClose = () => {
-    if (!isLoading) {
-      setFormData({
-        room_type_name: "",
-        number_of_beds: 1,
-        maximum_occupancy: 2,
-        daily_rate: 0,
-        hourly_rate: 0,
-      });
-      setErrors({});
-      onClose();
-    }
+    if (isLoading) return;
+
+    setFormData({ ...initialFormData });
+    setErrors({});
+    onClose();
+  };
+
+  /**
+   * Class input dùng chung
+   */
+  const getInputClass = (fieldName) =>
+    `w-full px-space-md py-space-sm rounded-lg border
+     bg-surface-container font-body-md text-body-md text-on-surface
+     focus:outline-none focus:ring-2 focus:ring-primary
+     disabled:opacity-50 disabled:cursor-not-allowed
+     ${
+       errors[fieldName]
+         ? "border-error focus:border-error"
+         : "border-outline-variant"
+     }`;
+
+  /**
+   * Hiển thị thông báo lỗi bên dưới trường
+   */
+  const renderError = (fieldName) => {
+    if (!errors[fieldName]) return null;
+
+    return (
+      <p
+        className="mt-1 flex items-start gap-space-xs text-error font-body-sm text-body-sm"
+        role="alert"
+      >
+        <span className="material-symbols-outlined text-[16px]">
+          error
+        </span>
+        <span>{errors[fieldName]}</span>
+      </p>
+    );
   };
 
   if (!isOpen) return null;
@@ -126,28 +207,32 @@ const RoomTypeFormDialog = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-space-md bg-black/50">
       <div
         className="w-full max-w-2xl bg-surface-container-low rounded-lg shadow-xl
-                    animate-fade-in-up overflow-hidden"
+                   animate-fade-in-up overflow-hidden max-h-[90vh] overflow-y-auto"
       >
         {/* Header */}
         <div
-          className="flex items-center justify-between px-space-lg py-space-md
-                      bg-surface-container-high border-b border-outline-variant"
+          className="sticky top-0 z-10 flex items-center justify-between px-space-lg py-space-md
+                     bg-surface-container-high border-b border-outline-variant"
         >
           <div className="flex items-center gap-space-sm">
             <span className="material-symbols-outlined text-secondary text-[24px]">
               {editMode === "add" ? "add_circle" : "edit"}
             </span>
+
             <h2 className="font-headline-sm text-headline-sm text-on-surface">
               {editMode === "add"
                 ? "Thêm loại phòng mới"
                 : "Chỉnh sửa loại phòng"}
             </h2>
           </div>
+
           <button
+            type="button"
             onClick={handleClose}
             disabled={isLoading}
+            aria-label="Đóng biểu mẫu"
             className="p-space-xs rounded-lg hover:bg-surface-container-highest
-                     transition-colors disabled:opacity-50"
+                       transition-colors disabled:opacity-50"
           >
             <span className="material-symbols-outlined text-on-surface">
               close
@@ -156,210 +241,232 @@ const RoomTypeFormDialog = ({
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-space-lg space-y-space-md">
+        <form
+          onSubmit={handleSubmit}
+          noValidate
+          className="p-space-lg space-y-space-md"
+        >
           {/* Tên loại phòng */}
           <div className="space-y-space-xs">
-            <label className="flex items-center gap-space-xs font-label-lg text-label-lg text-on-surface">
+            <label
+              htmlFor="roomTypeName"
+              className="flex items-center gap-space-xs font-label-lg text-label-lg text-on-surface"
+            >
               <span className="material-symbols-outlined text-[18px]">
                 badge
               </span>
               <span>Tên loại phòng</span>
               <span className="text-error">*</span>
             </label>
+
             <input
+              id="roomTypeName"
               type="text"
-              name="room_type_name"
-              value={formData.room_type_name}
+              name="roomTypeName"
+              value={formData.roomTypeName}
               onChange={handleChange}
               disabled={isLoading}
               placeholder="Ví dụ: Phòng Deluxe, Phòng Suite..."
-              className={`w-full px-space-md py-space-sm rounded-lg border
-                       bg-surface-container font-body-md text-body-md text-on-surface
-                       focus:outline-none focus:ring-2 focus:ring-primary
-                       disabled:opacity-50 disabled:cursor-not-allowed
-                       ${errors.room_type_name ? "border-error" : "border-outline-variant"}`}
+              maxLength={100}
+              aria-invalid={Boolean(errors.roomTypeName)}
+              aria-describedby={
+                errors.roomTypeName ? "roomTypeName-error" : undefined
+              }
+              className={getInputClass("roomTypeName")}
             />
-            {errors.room_type_name && (
-              <p className="flex items-center gap-space-xs text-error font-body-sm text-body-sm">
-                <span className="material-symbols-outlined text-[16px]">
-                  error
-                </span>
-                <span>{errors.room_type_name}</span>
-              </p>
+
+            {errors.roomTypeName && (
+              <div id="roomTypeName-error">
+                {renderError("roomTypeName")}
+              </div>
             )}
           </div>
 
-          {/* Grid 2 cột cho Số giường và Số người tối đa */}
+          {/* Số giường và sức chứa */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-space-md">
             {/* Số giường */}
             <div className="space-y-space-xs">
-              <label className="flex items-center gap-space-xs font-label-lg text-label-lg text-on-surface">
+              <label
+                htmlFor="numberOfBeds"
+                className="flex items-center gap-space-xs font-label-lg text-label-lg text-on-surface"
+              >
                 <span className="material-symbols-outlined text-[18px]">
                   bed
                 </span>
                 <span>Số giường</span>
                 <span className="text-error">*</span>
               </label>
+
               <input
+                id="numberOfBeds"
                 type="number"
-                name="number_of_beds"
-                value={formData.number_of_beds}
+                name="numberOfBeds"
+                value={formData.numberOfBeds}
                 onChange={handleChange}
                 disabled={isLoading}
                 min="1"
-                className={`w-full px-space-md py-space-sm rounded-lg border
-                         bg-surface-container font-body-md text-body-md text-on-surface
-                         focus:outline-none focus:ring-2 focus:ring-primary
-                         disabled:opacity-50 disabled:cursor-not-allowed
-                         ${errors.number_of_beds ? "border-error" : "border-outline-variant"}`}
+                max="10"
+                step="1"
+                aria-invalid={Boolean(errors.numberOfBeds)}
+                aria-describedby={
+                  errors.numberOfBeds ? "numberOfBeds-error" : undefined
+                }
+                className={getInputClass("numberOfBeds")}
               />
-              {errors.number_of_beds && (
-                <p className="flex items-center gap-space-xs text-error font-body-sm text-body-sm">
-                  <span className="material-symbols-outlined text-[16px]">
-                    error
-                  </span>
-                  <span>{errors.number_of_beds}</span>
-                </p>
+
+              {errors.numberOfBeds && (
+                <div id="numberOfBeds-error">
+                  {renderError("numberOfBeds")}
+                </div>
               )}
             </div>
 
             {/* Số người tối đa */}
             <div className="space-y-space-xs">
-              <label className="flex items-center gap-space-xs font-label-lg text-label-lg text-on-surface">
+              <label
+                htmlFor="maximumOccupancy"
+                className="flex items-center gap-space-xs font-label-lg text-label-lg text-on-surface"
+              >
                 <span className="material-symbols-outlined text-[18px]">
                   group
                 </span>
                 <span>Số người tối đa</span>
                 <span className="text-error">*</span>
               </label>
+
               <input
+                id="maximumOccupancy"
                 type="number"
-                name="maximum_occupancy"
-                value={formData.maximum_occupancy}
+                name="maximumOccupancy"
+                value={formData.maximumOccupancy}
                 onChange={handleChange}
                 disabled={isLoading}
-                min="1"
-                className={`w-full px-space-md py-space-sm rounded-lg border
-                         bg-surface-container font-body-md text-body-md text-on-surface
-                         focus:outline-none focus:ring-2 focus:ring-primary
-                         disabled:opacity-50 disabled:cursor-not-allowed
-                         ${errors.maximum_occupancy ? "border-error" : "border-outline-variant"}`}
+                min="2"
+                max="20"
+                step="1"
+                aria-invalid={Boolean(errors.maximumOccupancy)}
+                aria-describedby={
+                  errors.maximumOccupancy
+                    ? "maximumOccupancy-error"
+                    : undefined
+                }
+                className={getInputClass("maximumOccupancy")}
               />
-              {errors.maximum_occupancy && (
-                <p className="flex items-center gap-space-xs text-error font-body-sm text-body-sm">
-                  <span className="material-symbols-outlined text-[16px]">
-                    error
-                  </span>
-                  <span>{errors.maximum_occupancy}</span>
-                </p>
+
+              {errors.maximumOccupancy && (
+                <div id="maximumOccupancy-error">
+                  {renderError("maximumOccupancy")}
+                </div>
               )}
             </div>
           </div>
 
-          {/* Grid 2 cột cho Giá ngày và Giá giờ */}
+          {/* Giá ngày và giá giờ */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-space-md">
             {/* Giá ngày */}
             <div className="space-y-space-xs">
-              <label className="flex items-center gap-space-xs font-label-lg text-label-lg text-on-surface">
+              <label
+                htmlFor="dailyRate"
+                className="flex items-center gap-space-xs font-label-lg text-label-lg text-on-surface"
+              >
                 <span className="material-symbols-outlined text-[18px]">
                   payments
                 </span>
                 <span>Giá ngày (VNĐ)</span>
                 <span className="text-error">*</span>
               </label>
+
               <input
+                id="dailyRate"
                 type="number"
-                name="daily_rate"
-                value={formData.daily_rate}
+                name="dailyRate"
+                value={formData.dailyRate}
                 onChange={handleChange}
                 disabled={isLoading}
-                required
                 min="0"
-                step="1"
+                step="0.01"
                 placeholder="800000"
-                className={`w-full px-space-md py-space-sm rounded-lg border
-                         bg-surface-container font-body-md text-body-md text-on-surface
-                         focus:outline-none focus:ring-2 focus:ring-primary
-                         disabled:opacity-50 disabled:cursor-not-allowed
-                         ${errors.daily_rate ? "border-error" : "border-outline-variant"}`}
+                aria-invalid={Boolean(errors.dailyRate)}
+                aria-describedby={
+                  errors.dailyRate ? "dailyRate-error" : undefined
+                }
+                className={getInputClass("dailyRate")}
               />
-              {errors.daily_rate && (
-                <p className="flex items-center gap-space-xs text-error font-body-sm text-body-sm">
-                  <span className="material-symbols-outlined text-[16px]">
-                    error
-                  </span>
-                  <span>{errors.daily_rate}</span>
-                </p>
+
+              {errors.dailyRate && (
+                <div id="dailyRate-error">
+                  {renderError("dailyRate")}
+                </div>
               )}
             </div>
 
             {/* Giá giờ */}
             <div className="space-y-space-xs">
-              <label className="flex items-center gap-space-xs font-label-lg text-label-lg text-on-surface">
+              <label
+                htmlFor="hourlyRate"
+                className="flex items-center gap-space-xs font-label-lg text-label-lg text-on-surface"
+              >
                 <span className="material-symbols-outlined text-[18px]">
                   schedule
                 </span>
                 <span>Giá giờ (VNĐ)</span>
               </label>
+
               <input
+                id="hourlyRate"
                 type="number"
-                name="hourly_rate"
-                value={formData.hourly_rate}
+                name="hourlyRate"
+                value={formData.hourlyRate}
                 onChange={handleChange}
                 disabled={isLoading}
-                required
                 min="0"
-                step="1"
+                step="0.01"
                 placeholder="100000"
-                className={`w-full px-space-md py-space-sm rounded-lg border
-                         bg-surface-container font-body-md text-body-md text-on-surface
-                         focus:outline-none focus:ring-2 focus:ring-primary
-                         disabled:opacity-50 disabled:cursor-not-allowed
-                         ${errors.hourly_rate ? "border-error" : "border-outline-variant"}`}
+                aria-invalid={Boolean(errors.hourlyRate)}
+                aria-describedby={
+                  errors.hourlyRate ? "hourlyRate-error" : undefined
+                }
+                className={getInputClass("hourlyRate")}
               />
-              {errors.hourly_rate && (
-                <p className="flex items-center gap-space-xs text-error font-body-sm text-body-sm">
-                  <span className="material-symbols-outlined text-[16px]">
-                    error
-                  </span>
-                  <span>{errors.hourly_rate}</span>
-                </p>
+
+              {errors.hourlyRate && (
+                <div id="hourlyRate-error">
+                  {renderError("hourlyRate")}
+                </div>
               )}
-              <p className="font-body-sm text-body-sm text-on-surface-variant">
-                Để trống hoặc 0 nếu không cho thuê theo giờ
-              </p>
             </div>
           </div>
 
           {/* Actions */}
           <div
             className="flex items-center justify-end gap-space-sm pt-space-md
-                        border-t border-outline-variant"
+                       border-t border-outline-variant"
           >
             <button
               type="button"
               onClick={handleClose}
               disabled={isLoading}
               className="px-space-lg py-space-sm rounded-lg font-label-lg text-label-lg
-                       text-on-surface bg-surface-container-high
-                       hover:bg-surface-container-highest transition-colors
-                       disabled:opacity-50 disabled:cursor-not-allowed"
+                         text-on-surface bg-surface-container-high
+                         hover:bg-surface-container-highest transition-colors
+                         disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Hủy
             </button>
+
             <button
               type="submit"
               disabled={isLoading}
               className="flex items-center gap-space-xs px-space-lg py-space-sm rounded-lg
-                       font-label-lg text-label-lg text-on-primary bg-primary
-                       hover:bg-primary/90 transition-colors shadow-sm
-                       disabled:opacity-50 disabled:cursor-not-allowed"
+                         font-label-lg text-label-lg text-on-primary bg-primary
+                         hover:bg-primary/90 transition-colors shadow-sm
+                         disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <>
                   <div
                     className="w-4 h-4 border-2 border-on-primary border-t-transparent
-                                rounded-full animate-spin"
+                               rounded-full animate-spin"
                   />
                   <span>Đang xử lý...</span>
                 </>
@@ -368,8 +475,11 @@ const RoomTypeFormDialog = ({
                   <span className="material-symbols-outlined text-[20px]">
                     {editMode === "add" ? "add" : "save"}
                   </span>
+
                   <span>
-                    {editMode === "add" ? "Thêm loại phòng" : "Lưu thay đổi"}
+                    {editMode === "add"
+                      ? "Thêm loại phòng"
+                      : "Lưu thay đổi"}
                   </span>
                 </>
               )}

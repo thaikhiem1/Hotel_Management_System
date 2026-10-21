@@ -44,7 +44,7 @@ const RoomTypeTable = ({ roomTypes, onEdit, onDelete, isLoading }) => {
       </div>
     );
   }
-  const getformatMaLPH = (room_type_id) => `LP${String(room_type_id).padStart(3, 0)}`;
+  const getformatMaLPH = (roomTypeId) => `LP${String(roomTypeId).padStart(3, 0)}`;
   return (
     <div className="w-full overflow-x-auto bg-surface-container-low rounded-lg border border-outline-variant">
       <table className="w-full">
@@ -80,7 +80,7 @@ const RoomTypeTable = ({ roomTypes, onEdit, onDelete, isLoading }) => {
         <tbody className="divide-y divide-outline-variant">
           {roomTypes.map((roomType) => (
             <tr
-              key={roomType.room_type_id}
+              key={roomType.roomTypeId}
               className="hover:bg-surface-container-highest transition-colors duration-150"
             >
               {/* ID Loại phòng với icon */}
@@ -92,7 +92,7 @@ const RoomTypeTable = ({ roomTypes, onEdit, onDelete, isLoading }) => {
                     </span>
                   </div>
                   <span className="font-body-md text-body-md text-on-surface font-semibold">
-                    {getformatMaLPH(roomType.room_type_id)}
+                    {getformatMaLPH(roomType.roomTypeId)}
                   </span>
                 </div>
               </td>
@@ -100,7 +100,7 @@ const RoomTypeTable = ({ roomTypes, onEdit, onDelete, isLoading }) => {
               {/* Tên loại phòng */}
               <td className="px-space-md py-space-md">
                 <span className="font-body-md text-body-md text-on-surface font-semibold">
-                  {roomType.room_type_name}
+                  {roomType.roomTypeName}
                 </span>
               </td>
 
@@ -114,7 +114,7 @@ const RoomTypeTable = ({ roomTypes, onEdit, onDelete, isLoading }) => {
                     bed
                   </span>
                   <span className="font-body-sm text-body-sm">
-                    {roomType.number_of_beds}
+                    {roomType.numberOfBeds}
                   </span>
                 </div>
               </td>
@@ -129,7 +129,7 @@ const RoomTypeTable = ({ roomTypes, onEdit, onDelete, isLoading }) => {
                     group
                   </span>
                   <span className="font-body-sm text-body-sm">
-                    {roomType.maximum_occupancy}
+                    {roomType.maximumOccupancy}
                   </span>
                 </div>
               </td>
@@ -137,14 +137,14 @@ const RoomTypeTable = ({ roomTypes, onEdit, onDelete, isLoading }) => {
               {/* Giá ngày */}
               <td className="px-space-md py-space-md text-right">
                 <span className="font-body-md text-body-md text-primary font-semibold">
-                  {formatCurrency(roomType.daily_rate)}
+                  {formatCurrency(roomType.dailyRate)}
                 </span>
               </td>
 
               {/* Giá giờ */}
               <td className="px-space-md py-space-md text-right">
                 <span className="font-body-sm text-body-sm text-on-surface-variant">
-                  {roomType.hourly_rate ? formatCurrency(roomType.hourly_rate) : "—"}
+                  {roomType.hourlyRate ? formatCurrency(roomType.hourlyRate) : "—"}
                 </span>
               </td>
 

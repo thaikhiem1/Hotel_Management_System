@@ -1,88 +1,133 @@
 package com.example.hotel.services.impl;
 
-import java.util.List;
-import org.springframework.stereotype.Service;
-import com.example.hotel.mapper.*;
+import com.example.hotel.exception.DuplicateResourceException;
+import com.example.hotel.exception.ResourceNotFoundException;
+import com.example.hotel.mapper.RoomTypeMapper;
 import com.example.hotel.models.dto.request.RoomTypeRequest;
 import com.example.hotel.models.dto.response.RoomTypeResponse;
 import com.example.hotel.models.entities.room_types;
-import com.example.hotel.repositorys.RoomTypeRepository;
 import com.example.hotel.repositorys.RoomRepository;
-import com.example.hotel.services.*;
+import com.example.hotel.repositorys.RoomTypeRepository;
+import com.example.hotel.services.IRoomTypesService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class RoomTypesService implements IRoomTypesService {
 
-    private final RoomTypeMapper _roomTypeMapper;
-    private final RoomTypeRepository _RoomTypeRepository;
-    private final RoomRepository _RoomRepository;
+    private final RoomTypeMapper roomTypeMapper;
+    private final RoomTypeRepository roomTypeRepository;
+    private final RoomRepository roomRepository;
 
-    public RoomTypesService(RoomTypeMapper roomTypeMapper, RoomTypeRepository roomTypeRepository,
+    public RoomTypesService(
+            RoomTypeMapper roomTypeMapper,
+            RoomTypeRepository roomTypeRepository,
             RoomRepository roomRepository) {
-        this._roomTypeMapper = roomTypeMapper;
-        this._RoomTypeRepository = roomTypeRepository;
-        this._RoomRepository = roomRepository;
+        this.roomTypeMapper = roomTypeMapper;
+        this.roomTypeRepository = roomTypeRepository;
+        this.roomRepository = roomRepository;
     }
 
     @Override
-    public RoomTypeResponse CreateRoomType(RoomTypeRequest request) {
-        if (_RoomTypeRepository.existsByRoomTypeName(request.getRoomTypeName())) {
-            throw new IllegalArgumentException("This room type name existed");
+    @Transactional
+    public RoomTypeResponse createRoomType(RoomTypeRequest request) {
+        // Trim và chuẩn hóa tên
+        String roomTypeName = request.getRoomTypeName().trim();
+        
+        // Kiểm tra tên chưa tồn tại
+        if (roomTypeRepository.existsByRoomTypeName(roomTypeName)) {
+            throw new DuplicateResourceException(
+                "Tên loại phòng '" + roomTypeName + "' đã tồn tại trong hệ thống",
+                "roomTypeName",
+                roomTypeName
+            );
         }
-        room_types RoomType = _roomTypeMapper.toEntities(request);
-        if (RoomType == null) {
-            return null;
-        }
-        room_types savedRoomType = _RoomTypeRepository.save(RoomType);
-        return _roomTypeMapper.toRoomTypeResponse(savedRoomType);
+
+        // Tạo entity
+        room_types roomType = roomTypeMapper.toEntities(request);
+        roomType.setRoomTypeName(roomTypeName); // Đảm bảo dùng tên đã trim
+        
+        // Lưu vào database (ID tự sinh)
+        room_types savedRoomType = roomTypeRepository.save(roomType);
+        
+        return roomTypeMapper.toRoomTypeResponse(savedRoomType);
     }
 
     @Override
-    public List<RoomTypeResponse> GetAll() {
-        return _RoomTypeRepository.findAllByOrderByRoomTypeIdAsc().stream()
-                .map(_roomTypeMapper::toRoomTypeResponse)
-                .toList();
+    @Transactional(readOnly = true)
+    public Page<RoomTypeResponse> getAllRoomTypes(Pageable pageable) {
+        Page<room_types> roomTypesPage = roomTypeRepository.findAll(pageable);
+        return roomTypesPage.map(roomTypeMapper::toRoomTypeResponse);
     }
 
     @Override
-    public RoomTypeResponse UpdateRoomType(Integer IdLPH, RoomTypeRequest request) {
-        if(IdLPH == null){
-            throw new IllegalArgumentException("Room type ID is require");
-        }
-        room_types existsRoom_types = _RoomTypeRepository.findById(IdLPH).orElseThrow(() -> {
-            throw new RuntimeException("Room type ID not exists");
-        });
-        if (!existsRoom_types.getRoomTypeName().equals(request.getRoomTypeName())
-                && _RoomTypeRepository.existsByRoomTypeName(request.getRoomTypeName())) {
-            throw new IllegalArgumentException("This room type name existed");
-        }
-        existsRoom_types.setRoomTypeName(request.getRoomTypeName());
-        existsRoom_types.setDailyRate(request.getDailyRate());
-        existsRoom_types.setHourlyRate(request.getHourlyRate());
-        existsRoom_types.setNumberOfBeds(request.getNumberOfBeds());
-        existsRoom_types.setMaximumOccupancy(request.getMaximumOccupancy());
-        room_types savedRoomType = _RoomTypeRepository.save(existsRoom_types);
-        return _roomTypeMapper.toRoomTypeResponse(savedRoomType);
+    @Transactional(readOnly = true)
+    public RoomTypeResponse getRoomTypeById(Integer id) {
+        room_types roomType = roomTypeRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException(
+                "Không tìm thấy loại phòng với ID: " + id
+            ));
+        
+        return roomTypeMapper.toRoomTypeResponse(roomType);
     }
 
     @Override
-    public void DeletedRoomType(Integer idLPH) {
-        if(idLPH == null){
-            return;
-        }
-        room_types existsRoom_types = _RoomTypeRepository.findById(idLPH).orElseThrow(() -> {
-            throw new IllegalArgumentException("Loại phòng này chưa tồn tại");
-        });
-        if(existsRoom_types == null){
-            throw new IllegalArgumentException("This room type not exists");
-        }
-        boolean existsRoom = _RoomRepository.existsByRoomTypesRoomTypeId(idLPH);
+    @Transactional
+    public RoomTypeResponse updateRoomType(Integer id, RoomTypeRequest request) {
+        // Tìm loại phòng
+        room_types existingRoomType = roomTypeRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException(
+                "Không tìm thấy loại phòng với ID: " + id
+            ));
 
-        if (existsRoom) {
-            throw new IllegalArgumentException(
-                    "Không thể xóa loại phòng vì đang có phòng sử dụng loại phòng này");
+        // Trim và chuẩn hóa tên mới
+        String newRoomTypeName = request.getRoomTypeName().trim();
+        
+        // Kiểm tra tên không trùng với loại phòng khác
+        if (!existingRoomType.getRoomTypeName().equals(newRoomTypeName) &&
+            roomTypeRepository.existsByRoomTypeName(newRoomTypeName)) {
+            throw new DuplicateResourceException(
+                "Tên loại phòng '" + newRoomTypeName + "' đã được sử dụng bởi loại phòng khác",
+                "roomTypeName",
+                newRoomTypeName
+            );
         }
 
-        _RoomTypeRepository.delete(existsRoom_types);
+        // Cập nhật thông tin
+        existingRoomType.setRoomTypeName(newRoomTypeName);
+        existingRoomType.setNumberOfBeds(request.getNumberOfBeds());
+        existingRoomType.setMaximumOccupancy(request.getMaximumOccupancy());
+        existingRoomType.setDailyRate(request.getDailyRate());
+        existingRoomType.setHourlyRate(request.getHourlyRate());
+        
+        // Lưu vào database
+        room_types updatedRoomType = roomTypeRepository.save(existingRoomType);
+        
+        return roomTypeMapper.toRoomTypeResponse(updatedRoomType);
+    }
+
+    @Override
+    @Transactional
+    public void deleteRoomType(Integer id) {
+        // Kiểm tra loại phòng tồn tại
+        room_types roomType = roomTypeRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException(
+                "Không tìm thấy loại phòng với ID: " + id
+            ));
+
+        // Kiểm tra có phòng nào đang sử dụng không
+        boolean hasRooms = roomRepository.existsByRoomTypesRoomTypeId(id);
+        
+        if (hasRooms) {
+            throw new IllegalStateException(
+                "Không thể xóa loại phòng '" + roomType.getRoomTypeName() + 
+                "' vì đang có phòng sử dụng loại phòng này"
+            );
+        }
+
+        // Xóa loại phòng
+        roomTypeRepository.delete(roomType);
     }
 }

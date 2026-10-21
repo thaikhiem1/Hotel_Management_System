@@ -20,27 +20,27 @@ const RoomTypeDeleteDialog = ({
     }).format(amount);
   };
 
-  // Map room type data to generic dialog format
+  // Map room type data to generic dialog format (camelCase fields)
   const itemDetails = [
-    { label: "Tên loại phòng", value: roomTypeData.room_type_name, highlight: true },
-    { label: "Số giường", value: roomTypeData.number_of_beds, highlight: false },
+    { label: "Tên loại phòng", value: roomTypeData.roomTypeName, highlight: true },
+    { label: "Số giường", value: roomTypeData.numberOfBeds, highlight: false },
     {
       label: "Số người tối đa",
-      value: roomTypeData.maximum_occupancy,
+      value: roomTypeData.maximumOccupancy,
       highlight: false,
     },
     {
       label: "Giá ngày",
-      value: formatCurrency(roomTypeData.daily_rate),
+      value: formatCurrency(roomTypeData.dailyRate),
       highlight: false,
     },
   ];
 
   // Add price per hour if exists
-  if (roomTypeData.hourly_rate) {
+  if (roomTypeData.hourlyRate) {
     itemDetails.push({
       label: "Giá giờ",
-      value: formatCurrency(roomTypeData.hourly_rate),
+      value: formatCurrency(roomTypeData.hourlyRate),
       highlight: false,
     });
   }

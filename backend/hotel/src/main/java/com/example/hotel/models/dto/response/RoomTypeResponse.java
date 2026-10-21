@@ -10,21 +10,21 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RoomTypeResponse {
-    @JsonProperty("room_type_id")
+    @JsonProperty("roomTypeId")
     private Integer roomTypeId;
 
-    @JsonProperty("room_type_name")
+    @JsonProperty("roomTypeName")
     private String roomTypeName;
 
-    @JsonProperty("number_of_beds")
+    @JsonProperty("numberOfBeds")
     private Integer numberOfBeds;
 
-    @JsonProperty("maximum_occupancy")
+    @JsonProperty("maximumOccupancy")
     private Integer maximumOccupancy;
 
-    @JsonProperty("daily_rate")
+    @JsonProperty("dailyRate")
     private BigDecimal dailyRate;
 
-    @JsonProperty("hourly_rate")
+    @JsonProperty("hourlyRate")
     private BigDecimal hourlyRate;
 }

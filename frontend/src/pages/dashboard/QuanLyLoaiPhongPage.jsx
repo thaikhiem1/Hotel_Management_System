@@ -16,30 +16,38 @@ const QuanLyLoaiPhongPage = () => {
   const [editMode, setEditMode] = useState('add'); 
   const [selectedRoomType, setSelectedRoomType] = useState(null);
   
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  // State phân trang (server-side)
+  const [currentPage, setCurrentPage] = useState(0); // Backend page bắt đầu từ 0
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
+  const itemsPerPage = 16; // Match backend default
   
   const [isLoading, setIsLoading] = useState(false);
   
+  // UC-RTY-004: Load dữ liệu khi component mount hoặc khi page thay đổi
   useEffect(() => {
     fetchRoomTypes();
-  }, []);
+  }, [currentPage]);
   
   const fetchRoomTypes = async () => {
     setIsLoading(true);
     try {
-      const data = await roomTypeAPI.getAll();
+      // UC-RTY-004: Xem danh sách loại phòng với phân trang
+      // Backend trả về: ApiResponse<Page<RoomTypeResponse>>
+      // axios unwrap HTTP response → response = ApiResponse object
+      // ApiResponse.data = Page object
+      const apiResponse = await roomTypeAPI.getAll({
+        page: currentPage,
+        size: itemsPerPage
+      });
+      console.log(apiResponse);
+      // apiResponse = { timestamp, status, message, data: Page {...} }
+      // Page = { content: [...], totalPages, totalElements, size, number }
+      const pageData = apiResponse.data;
       
-      const mappedData = data.map(item => ({
-        room_type_id: item.room_type_id,
-        room_type_name: item.room_type_name,
-        number_of_beds: item.number_of_beds,
-        maximum_occupancy: item.maximum_occupancy,
-        daily_rate: item.daily_rate,
-        hourly_rate: item.hourly_rate
-      }));
-      
-      setRoomTypes(mappedData);
+      setRoomTypes(pageData.content || []);
+      setTotalPages(pageData.totalPages || 0);
+      setTotalElements(pageData.totalElements || 0);
     } catch (error) {
       handleApiError(error);
     } finally {
@@ -47,29 +55,25 @@ const QuanLyLoaiPhongPage = () => {
     }
   };
 
-  // Tính toán phân trang
-  const paginatedRoomTypes = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return roomTypes.slice(startIndex, endIndex);
-  }, [roomTypes, currentPage, itemsPerPage]);
+  // Server đã xử lý phân trang, không cần slice ở client
+  const paginatedRoomTypes = roomTypes;
 
-  const totalPages = Math.ceil(roomTypes.length / itemsPerPage);
-
-  // Tính toán thống kê
+  // Tính toán thống kê (dựa trên totalElements từ server)
   const stats = useMemo(() => {
     const avgPrice = roomTypes.length > 0
-      ? roomTypes.reduce((sum, rt) => sum + rt.daily_rate, 0) / roomTypes.length
+      ? roomTypes.reduce((sum, rt) => sum + rt.dailyRate, 0) / roomTypes.length
       : 0;
     
-    const maxCapacity = Math.max(...roomTypes.map(rt => rt.maximum_occupancy), 0);
+    const maxCapacity = roomTypes.length > 0 
+      ? Math.max(...roomTypes.map(rt => rt.maximumOccupancy)) 
+      : 0;
     
     return {
-      total: roomTypes.length,
+      total: totalElements, // Tổng số từ server, không phải length của mảng local
       avgPrice: Math.round(avgPrice),
       maxCapacity
     };
-  }, [roomTypes]);
+  }, [roomTypes, totalElements]);
 
   const handleAddNew = () => {
     setEditMode('add');
@@ -83,65 +87,64 @@ const QuanLyLoaiPhongPage = () => {
     setIsFormDialogOpen(true);
   };
 
-
   const handleDelete = (roomTypeData) => {
     setSelectedRoomType(roomTypeData);
     setIsDeleteDialogOpen(true);
   };
 
+  // UC-RTY-001: Thêm loại phòng mới hoặc UC-RTY-002: Cập nhật loại phòng
   const handleSubmitForm = async (roomTypeData) => {
     setIsLoading(true);
     
     try {
       if (editMode === 'add') {
-
+        // UC-RTY-001: Thêm loại phòng mới
         const response = await roomTypeAPI.create(roomTypeData);
         
-        setRoomTypes([...roomTypes, response]);
+        showSuccess(response.message || 'Thêm loại phòng thành công');
         
-        showSuccess('add room_type success');
+        // Refresh lại trang hiện tại để hiển thị dữ liệu mới
+        await fetchRoomTypes();
       } else {
-
-        const response = await roomTypeAPI.update(selectedRoomType.room_type_id, roomTypeData);
+        // UC-RTY-002: Cập nhật loại phòng
+        const response = await roomTypeAPI.update(selectedRoomType.roomTypeId, roomTypeData);
         
-        setRoomTypes(roomTypes.map(rt => 
-          rt.room_type_id === selectedRoomType.room_type_id ? response : rt
-        ));
+        showSuccess(response.message || 'Cập nhật loại phòng thành công');
         
-        showSuccess('update room_type success!');
+        // Refresh lại dữ liệu
+        await fetchRoomTypes();
       }
 
       setIsFormDialogOpen(false);
       setSelectedRoomType(null);
           
     } catch (error) {
-      console.error('Error submitting room type:', error);
       handleApiError(error);
     } finally {
       setIsLoading(false);
     }
   };
 
+  // UC-RTY-003: Xóa loại phòng
   const handleConfirmDelete = async () => {
     setIsLoading(true);
     
     try {
-      await roomTypeAPI.delete(selectedRoomType.room_type_id);
+      const response = await roomTypeAPI.delete(selectedRoomType.roomTypeId);
       
-      setRoomTypes(roomTypes.filter(rt => rt.room_type_id !== selectedRoomType.room_type_id));
+      showSuccess(response.message || 'Xóa loại phòng thành công');
       
       setIsDeleteDialogOpen(false);
       setSelectedRoomType(null);
       
-      const newTotalPages = Math.ceil((roomTypes.length - 1) / itemsPerPage);
-      if (currentPage > newTotalPages && newTotalPages > 0) {
-        setCurrentPage(newTotalPages);
+      // Nếu xóa phần tử cuối của trang cuối, quay về trang trước
+      if (roomTypes.length === 1 && currentPage > 0) {
+        setCurrentPage(currentPage - 1);
+      } else {
+        await fetchRoomTypes();
       }
-      
-      showSuccess('delete success!');
        
     } catch (error) {
-      console.error('Error deleting room type:', error);
       handleApiError(error);
     } finally {
       setIsLoading(false);
@@ -150,6 +153,7 @@ const QuanLyLoaiPhongPage = () => {
 
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const formatCurrency = (amount) => {
@@ -239,7 +243,7 @@ const QuanLyLoaiPhongPage = () => {
 
       {/* Bảng dữ liệu loại phòng */}
       <RoomTypeTable
-        roomTypes={paginatedRoomTypes}
+        roomTypes={paginatedRoomTypes || []}
         onEdit={handleEdit}
         onDelete={handleDelete}
         isLoading={isLoading}
@@ -250,13 +254,13 @@ const QuanLyLoaiPhongPage = () => {
         <div className="flex items-center justify-between px-space-md py-space-sm
                       bg-surface-container-low rounded-lg border border-outline-variant">
           <p className="font-body-sm text-body-sm text-on-surface-variant">
-            Trang {currentPage} / {totalPages} (Tổng {roomTypes.length} loại phòng)
+            Trang {currentPage + 1} / {totalPages} (Tổng {totalElements} loại phòng)
           </p>
 
           <div className="flex items-center gap-space-xs">
             <button
               onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1 || isLoading}
+              disabled={currentPage === 0 || isLoading}
               className="p-space-xs rounded-lg hover:bg-surface-container-high
                        disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
@@ -266,9 +270,9 @@ const QuanLyLoaiPhongPage = () => {
             </button>
 
             {/* Hiển thị các số trang */}
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+            {totalPages > 0 && Array.from({ length: totalPages }, (_, i) => i).map(page => (
               <button
-                key={page}
+                key={`page-${page}`}
                 onClick={() => handlePageChange(page)}
                 disabled={isLoading}
                 className={`min-w-[32px] h-[32px] rounded-lg font-label-md text-label-md
@@ -278,13 +282,13 @@ const QuanLyLoaiPhongPage = () => {
                               : 'hover:bg-surface-container-high text-on-surface'
                           } disabled:opacity-50 disabled:cursor-not-allowed`}
               >
-                {page}
+                {page + 1}
               </button>
             ))}
 
             <button
               onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages || isLoading}
+              disabled={currentPage === totalPages - 1 || isLoading}
               className="p-space-xs rounded-lg hover:bg-surface-container-high
                        disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
