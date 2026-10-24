@@ -8,5 +8,11 @@ import java.util.List;
 public interface IServicesService {
     List<ServicesResponse> getAll();
 
+    ServicesResponse getById(Integer serviceId);
+
     ServicesResponse create(ServicesRequest request);
+
+    ServicesResponse update(Integer serviceId, ServicesRequest request);
+
+    void delete(Integer serviceId);
 }

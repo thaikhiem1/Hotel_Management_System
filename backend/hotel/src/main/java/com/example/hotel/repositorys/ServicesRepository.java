@@ -9,5 +9,7 @@ import com.example.hotel.models.entities.services;
 public interface ServicesRepository extends JpaRepository<services, Integer> {
     Boolean existsByServiceName(String servicesName);
 
+    boolean existsByServiceNameAndServiceIdNot(String serviceName, Integer serviceId);
+
     Boolean existsByCategoryServiceCategoriesId(Integer serviceCategoriesId);
 }

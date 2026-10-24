@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -18,6 +20,7 @@ import org.springframework.web.context.request.WebRequest;
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     /**
      * Handles validation errors from @Valid annotation
@@ -116,12 +119,15 @@ public class GlobalExceptionHandler {
             Exception ex,
             WebRequest request) {
 
+        String path = request.getDescription(false).replace("uri=", "");
+        logger.error("Unhandled exception while processing request {}", path, ex);
+
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .timestamp(LocalDateTime.now())
                 .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
                 .error("Internal Server Error")
                 .message("Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.")
-                .path(request.getDescription(false).replace("uri=", ""))
+                .path(path)
                 .build();
 
         return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
