@@ -11,7 +11,7 @@ import com.example.hotel.models.dto.response.AccountResponse;
 import com.example.hotel.models.dto.response.EmployeeResponse;
 import com.example.hotel.models.entities.accounts;
 import com.example.hotel.models.entities.employees;
-import com.example.hotel.repositories.AccountRepository;
+import com.example.hotel.repositorys.AccountRepository;
 import com.example.hotel.repositorys.EmployeeRepository;
 import com.example.hotel.services.IAccountService;
 import com.example.hotel.specification.AccountSpecification;
@@ -49,31 +49,28 @@ public class AccountService implements IAccountService {
     public AccountResponse createAccount(AccountCreateRequest request) {
         // Trim dữ liệu đầu vào
         String username = request.getUsername().trim();
-        String password = request.getPassword(); // Không trim password để giữ nguyên
+        String password = request.getPassword().trim();
         Integer employeeId = request.getEmployeeId();
 
         // Kiểm tra username đã tồn tại chưa
         if (accountRepository.existsByUsername(username)) {
             throw new DuplicateResourceException(
-                "Tên đăng nhập '" + username + "' đã tồn tại trong hệ thống",
-                "username",
-                username
-            );
+                    "Tên đăng nhập '" + username + "' đã tồn tại trong hệ thống",
+                    "username",
+                    username);
         }
 
         // Kiểm tra employee tồn tại
         employees employee = employeeRepository.findById(employeeId)
-            .orElseThrow(() -> new ResourceNotFoundException(
-                "Không tìm thấy nhân viên với ID: " + employeeId
-            ));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Không tìm thấy nhân viên với ID: " + employeeId));
 
         // Kiểm tra employee chưa có tài khoản
         if (accountRepository.existsByEmployee_EmployeeId(employeeId)) {
             throw new DuplicateResourceException(
-                "Nhân viên '" + employee.getFullName() + "' đã có tài khoản trong hệ thống",
-                "employeeId",
-                employeeId.toString()
-            );
+                    "Nhân viên '" + employee.getFullName() + "' đã có tài khoản trong hệ thống",
+                    "employeeId",
+                    employeeId.toString());
         }
 
         // Băm mật khẩu bằng BCrypt
@@ -83,11 +80,11 @@ public class AccountService implements IAccountService {
         accounts account = new accounts();
         account.setUsername(username);
         account.setPasswordHash(passwordHash);
-        account.setRole(Role.RECEPTIONIST); 
+        account.setRole(Role.RECEPTIONIST);
         account.setEmployee(employee);
-        account.setIsActive(true); 
+        account.setIsActive(true);
 
-        //  Lưu vào database
+        // Lưu vào database
         accounts savedAccount = accountRepository.save(account);
 
         // Chuyển đổi sang DTO và trả về
@@ -99,10 +96,10 @@ public class AccountService implements IAccountService {
     public Page<AccountResponse> getAllAccounts(Pageable pageable, Boolean isActive) {
         // Xây dựng Specification với điều kiện lọc
         Specification<accounts> spec = AccountSpecification.withFilters(isActive);
-        
+
         // Truy vấn với Specification và phân trang
         Page<accounts> accountsPage = accountRepository.findAll(spec, pageable);
-        
+
         // Chuyển đổi sang DTO
         return accountsPage.map(accountMapper::toAccountResponse);
     }
@@ -112,53 +109,68 @@ public class AccountService implements IAccountService {
     public List<EmployeeResponse> getEmployeesWithoutAccount() {
         // Lấy tất cả nhân viên đang hoạt động
         List<employees> allActiveEmployees = employeeRepository.findAll()
-            .stream()
-            .filter(employees::getIsActive)
-            .collect(Collectors.toList());
+                .stream()
+                .filter(employees::getIsActive)
+                .collect(Collectors.toList());
 
         // Lọc ra những nhân viên chưa có tài khoản và chuyển sang DTO
         return allActiveEmployees.stream()
-            .filter(employee -> !accountRepository.existsByEmployee_EmployeeId(employee.getEmployeeId()))
-            .map(employeeMapper::toEmployeeResponse)
-            .collect(Collectors.toList());
+                .filter(employee -> !accountRepository.existsByEmployee_EmployeeId(employee.getEmployeeId()))
+                .map(employeeMapper::toEmployeeResponse)
+                .collect(Collectors.toList());
     }
 
     @Override
     @Transactional
-    public AccountResponse updateAccount(String currentUsername, AccountUpdateRequest request) {
-        //Tìm tài khoản cần update
+    public AccountResponse updateAccount(
+            String currentUsername,
+            AccountUpdateRequest request) {
+
+        // Tìm tài khoản cần cập nhật
         accounts account = accountRepository.findById(currentUsername)
-            .orElseThrow(() -> new ResourceNotFoundException(
-                "Không tìm thấy tài khoản với username: " + currentUsername
-            ));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Không tìm thấy tài khoản với username: " + currentUsername));
 
         boolean isUpdated = false;
 
-        // Cập nhật password nếu có
-        if (request.getNewPassword() != null && !request.getNewPassword().isEmpty()) {
-            String newPasswordHash = passwordEncoder.encode(request.getNewPassword());
+        // Cập nhật mật khẩu nếu có yêu cầu
+        String newPassword = request.getNewPassword();
+
+        if (newPassword != null && !newPassword.isEmpty()) {
+            String newPasswordHash = passwordEncoder.encode(newPassword);
             account.setPasswordHash(newPasswordHash);
             isUpdated = true;
         }
 
-        //  Cập nhật role nếu có
-        if (request.getRole() != null) {
-            account.setRole(request.getRole());
+        // Cập nhật vai trò nếu có yêu cầu
+        Role newRole = request.getRole();
+
+        if (newRole != null) {
+            if (newRole != Role.RECEPTIONIST && newRole != Role.MANAGER) {
+                throw new IllegalArgumentException(
+                        "Role không được phép gán: " + newRole);
+            }
+
+            if (account.getRole() != newRole) {
+                account.setRole(newRole);
+                isUpdated = true;
+            }
+        }
+
+        // Cập nhật trạng thái tài khoản nếu có yêu cầu
+        Boolean newIsActive = request.getIsActive();
+
+        if (newIsActive != null && !newIsActive.equals(account.getIsActive())) {
+            account.setIsActive(newIsActive);
             isUpdated = true;
         }
 
-        // Cập nhật isActive nếu có (Khóa/Mở khóa)
-        if (request.getIsActive() != null) {
-            account.setIsActive(request.getIsActive());
-            isUpdated = true;
-        }
-
-        // Lưu nếu có thay đổi
+        // Chỉ lưu khi có thay đổi
         if (isUpdated) {
             account = accountRepository.save(account);
         }
 
-        //  Chuyển đổi sang DTO và trả về
+        // Trả về thông tin tài khoản
         return accountMapper.toAccountResponse(account);
     }
 
@@ -166,10 +178,9 @@ public class AccountService implements IAccountService {
     @Transactional(readOnly = true)
     public AccountResponse getAccountByUsername(String username) {
         accounts account = accountRepository.findById(username)
-            .orElseThrow(() -> new ResourceNotFoundException(
-                "Không tìm thấy tài khoản với username: " + username
-            ));
-        
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Không tìm thấy tài khoản với username: " + username));
+
         return accountMapper.toAccountResponse(account);
     }
 
@@ -177,7 +188,7 @@ public class AccountService implements IAccountService {
      * Verify mật khẩu
      * So sánh plain password với BCrypt hash
      * 
-     * @param rawPassword Mật khẩu plain text
+     * @param rawPassword     Mật khẩu plain text
      * @param encodedPassword Mật khẩu đã mã hóa BCrypt
      * @return true nếu khớp, false nếu không
      */

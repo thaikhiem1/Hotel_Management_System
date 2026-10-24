@@ -43,6 +43,7 @@ public class RoomTypeRequest {
     @JsonProperty("dailyRate")
     private BigDecimal dailyRate;
 
+    @NotNull(message = "Gía thuê theo giờ không được để trống")
     @DecimalMin(value = "0.0", inclusive = true, message = "Giá thuê theo giờ không được âm")
     @Digits(integer = 16, fraction = 2, message = "Giá thuê theo giờ có tối đa 2 chữ số thập phân")
     @JsonProperty("hourlyRate")

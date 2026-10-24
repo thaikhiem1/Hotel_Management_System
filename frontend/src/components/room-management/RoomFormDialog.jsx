@@ -11,7 +11,7 @@ const RoomFormDialog = ({
 }) => {
   const [formData, setFormData] = useState({
     room_code: "",
-    room_type_name: "",
+    room_type_id: "",
     room_status: "AVAILABLE",
     note: "",
   });
@@ -21,58 +21,70 @@ const RoomFormDialog = ({
   /**
    * Binding dữ liệu khi mở form sửa
    **/
-  useEffect(() => {
-    if (!isOpen) return;
+useEffect(() => {
+  if (!isOpen) return;
 
-    if (editMode === "edit" && roomData) {
-      // Ưu tiên dùng room_type_id trực tiếp từ roomData
-      let room_type_id = roomData.room_type_id ? Number(roomData.room_type_id) : "";
+  if (editMode === "edit" && roomData) {
+    // Ép kiểu an toàn, tránh bị NaN
+    let rawId = roomData.room_type_id;
+    let room_type_id =
+      rawId !== null && rawId !== undefined && !isNaN(Number(rawId))
+        ? Number(rawId)
+        : "";
 
-      // Fallback: tìm theo room_type_name nếu không có room_type_id
-      if (!room_type_id && roomData.room_type_name && roomTypeData.length > 0) {
-        const matched = roomTypeData.find(
-          (lp) => lp.room_type_name === roomData.room_type_name,
-        );
-        room_type_id = matched ? matched.room_type_id : "";
-      }
-      setFormData({
-        room_code: roomData.room_code || "",
-        room_type_id: room_type_id,
-        room_status: roomData.room_status || "AVAILABLE",
-        note: roomData.note || "",
-      });
-    } else if (editMode === "add") {
-      // Reset form khi thêm mới, chọn loại phòng đầu tiên nếu có
-      setFormData({
-        room_code: "",
-        room_type_id: roomTypeData.length > 0 ? roomTypeData[0].room_type_id : "",
-        room_status: "AVAILABLE",
-        note: "",
-      });
+    // Fallback: tìm theo room_type_name nếu không có room_type_id hợp lệ
+    if (!room_type_id && roomData.room_type_name && roomTypeData.length > 0) {
+      const matched = roomTypeData.find(
+        (lp) => lp.roomTypeName === roomData.room_type_name,
+      );
+      room_type_id = matched ? matched.roomTypeId : "";
     }
-    setErrors({});
-  }, [isOpen, editMode, roomData, roomTypeData]);
+
+    setFormData({
+      room_code: roomData.room_code || "",
+      room_type_id:
+        room_type_id !== "" && !isNaN(room_type_id) ? room_type_id : "",
+      room_status: roomData.room_status || "AVAILABLE",
+      note: roomData.note || "",
+    });
+  } else if (editMode === "add") {
+    setFormData({
+      room_code: "",
+      room_type_id: roomTypeData.length > 0 ? roomTypeData[0].roomTypeId : "",
+      room_status: "AVAILABLE",
+      note: "",
+    });
+  }
+  setErrors({});
+}, [isOpen, editMode, roomData, roomTypeData]);
 
   // Xử lý thay đổi giá trị input
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: name === "room_type_id" ? parseInt(value, 10) : value,
-    }));
+ const handleChange = (e) => {
+   const { name, value } = e.target;
 
-    // Xóa lỗi khi user bắt đầu nhập
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
-    }
-  };
+   setFormData((prev) => ({
+     ...prev,
+     [name]:
+       name === "room_type_id"
+         ? value === ""
+           ? ""
+           : isNaN(Number(value))
+             ? ""
+             : Number(value)
+         : value,
+   }));
+
+   if (errors[name]) {
+     setErrors((prev) => ({ ...prev, [name]: "" }));
+   }
+ };
 
   const validate = () => {
     const newErrors = {};
 
     if (!formData.room_code.trim()) {
       newErrors.room_code = "Vui lòng nhập mã phòng";
-    } else if (!/^[A-Z0-9]+$/i.test(formData.MaPH)) {
+    } else if (!/^[A-Z0-9]+$/i.test(formData.room_code.trim())) {
       newErrors.room_code = "Mã phòng chỉ được chứa chữ cái và số";
     }
 
@@ -214,8 +226,8 @@ const RoomFormDialog = ({
               </option>
 
               {roomTypeData.map((roomType) => (
-                <option key={roomType.room_type_id} value={roomType.room_type_id}>
-                  {roomType.room_type_name}
+                <option key={roomType.roomTypeId} value={roomType.roomTypeId}>
+                  {roomType.roomTypeName}
                 </option>
               ))}
             </select>

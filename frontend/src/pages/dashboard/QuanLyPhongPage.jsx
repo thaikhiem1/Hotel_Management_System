@@ -1,42 +1,42 @@
-import React, { useState, useEffect , useMemo } from 'react';
-import RoomTable from '@/components/room-management/RoomTable';
-import RoomFormDialog from '@/components/room-management/RoomFormDialog';
-import DeleteConfirmDialog from '@/components/room-management/DeleteConfirmDialog';
-import { roomAPI, roomTypeAPI } from '@/services/api';
-import { showSuccess, handleApiError } from '@/utils/notification';
+import React, { useState, useEffect, useMemo } from "react";
+import RoomTable from "@/components/room-management/RoomTable";
+import RoomFormDialog from "@/components/room-management/RoomFormDialog";
+import DeleteConfirmDialog from "@/components/room-management/DeleteConfirmDialog";
+import { roomAPI, roomTypeAPI } from "@/services/api";
+import { showSuccess, handleApiError } from "@/utils/notification";
 
 const QuanLyPhongPage = () => {
   // State quản lý dữ liệu phòng (sẽ được thay thế bằng API call)
   const [rooms, setRooms] = useState([]);
-  
+
   // State quản lý dialog
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  
+
   // State quản lý chế độ thêm/sửa và phòng được chọn
-  const [editMode, setEditMode] = useState('add'); // 'add' | 'edit'
+  const [editMode, setEditMode] = useState("add"); // 'add' | 'edit'
   const [selectedRoom, setSelectedRoom] = useState(null);
   // State quản lý danh sách loại phòng
   const [roomType, setRoomTypes] = useState([]);
-  
+
   // State phân trang
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
-  
+
   // State loading
   const [isLoading, setIsLoading] = useState(false);
- useEffect(() => {
+  useEffect(() => {
     fetchRooms();
     fetchRoomTypes();
   }, []);
-  
+
   const fetchRooms = async () => {
     setIsLoading(true);
     try {
       // Gọi API lấy danh sách phòng
       const data = await roomAPI.getAll();
 
-      const mappedData = data.map(item => ({
+      const mappedData = data.map((item) => ({
         room_id: item.room_id,
         room_code: item.room_code,
         room_type_id: item.room_type_id,
@@ -47,9 +47,9 @@ const QuanLyPhongPage = () => {
         note: item.note,
       }));
       setRooms(mappedData);
-      console.log('Loaded rooms :', mappedData.length);
+      console.log("Loaded rooms :", mappedData.length);
     } catch (error) {
-      console.error('Error fetching room :', error);
+      console.error("Error fetching room :", error);
       handleApiError(error);
     } finally {
       setIsLoading(false);
@@ -58,15 +58,24 @@ const QuanLyPhongPage = () => {
 
   const fetchRoomTypes = async () => {
     try {
-      const data = await roomTypeAPI.getAll();
+      const response = await roomTypeAPI.getAll();
+      const data = Array.isArray(response)
+        ? response
+        : Array.isArray(response?.content)
+          ? response.content
+          : Array.isArray(response?.data)
+            ? response.data
+            : Array.isArray(response?.data?.content)
+              ? response.data.content
+              : [];
       setRoomTypes(data);
-      console.log('Loaded room types:', data.length);
+      console.log("Loaded room types:", data.length);
     } catch (error) {
-      console.error('Error fetching room types:', error);
+      console.error("Error fetching room types:", error);
       handleApiError(error);
     }
   };
-  
+
   // Tính toán phân trang
   const paginatedRooms = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -76,13 +85,13 @@ const QuanLyPhongPage = () => {
   const totalPages = Math.ceil(rooms.length / itemsPerPage);
 
   const handleAddNew = () => {
-    setEditMode('add');
+    setEditMode("add");
     setSelectedRoom(null);
     setIsFormDialogOpen(true);
   };
-  
+
   const handleEdit = (room) => {
-    setEditMode('edit');
+    setEditMode("edit");
     setSelectedRoom(room);
     setIsFormDialogOpen(true);
   };
@@ -99,10 +108,9 @@ const QuanLyPhongPage = () => {
    * Xử lý submit form (thêm mới hoặc cập nhật)
    */
   const handleSubmitForm = async (roomData) => {
-
-    setIsLoading(true);    
+    setIsLoading(true);
     try {
-      if (editMode === 'add') {
+      if (editMode === "add") {
         // Gọi API thêm mới
         const response = await roomAPI.create(roomData);
         setRooms([...rooms, response]);
@@ -110,15 +118,15 @@ const QuanLyPhongPage = () => {
       } else {
         // Gọi API cập nhật
         const response = await roomAPI.update(selectedRoom.room_id, roomData);
-        setRooms(rooms.map(r => 
-          r.room_id === selectedRoom.room_id ? response : r
-        ));
+        setRooms(
+          rooms.map((r) => (r.room_id === selectedRoom.room_id ? response : r)),
+        );
         showSuccess("update success");
       }
       setIsFormDialogOpen(false);
       setSelectedRoom(null);
     } catch (error) {
-      console.error('Error submitting room:', error);
+      console.error("Error submitting room:", error);
       handleApiError(error);
     } finally {
       setIsLoading(false);
@@ -127,14 +135,12 @@ const QuanLyPhongPage = () => {
 
   const handleConfirmDelete = async () => {
     console.log("room_id: " + selectedRoom.room_id);
-    
+
     setIsLoading(true);
     try {
       // Gọi API xóa phòng
       await roomAPI.delete(selectedRoom.room_id);
-      setRooms(rooms.filter(r => 
-        rooms.room_id != selectedRoom.room_id
-      ));
+      setRooms(rooms.filter((r) => rooms.room_id != selectedRoom.room_id));
       setIsDeleteDialogOpen(false);
       setSelectedRoom(null);
       // Điều chỉnh trang nếu trang hiện tại không còn dữ liệu
@@ -144,7 +150,7 @@ const QuanLyPhongPage = () => {
       }
       showSuccess("delete success");
     } catch (error) {
-      console.error('Error deleting room:', error);
+      console.error("Error deleting room:", error);
       handleApiError(error);
     } finally {
       setIsLoading(false);
@@ -212,7 +218,7 @@ const QuanLyPhongPage = () => {
                 Phòng trống
               </p>
               <p className="font-headline-md text-headline-md text-on-surface">
-                {rooms.filter(r => r.room_status === "AVAILABLE").length}
+                {rooms.filter((r) => r.room_status === "AVAILABLE").length}
               </p>
             </div>
           </div>
@@ -228,7 +234,10 @@ const QuanLyPhongPage = () => {
                 Đang bảo trì
               </p>
               <p className="font-headline-md text-headline-md text-on-surface">
-                {rooms.filter(r => r.room_status === "UNDER_MAINTENANCE").length}
+                {
+                  rooms.filter((r) => r.room_status === "UNDER_MAINTENANCE")
+                    .length
+                }
               </p>
             </div>
           </div>
@@ -245,8 +254,10 @@ const QuanLyPhongPage = () => {
 
       {/* Phân trang */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between px-space-md py-space-sm
-                      bg-surface-container-low rounded-lg border border-outline-variant">
+        <div
+          className="flex items-center justify-between px-space-md py-space-sm
+                      bg-surface-container-low rounded-lg border border-outline-variant"
+        >
           <p className="font-body-sm text-body-sm text-on-surface-variant">
             Trang {currentPage} / {totalPages} (Tổng {rooms.length} phòng)
           </p>
@@ -264,7 +275,7 @@ const QuanLyPhongPage = () => {
             </button>
 
             {/* Hiển thị các số trang */}
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
               <button
                 key={page}
                 onClick={() => handlePageChange(page)}
@@ -272,8 +283,8 @@ const QuanLyPhongPage = () => {
                 className={`min-w-[32px] h-[32px] rounded-lg font-label-md text-label-md
                           transition-colors ${
                             page === currentPage
-                              ? 'bg-primary text-on-primary'
-                              : 'hover:bg-surface-container-high text-on-surface'
+                              ? "bg-primary text-on-primary"
+                              : "hover:bg-surface-container-high text-on-surface"
                           } disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 {page}
@@ -304,7 +315,7 @@ const QuanLyPhongPage = () => {
         onSubmit={handleSubmitForm}
         editMode={editMode}
         roomData={selectedRoom}
-        roomTypeData = {roomType}
+        roomTypeData={roomType}
         isLoading={isLoading}
       />
 
