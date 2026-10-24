@@ -1,6 +1,7 @@
 package com.example.hotel.services.impl;
 
 import java.time.LocalDate;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -11,10 +12,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.hotel.exception.DuplicateResourceException;
+import com.example.hotel.exception.ResourceNotFoundException;
 import com.example.hotel.mapper.EmployeeMapper;
 import com.example.hotel.models.dto.request.EmployeeCreateRequest;
+import com.example.hotel.models.dto.request.EmployeeUpdateRequest;
 import com.example.hotel.models.dto.response.EmployeeResponse;
+import com.example.hotel.models.entities.accounts;
 import com.example.hotel.models.entities.employees;
+import com.example.hotel.repositorys.AccountRepository;
 import com.example.hotel.repositorys.EmployeeRepository;
 import com.example.hotel.services.IEmployeeService;
 import com.example.hotel.specification.EmployeeSpecification;
@@ -23,10 +28,15 @@ import com.example.hotel.specification.EmployeeSpecification;
 public class EmployeeService implements IEmployeeService {
     private final EmployeeRepository employeeRepository;
     private final EmployeeMapper employeeMapper;
+    private final AccountRepository accountRepository;
 
-    public EmployeeService(EmployeeRepository employeeRepository, EmployeeMapper employeeMapper) {
+    public EmployeeService(
+            EmployeeRepository employeeRepository,
+            EmployeeMapper employeeMapper,
+            AccountRepository accountRepository) {
         this.employeeRepository = employeeRepository;
         this.employeeMapper = employeeMapper;
+        this.accountRepository = accountRepository;
     }
 
     @Override
@@ -115,9 +125,128 @@ public class EmployeeService implements IEmployeeService {
             throw new RuntimeException("Không thể lưu thông tin nhân viên. Vui lòng thử lại sau.", e);
         }
     }
+
+    @Override
+    @Transactional
+    public EmployeeResponse updateEmployee(Integer employeeId, EmployeeUpdateRequest request) {
+        employees employee = employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Không tìm thấy nhân viên với ID: " + employeeId));
+
+        String fullName = normalizeOptionalText(request.getFullName(), "Họ và tên");
+        String position = normalizeOptionalText(request.getPosition(), "Chức vụ");
+        String phone = normalizeOptionalText(request.getPhone(), "Số điện thoại");
+        String citizenId = normalizeOptionalText(request.getCitizenId(), "Số CCCD");
+        String gender = normalizeOptionalText(request.getGender(), "Giới tính");
+        String email = normalizeOptionalText(request.getEmail(), "Email");
+        String address = request.getAddress() == null ? null : request.getAddress().trim();
+        LocalDate dateOfBirth = request.getDateOfBirth();
+
+        if (dateOfBirth != null) {
+            LocalDate today = LocalDate.now();
+            if (dateOfBirth.isAfter(today)) {
+                throw new IllegalArgumentException("Ngày sinh không được nằm trong tương lai");
+            }
+            if (dateOfBirth.isAfter(today.minusYears(18))) {
+                throw new IllegalArgumentException("Nhân viên phải đủ 18 tuổi");
+            }
+        }
+
+        if (phone != null
+                && !phone.equals(employee.getPhone())
+                && employeeRepository.existsByPhoneAndEmployeeIdNot(phone, employeeId)) {
+            throw new DuplicateResourceException("Số điện thoại", phone);
+        }
+        if (citizenId != null
+                && !citizenId.equals(employee.getCitizenId())
+                && employeeRepository.existsByCitizenIdAndEmployeeIdNot(citizenId, employeeId)) {
+            throw new DuplicateResourceException("Số CCCD", citizenId);
+        }
+        if (email != null
+                && !email.equals(employee.getEmail())
+                && employeeRepository.existsByEmailAndEmployeeIdNot(email, employeeId)) {
+            throw new DuplicateResourceException("Email", email);
+        }
+
+        boolean isUpdated = false;
+        if (fullName != null && !fullName.equals(employee.getFullName())) {
+            employee.setFullName(fullName);
+            isUpdated = true;
+        }
+        if (position != null && !position.equals(employee.getPosition())) {
+            employee.setPosition(position);
+            isUpdated = true;
+        }
+        if (request.getSalary() != null && request.getSalary().compareTo(employee.getSalary()) != 0) {
+            employee.setSalary(request.getSalary());
+            isUpdated = true;
+        }
+        if (phone != null && !phone.equals(employee.getPhone())) {
+            employee.setPhone(phone);
+            isUpdated = true;
+        }
+        if (citizenId != null && !citizenId.equals(employee.getCitizenId())) {
+            employee.setCitizenId(citizenId);
+            isUpdated = true;
+        }
+        if (dateOfBirth != null && !dateOfBirth.equals(employee.getDateOfBirth())) {
+            employee.setDateOfBirth(dateOfBirth);
+            isUpdated = true;
+        }
+        if (gender != null && !gender.equals(employee.getGender())) {
+            employee.setGender(gender);
+            isUpdated = true;
+        }
+        if (address != null && !address.equals(employee.getAddress())) {
+            employee.setAddress(address);
+            isUpdated = true;
+        }
+        if (email != null && !email.equals(employee.getEmail())) {
+            employee.setEmail(email);
+            isUpdated = true;
+        }
+
+        Boolean isActive = request.getIsActive();
+        boolean activeStatusChanged = isActive != null && !isActive.equals(employee.getIsActive());
+        if (activeStatusChanged) {
+            employee.setIsActive(isActive);
+            isUpdated = true;
+        }
+
+        Optional<accounts> linkedAccount = isActive == null
+                ? Optional.empty()
+                : accountRepository.findByEmployee_EmployeeId(employeeId);
+        boolean linkedAccountStatusChanged = linkedAccount
+                .map(account -> !isActive.equals(account.getIsActive()))
+                .orElse(false);
+
+        if (!isUpdated && !linkedAccountStatusChanged) {
+            return employeeMapper.toEmployeeResponse(employee);
+        }
+
+        employees savedEmployee = isUpdated ? employeeRepository.save(employee) : employee;
+        if (linkedAccountStatusChanged) {
+            accounts account = linkedAccount.orElseThrow();
+            account.setIsActive(isActive);
+            accountRepository.save(account);
+        }
+
+        return employeeMapper.toEmployeeResponse(savedEmployee);
+    }
+
+    private String normalizeOptionalText(String value, String fieldName) {
+        if (value == null) {
+            return null;
+        }
+        String normalized = value.trim();
+        if (normalized.isEmpty()) {
+            throw new IllegalArgumentException(fieldName + " không được để trống");
+        }
+        return normalized;
+    }
     
     /**
-     * Bước 11: Lấy ảnh đại diện mặc định theo giới tính
+     * Lấy ảnh đại diện mặc định theo giới tính
      */
     private String getDefaultAvatarByGender(String gender) {
         switch (gender) {

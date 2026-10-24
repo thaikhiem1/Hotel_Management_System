@@ -13,4 +13,10 @@ public interface EmployeeRepository extends JpaRepository<employees, Integer>, J
     Boolean existsByCitizenId(String citizenId);
 
     Boolean existsByEmail(String email);
+
+    boolean existsByPhoneAndEmployeeIdNot(String phone, Integer employeeId);
+
+    boolean existsByCitizenIdAndEmployeeIdNot(String citizenId, Integer employeeId);
+
+    boolean existsByEmailAndEmployeeIdNot(String email, Integer employeeId);
 }

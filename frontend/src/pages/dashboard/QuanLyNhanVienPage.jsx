@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 
 import {
   EmployeeCard,
@@ -152,15 +152,18 @@ const QuanLyNhanVienPage = () => {
     setIsProfileDialogOpen(true);
   };
 
-  const handleSubmitForm = async (formData) => {
+  const handleSubmitForm = async (formData, submissionMode = dialogMode) => {
     setIsLoading(true);
 
     try {
-      if (dialogMode === "add") {
+      if (submissionMode === "add") {
         const response = await employeeAPI.create(formData);
         // ApiResponse structure: { status, message, data }
         showSuccess(response.message || "Thêm nhân viên thành công");
-      } else if (dialogMode === "edit") {
+      } else if (submissionMode === "edit") {
+        if (!selectedEmployee) {
+          throw new Error("Không tìm thấy nhân viên cần cập nhật");
+        }
         const response = await employeeAPI.update(selectedEmployee.employeeId, formData);
         showSuccess(response.message || "Cập nhật nhân viên thành công");
       }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/utils/lib/util";
 
 const EmployeeProfileDialog = ({
@@ -10,12 +10,9 @@ const EmployeeProfileDialog = ({
   isLoading = false,
   canEdit = false,
 }) => {
-  const fileInputRef = useRef(null);
-
   const [isEditMode, setIsEditMode] = useState(
     mode === "edit" || mode === "add",
   );
-  const [avatarPreview, setAvatarPreview] = useState(null);
   const [errors, setErrors] = useState({});
 
   const [formData, setFormData] = useState({
@@ -51,7 +48,6 @@ const EmployeeProfileDialog = ({
         isActive: employeeData.isActive ?? true,
       });
 
-      setAvatarPreview(employeeData.avatar || null);
     } else {
       setFormData({
         fullName: "",
@@ -67,7 +63,6 @@ const EmployeeProfileDialog = ({
         isActive: true,
       });
 
-      setAvatarPreview(null);
     }
 
     setErrors({});
@@ -89,40 +84,6 @@ const EmployeeProfileDialog = ({
         [name]: "",
       }));
     }
-  };
-
-  // Xử lý upload avatar
-  const handleAvatarChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const allowedTypes = ["image/jpeg", "image/png", "image/gif"];
-
-    if (!allowedTypes.includes(file.type)) {
-      alert("Vui lòng chọn ảnh định dạng JPG, PNG hoặc GIF!");
-      e.target.value = "";
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      alert("Kích thước ảnh không được vượt quá 5MB!");
-      e.target.value = "";
-      return;
-    }
-
-    const reader = new FileReader();
-
-    reader.onloadend = () => {
-      const result = reader.result;
-
-      setAvatarPreview(result);
-      setFormData((prev) => ({
-        ...prev,
-        avatar: result,
-      }));
-    };
-
-    reader.readAsDataURL(file);
   };
 
   const validateForm = () => {
@@ -175,9 +136,9 @@ const EmployeeProfileDialog = ({
     // CCCD
     if (!formData.citizenId.trim()) {
       newErrors.citizenId = "Số CCCD không được để trống";
-    } else if (!/^0\d{11}$/.test(formData.citizenId.trim())) {
+    } else if (!/^\d{12}$/.test(formData.citizenId.trim())) {
       newErrors.citizenId =
-        "Số CCCD phải gồm đúng 12 chữ số và bắt đầu bằng số 0";
+        "Số CCCD phải gồm đúng 12 chữ số";
     }
 
     // Email
@@ -244,15 +205,18 @@ const EmployeeProfileDialog = ({
 
     if (!validateForm()) return;
 
+    const editableFields = { ...formData };
+    delete editableFields.avatar;
+
     onSubmit({
-      ...formData,
+      ...editableFields,
       fullName: formData.fullName.trim(),
       position: formData.position.trim(),
       phone: formData.phone.trim(),
       citizenId: formData.citizenId.trim(),
       email: formData.email.trim(),
       address: formData.address.trim(),
-    });
+    }, mode === "add" ? "add" : "edit");
   };
 
   // Chuyển sang chế độ chỉnh sửa
@@ -338,16 +302,12 @@ const EmployeeProfileDialog = ({
 
         {/* Form Content */}
         <form onSubmit={handleSubmit} className="p-space-lg space-y-space-lg">
-          {/* Avatar: ẩn khi thêm nhân viên mới */}
+          {/* Avatar is display-only; it is hidden when adding an employee. */}
           {mode !== "add" && (
             <div className="flex flex-col items-center gap-space-md pb-space-lg border-b border-outline-variant">
               <div className="relative">
                 <img
-                  src={
-                    avatarPreview ||
-                    formData.avatar ||
-                    "/avatars/default-male.png"
-                  }
+                  src={formData.avatar || "/avatars/default-male.png"}
                   alt={`Ảnh đại diện ${formData.fullName || "nhân viên"}`}
                   className="w-32 h-32 rounded-full object-cover ring-4 ring-primary/20"
                   onError={(e) => {
@@ -355,38 +315,11 @@ const EmployeeProfileDialog = ({
                     e.currentTarget.src = "/avatars/default-male.png";
                   }}
                 />
-
-                {isEditMode && (
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className={cn(
-                      "absolute bottom-0 right-0 p-space-sm rounded-full",
-                      "bg-primary text-on-primary shadow-lg",
-                      "hover:bg-primary/90 transition-colors",
-                    )}
-                  >
-                    <span className="material-symbols-outlined text-[20px]">
-                      photo_camera
-                    </span>
-                  </button>
-                )}
-
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/gif"
-                  className="hidden"
-                  onChange={handleAvatarChange}
-                  disabled={!isEditMode}
-                />
               </div>
 
               {isEditMode && (
                 <p className="font-body-sm text-body-sm text-on-surface-variant text-center">
-                  Click vào icon camera để thay đổi ảnh đại diện
-                  <br />
-                  (Tối đa 5MB, định dạng: JPG, PNG, GIF)
+                  Ảnh đại diện chỉ được xem và không thể chỉnh sửa tại đây.
                 </p>
               )}
             </div>
