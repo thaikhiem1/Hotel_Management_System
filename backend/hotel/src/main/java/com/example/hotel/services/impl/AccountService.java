@@ -107,6 +107,9 @@ public class AccountService implements IAccountService {
     @Override
     @Transactional(readOnly = true)
     public List<EmployeeResponse> getEmployeesWithoutAccount() {
+        // Lấy danh sách ID nhân viên đã có tài khoản
+        List<Integer> employeeIdsWithAccount = accountRepository.findAllEmployeeIdsWithAccount();
+
         // Lấy tất cả nhân viên đang hoạt động
         List<employees> allActiveEmployees = employeeRepository.findAll()
                 .stream()
@@ -115,7 +118,7 @@ public class AccountService implements IAccountService {
 
         // Lọc ra những nhân viên chưa có tài khoản và chuyển sang DTO
         return allActiveEmployees.stream()
-                .filter(employee -> !accountRepository.existsByEmployee_EmployeeId(employee.getEmployeeId()))
+                .filter(employee -> !employeeIdsWithAccount.contains(employee.getEmployeeId()))
                 .map(employeeMapper::toEmployeeResponse)
                 .collect(Collectors.toList());
     }
@@ -123,15 +126,38 @@ public class AccountService implements IAccountService {
     @Override
     @Transactional
     public AccountResponse updateAccount(
-            String currentUsername,
+            Integer accountId,
             AccountUpdateRequest request) {
 
+        if(accountId == null){
+                throw new IllegalArgumentException(
+                        "Tài khoản không tồn tại: " + accountId);
+        }
         // Tìm tài khoản cần cập nhật
-        accounts account = accountRepository.findById(currentUsername)
+        accounts account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "Không tìm thấy tài khoản với username: " + currentUsername));
+                        "Không tìm thấy tài khoản với ID: " + accountId));
 
         boolean isUpdated = false;
+
+        // Cập nhật username nếu có yêu cầu
+        String newUsername = request.getUsername();
+        if (newUsername != null && !newUsername.trim().isEmpty()) {
+            newUsername = newUsername.trim();
+            
+            // Chỉ kiểm tra trùng lặp nếu username mới khác với username hiện tại
+            if (!newUsername.equals(account.getUsername())) {
+                // Kiểm tra username mới đã tồn tại chưa (ngoại trừ tài khoản hiện tại)
+                if (accountRepository.existsByUsernameAndAccountIdNot(newUsername, accountId)) {
+                    throw new DuplicateResourceException(
+                            "Tên đăng nhập '" + newUsername + "' đã tồn tại trong hệ thống",
+                            "username",
+                            newUsername);
+                }
+                account.setUsername(newUsername);
+                isUpdated = true;
+            }
+        }
 
         // Cập nhật mật khẩu nếu có yêu cầu
         String newPassword = request.getNewPassword();
@@ -173,16 +199,17 @@ public class AccountService implements IAccountService {
         // Trả về thông tin tài khoản
         return accountMapper.toAccountResponse(account);
     }
-
+    
     @Override
     @Transactional(readOnly = true)
-    public AccountResponse getAccountByUsername(String username) {
-        accounts account = accountRepository.findById(username)
+    public AccountResponse getAccountById(Integer accountId) {
+        accounts account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "Không tìm thấy tài khoản với username: " + username));
+                        "Không tìm thấy tài khoản với ID: " + accountId));
 
         return accountMapper.toAccountResponse(account);
     }
+
 
     /**
      * Verify mật khẩu

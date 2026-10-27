@@ -13,41 +13,46 @@ import java.util.List;
  * Interface cho Account Service
  */
 public interface IAccountService {
-    
+
     /**
      * Tạo tài khoản mới
+     * 
      * @param request Thông tin tài khoản cần tạo
      * @return AccountResponse
      */
     AccountResponse createAccount(AccountCreateRequest request);
-    
+
     /**
-     * REQ-ACC-004: Lấy danh sách tất cả tài khoản có phân trang và lọc theo trạng thái
+     * REQ-ACC-004: Lấy danh sách tất cả tài khoản có phân trang và lọc theo trạng
+     * thái
+     * 
      * @param pageable Thông tin phân trang
      * @param isActive Trạng thái hoạt động (true/false/null)
      * @return Page<AccountResponse>
      */
     Page<AccountResponse> getAllAccounts(Pageable pageable, Boolean isActive);
-    
+
     /**
      * REQ-ACC-002: Cập nhật thông tin tài khoản và vai trò
      * REQ-ACC-003: Khóa/Mở khóa tài khoản (thông qua isActive)
      * 
-     * @param username Tên đăng nhập của tài khoản cần update
-     * @param request Thông tin cần cập nhật
+     * @param accountId Mã định danh của tài khoản cần update
+     * @param request   Thông tin cần cập nhật
      * @return AccountResponse
      */
-    AccountResponse updateAccount(String username, AccountUpdateRequest request);
-    
+    AccountResponse updateAccount(Integer accountId, AccountUpdateRequest request);
+
     /**
-     * Lấy thông tin tài khoản theo username
-     * @param username Tên đăng nhập
+     * Lấy thông tin tài khoản theo ID
+     * 
+     * @param accountId Mã định danh của tài khoản
      * @return AccountResponse
      */
-    AccountResponse getAccountByUsername(String username);
+    AccountResponse getAccountById(Integer accountId);
 
     /**
      * Lấy danh sách nhân viên chưa có tài khoản
+     * 
      * @return List<EmployeeResponse>
      */
     List<EmployeeResponse> getEmployeesWithoutAccount();

@@ -1,6 +1,7 @@
 package com.example.hotel.models.dto.request;
 
 import com.example.hotel.Enums.Role;
+
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -12,7 +13,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AccountUpdateRequest {
-    
+
     @Size(max = 50, message = "Tên đăng nhập không được vượt quá 50 ký tự")
     private String username;
     

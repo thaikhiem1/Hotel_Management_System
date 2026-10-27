@@ -19,6 +19,10 @@ import lombok.Setter;
 public class accounts {
     
     @Id
+    @Column(name = "account_id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer accountId;
+    
     @Column(name = "username", length = 50, nullable = false)
     private String username;
     

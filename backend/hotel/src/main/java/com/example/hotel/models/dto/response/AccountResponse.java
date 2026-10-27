@@ -11,7 +11,9 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public class AccountResponse {
-    
+    @JsonProperty("accountId")
+    private Integer accountId;
+
     @JsonProperty("username")
     private String username;
     

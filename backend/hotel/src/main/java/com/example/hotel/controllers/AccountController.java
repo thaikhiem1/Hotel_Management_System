@@ -28,15 +28,14 @@ public class AccountController {
     @PostMapping
     public ResponseEntity<ApiResponse<AccountResponse>> createAccount(
             @Valid @RequestBody AccountCreateRequest request) {
-        
+
         AccountResponse response = accountService.createAccount(request);
-        
+
         ApiResponse<AccountResponse> apiResponse = ApiResponse.success(
-            201,
-            response,
-            "Tạo tài khoản thành công"
-        );
-        
+                201,
+                response,
+                "Tạo tài khoản thành công");
+
         return ResponseEntity.status(HttpStatus.CREATED).body(apiResponse);
     }
 
@@ -45,57 +44,53 @@ public class AccountController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "16") int size,
             @RequestParam(required = false) Boolean isActive) {
-        
+
         Pageable pageable = PageRequest.of(page, size, Sort.by("username").ascending());
         Page<AccountResponse> accountsPage = accountService.getAllAccounts(pageable, isActive);
-        
+
         ApiResponse<Page<AccountResponse>> apiResponse = ApiResponse.success(
-            accountsPage,
-            "Lấy danh sách tài khoản thành công"
-        );
-        
+                accountsPage,
+                "Lấy danh sách tài khoản thành công");
+
         return ResponseEntity.ok(apiResponse);
     }
 
     @GetMapping("/available-employees")
     public ResponseEntity<ApiResponse<List<EmployeeResponse>>> getAvailableEmployees() {
-        
+
         List<EmployeeResponse> employees = accountService.getEmployeesWithoutAccount();
-        
+
         ApiResponse<List<EmployeeResponse>> apiResponse = ApiResponse.success(
-            employees,
-            "Lấy danh sách nhân viên chưa có tài khoản thành công"
-        );
-        
+                employees,
+                "Lấy danh sách nhân viên chưa có tài khoản thành công");
+
         return ResponseEntity.ok(apiResponse);
     }
 
-    @GetMapping("/{username}")
-    public ResponseEntity<ApiResponse<AccountResponse>> getAccountByUsername(
-            @PathVariable String username) {
-        
-        AccountResponse account = accountService.getAccountByUsername(username);
-        
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<AccountResponse>> getAccountById(
+            @PathVariable Integer id) {
+
+        AccountResponse account = accountService.getAccountById(id);
+
         ApiResponse<AccountResponse> apiResponse = ApiResponse.success(
-            account,
-            "Lấy thông tin tài khoản thành công"
-        );
-        
+                account,
+                "Lấy thông tin tài khoản thành công");
+
         return ResponseEntity.ok(apiResponse);
     }
 
-    @PutMapping("/{username}")
+    @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<AccountResponse>> updateAccount(
-            @PathVariable String username,
+            @PathVariable Integer id,
             @Valid @RequestBody AccountUpdateRequest request) {
-        
-        AccountResponse response = accountService.updateAccount(username, request);
-        
+
+        AccountResponse response = accountService.updateAccount(id, request);
+
         ApiResponse<AccountResponse> apiResponse = ApiResponse.success(
-            response,
-            "Cập nhật tài khoản thành công"
-        );
-        
+                response,
+                "Cập nhật tài khoản thành công");
+
         return ResponseEntity.ok(apiResponse);
     }
 

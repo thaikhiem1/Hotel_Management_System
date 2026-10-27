@@ -6,7 +6,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 @Repository
 public interface RoomTypeRepository extends JpaRepository<room_types, Integer> {
-        boolean existsByRoomTypeName(String roomTypeName);
+        boolean existsByRoomTypeNameIgnoreCase(String roomTypeName);
+
+        boolean existsByRoomTypeNameIgnoreCaseAndRoomTypeIdNot(
+        String roomTypeName,
+        Integer roomTypeId
+        );
 
         List<room_types> findAllByOrderByRoomTypeIdAsc();
 }
