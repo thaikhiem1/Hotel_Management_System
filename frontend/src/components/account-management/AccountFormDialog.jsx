@@ -92,7 +92,7 @@ const AccountFormDialog = ({
       ...formData,
       employeeId: parseInt(formData.employeeId, 10),
     };
-
+    
     onSubmit(submitData);
   };
 

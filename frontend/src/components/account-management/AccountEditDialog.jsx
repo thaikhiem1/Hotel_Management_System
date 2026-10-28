@@ -22,6 +22,7 @@ const AccountEditDialog = ({
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
+    username: "",
     newPassword: "",
     role: "RECEPTIONIST",
     isActive: true,
@@ -31,6 +32,7 @@ const AccountEditDialog = ({
   useEffect(() => {
     if (isOpen && account) {
       setFormData({
+        username: account.username || "",
         newPassword: "",
         role: account.role || "RECEPTIONIST",
         isActive: account.isActive ?? true,
@@ -61,6 +63,13 @@ const AccountEditDialog = ({
   const validateForm = () => {
     const newErrors = {};
 
+    // Validate username nếu có thay đổi
+    if (formData.username && formData.username.trim()) {
+      if (formData.username.length > 50) {
+        newErrors.username = "Tên đăng nhập không được vượt quá 50 ký tự";
+      }
+    }
+
     // Chỉ validate password nếu user nhập
     if (formData.newPassword && formData.newPassword.length < 6) {
       newErrors.newPassword = "Mật khẩu phải có ít nhất 6 ký tự";
@@ -88,11 +97,16 @@ const AccountEditDialog = ({
       isActive: formData.isActive,
     };
 
+    // Chỉ thêm username nếu có thay đổi
+    if (formData.username && formData.username.trim() && formData.username.trim() !== account.username) {
+      submitData.username = formData.username.trim();
+    }
+
     // Chỉ thêm password nếu user nhập
     if (formData.newPassword && formData.newPassword.trim()) {
       submitData.newPassword = formData.newPassword;
     }
-
+    console.log(formData);
     onSubmit(submitData);
   };
 
@@ -142,7 +156,7 @@ const AccountEditDialog = ({
         </div>
 
         {/* Form Content */}
-        <form onSubmit={handleSubmit} className="p-space-lg space-y-space-lg">
+        <form onSubmit={handleSubmit}  autoComplete="off" className="p-space-lg space-y-space-lg">
           {/* Thông tin nhân viên (Read-only) */}
           <div className="p-space-md rounded-lg bg-surface-container-highest border border-outline-variant">
             <div className="flex items-start gap-space-md">
@@ -180,21 +194,38 @@ const AccountEditDialog = ({
             </div>
           </div>
 
-          {/* Username (Read-only) */}
+          {/* Username (Có thể chỉnh sửa) */}
           <div className="space-y-space-xs">
             <label className="font-label-md text-label-md text-on-surface font-semibold">
               Tên đăng nhập
             </label>
-            <div className="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg bg-surface-container-highest border border-outline">
-              <span className="material-symbols-outlined text-on-surface-variant text-[20px]">
-                lock
-              </span>
-              <span className="font-body-md text-body-md text-on-surface-variant">
-                {account.username}
-              </span>
-            </div>
+            <input
+              type="text"
+              name="username"
+              autoComplete="username"
+              value={formData.username}
+              onChange={handleInputChange}
+              className={cn(
+                "w-full px-space-md py-space-sm rounded-lg",
+                "bg-surface-container-highest border border-outline",
+                "font-body-md text-body-md text-on-surface",
+                "focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent",
+                "transition-all",
+                errors.username && "border-error focus:ring-error",
+              )}
+              placeholder="Nhập tên đăng nhập"
+              maxLength={50}
+            />
+            {errors.username && (
+              <p className="font-body-sm text-body-sm text-error flex items-center gap-space-xs">
+                <span className="material-symbols-outlined text-[16px]">
+                  error
+                </span>
+                {errors.username}
+              </p>
+            )}
             <p className="font-body-sm text-body-sm text-on-surface-variant">
-              Tên đăng nhập không thể thay đổi
+              Bạn có thể thay đổi tên đăng nhập. Hệ thống sẽ kiểm tra trùng lặp.
             </p>
           </div>
 
@@ -207,6 +238,7 @@ const AccountEditDialog = ({
               <input
                 type={showPassword ? "text" : "password"}
                 name="newPassword"
+                autoComplete="new-password"
                 value={formData.newPassword}
                 onChange={handleInputChange}
                 className={cn(
@@ -263,7 +295,6 @@ const AccountEditDialog = ({
             >
               <option value="RECEPTIONIST">Nhân viên lễ tân</option>
               <option value="MANAGER">Quản lý</option>
-              <option value="ADMIN">Quản trị viên</option>
             </select>
             {errors.role && (
               <p className="font-body-sm text-body-sm text-error flex items-center gap-space-xs">

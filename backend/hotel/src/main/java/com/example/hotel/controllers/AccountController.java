@@ -45,7 +45,7 @@ public class AccountController {
             @RequestParam(defaultValue = "16") int size,
             @RequestParam(required = false) Boolean isActive) {
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by("username").ascending());
+        Pageable pageable = PageRequest.of(page, size, Sort.by("accountId").ascending());
         Page<AccountResponse> accountsPage = accountService.getAllAccounts(pageable, isActive);
 
         ApiResponse<Page<AccountResponse>> apiResponse = ApiResponse.success(

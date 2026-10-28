@@ -38,31 +38,29 @@ public class RoomTypesService implements IRoomTypesService {
     public RoomTypeResponse createRoomType(RoomTypeRequest request) {
         // Trim và chuẩn hóa tên
         String roomTypeName = request.getRoomTypeName().trim().toLowerCase(Locale.ROOT);
-        
-        // Kiểm tra giá ngày phải lớn hơn hoặc bằng giá giờ
-        if (request.getDailyRate().compareTo(request.getHourlyRate()) <= 0) {
+
+        // Giá ngày không được nhỏ hơn giá giờ (cho phép bằng nhau)
+        if (request.getDailyRate().compareTo(request.getHourlyRate()) < 0) {
             throw new IllegalArgumentException(
-                "Giá thuê theo ngày (" + request.getDailyRate() + 
-                ") không được nhỏ hơn giá thuê theo giờ (" + request.getHourlyRate() + ")"
-            );
+                    "Giá thuê theo ngày (" + request.getDailyRate() +
+                            ") không được nhỏ hơn giá thuê theo giờ (" + request.getHourlyRate() + ")");
         }
-        
+
         // Kiểm tra tên chưa tồn tại (case-insensitive)
         if (roomTypeRepository.existsByRoomTypeNameIgnoreCase(roomTypeName)) {
             throw new DuplicateResourceException(
-                "Tên loại phòng '" + roomTypeName + "' đã tồn tại trong hệ thống (không phân biệt hoa thường)",
-                "roomTypeName",
-                roomTypeName
-            );
+                    "Tên loại phòng '" + roomTypeName + "' đã tồn tại trong hệ thống (không phân biệt hoa thường)",
+                    "roomTypeName",
+                    roomTypeName);
         }
 
         // Tạo entity
         room_types roomType = roomTypeMapper.toEntities(request);
-        roomType.setRoomTypeName(roomTypeName); // Đảm bảo dùng tên đã trim
-        
+        roomType.setRoomTypeName(roomTypeName);
+
         // Lưu vào database (ID tự sinh)
         room_types savedRoomType = roomTypeRepository.save(roomType);
-        
+
         return roomTypeMapper.toRoomTypeResponse(savedRoomType);
     }
 
@@ -76,51 +74,46 @@ public class RoomTypesService implements IRoomTypesService {
     @Override
     @Transactional(readOnly = true)
     public RoomTypeResponse getRoomTypeById(Integer id) {
-        if(id == null || id <= 0){
-            throw  new IllegalArgumentException(
-                "Loại phòng có " + id + " không tồn tại"
-            );
+        if (id == null || id <= 0) {
+            throw new IllegalArgumentException(
+                    "ID loại phòng không hợp lệ: " + id);
         }
         room_types roomType = roomTypeRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException(
-                "Không tìm thấy loại phòng với ID: " + id
-            ));
-        
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Không tìm thấy loại phòng với ID: " + id));
+
         return roomTypeMapper.toRoomTypeResponse(roomType);
     }
 
     @Override
     @Transactional
     public RoomTypeResponse updateRoomType(Integer id, RoomTypeRequest request) {
-        if(id == null || id <= 0){
-            throw  new IllegalArgumentException(
-                "Loại phòng có " + id + " không tồn tại"
-            );
+        if (id == null || id <= 0) {
+            throw new IllegalArgumentException(
+                    "ID loại phòng không hợp lệ: " + id);
         }
         // Tìm loại phòng
         room_types existingRoomType = roomTypeRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException(
-                "Không tìm thấy loại phòng với ID: " + id
-            ));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Không tìm thấy loại phòng với ID: " + id));
 
         // Trim và chuẩn hóa tên mới
-        String newRoomTypeName = request.getRoomTypeName().trim();
-        
-        // Kiểm tra giá ngày phải lớn hơn hoặc bằng giá giờ
+        String newRoomTypeName = request.getRoomTypeName().trim().toLowerCase(Locale.ROOT);
+
+        // Giá ngày không được nhỏ hơn giá giờ (cho phép bằng nhau)
         if (request.getDailyRate().compareTo(request.getHourlyRate()) < 0) {
             throw new IllegalArgumentException(
-                "Giá thuê theo ngày (" + request.getDailyRate() + 
-                ") không được nhỏ hơn giá thuê theo giờ (" + request.getHourlyRate() + ")"
-            );
+                    "Giá thuê theo ngày (" + request.getDailyRate() +
+                            ") không được nhỏ hơn giá thuê theo giờ (" + request.getHourlyRate() + ")");
         }
-        
+
         // Kiểm tra tên không trùng với loại phòng khác (case-insensitive)
         if (roomTypeRepository.existsByRoomTypeNameIgnoreCaseAndRoomTypeIdNot(newRoomTypeName, id)) {
             throw new DuplicateResourceException(
-                "Tên loại phòng '" + newRoomTypeName + "' đã được sử dụng bởi loại phòng khác (không phân biệt hoa thường)",
-                "roomTypeName",
-                newRoomTypeName
-            );
+                    "Tên loại phòng '" + newRoomTypeName
+                            + "' đã được sử dụng bởi loại phòng khác (không phân biệt hoa thường)",
+                    "roomTypeName",
+                    newRoomTypeName);
         }
 
         // Cập nhật thông tin
@@ -129,37 +122,33 @@ public class RoomTypesService implements IRoomTypesService {
         existingRoomType.setMaximumOccupancy(request.getMaximumOccupancy());
         existingRoomType.setDailyRate(request.getDailyRate());
         existingRoomType.setHourlyRate(request.getHourlyRate());
-        
+
         // Lưu vào database
         room_types updatedRoomType = roomTypeRepository.save(existingRoomType);
-        
+
         return roomTypeMapper.toRoomTypeResponse(updatedRoomType);
     }
 
     @Override
     @Transactional
     public void deleteRoomType(Integer id) {
-        if(id == null || id <= 0){
-            return;
+        if (id == null || id <= 0) {
+            throw new IllegalArgumentException(
+                    "ID loại phòng không hợp lệ: " + id);
         }
         // Kiểm tra loại phòng tồn tại
         room_types roomType = roomTypeRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException(
-                "Không tìm thấy loại phòng với ID: " + id
-            ));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Không tìm thấy loại phòng với ID: " + id));
 
         // Kiểm tra có phòng nào đang sử dụng không
-        boolean hasRooms = roomRepository.existsByRoomTypesRoomTypeId(id);
-        
-        if (hasRooms) {
+        if (roomRepository.existsByRoomTypesRoomTypeId(id)) {
             throw new IllegalStateException(
-                "Không thể xóa loại phòng '" + roomType.getRoomTypeName() + 
-                "' vì đang có phòng sử dụng loại phòng này"
-            );
+                    "Không thể xóa loại phòng '" + roomType.getRoomTypeName() +
+                            "' vì đang có phòng sử dụng loại phòng này");
         }
 
         // Xóa loại phòng
         roomTypeRepository.delete(roomType);
     }
 }
-

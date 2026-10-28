@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { cn } from '@/utils/lib/util';
 
 const ServiceModal = ({ 
@@ -7,14 +7,15 @@ const ServiceModal = ({
   onSubmit, 
   serviceCategories,
   mode = 'add',
-  initialData = null
+  initialData = null,
+  isSubmitting = false,
 }) => {
   const [formData, setFormData] = useState({
-    TenDV: '',
-    IdLDV: '',
-    DonGia: '',
-    DonVi: '',
-    SLTon: ''
+    serviceName: '',
+    serviceCategoryId: '',
+    unitPrice: '',
+    unit: '',
+    stockQuantity: ''
   });
 
   const [errors, setErrors] = useState({});
@@ -22,19 +23,19 @@ const ServiceModal = ({
   useEffect(() => {
     if (mode === 'edit' && initialData) {
       setFormData({
-        TenDV: initialData.TenDV || '',
-        IdLDV: initialData.IdLDV || '',
-        DonGia: initialData.DonGia || '',
-        DonVi: initialData.DonVi || '',
-        SLTon: initialData.SLTon === null ? '' : initialData.SLTon
+        serviceName: initialData.serviceName || '',
+        serviceCategoryId: initialData.serviceCateroriesId ?? '',
+        unitPrice: initialData.unitPrice ?? '',
+        unit: initialData.unit || '',
+        stockQuantity: initialData.stockQuality ?? ''
       });
     } else {
       setFormData({
-        TenDV: '',
-        IdLDV: '',
-        DonGia: '',
-        DonVi: '',
-        SLTon: ''
+        serviceName: '',
+        serviceCategoryId: '',
+        unitPrice: '',
+        unit: '',
+        stockQuantity: ''
       });
     }
     setErrors({});
@@ -45,24 +46,32 @@ const ServiceModal = ({
   const validate = () => {
     const newErrors = {};
 
-    if (!formData.TenDV.trim()) {
-      newErrors.TenDV = 'Tên dịch vụ không được để trống';
+    if (!formData.serviceName.trim()) {
+      newErrors.serviceName = 'Tên dịch vụ không được để trống';
+    } else if (formData.serviceName.trim().length > 100) {
+      newErrors.serviceName = 'Tên dịch vụ không được vượt quá 100 ký tự';
     }
 
-    if (!formData.IdLDV) {
-      newErrors.IdLDV = 'Vui lòng chọn loại dịch vụ';
+    if (!formData.serviceCategoryId || Number(formData.serviceCategoryId) <= 0) {
+      newErrors.serviceCategoryId = 'Vui lòng chọn loại dịch vụ';
     }
 
-    if (!formData.DonGia || formData.DonGia < 0) {
-      newErrors.DonGia = 'Đơn giá không hợp lệ';
+    const unitPrice = Number(formData.unitPrice);
+    if (formData.unitPrice === '' || !Number.isFinite(unitPrice) || unitPrice < 0) {
+      newErrors.unitPrice = 'Đơn giá phải là số không âm';
+    } else if (!/^\d{1,16}(\.\d{1,2})?$/.test(String(formData.unitPrice))) {
+      newErrors.unitPrice = 'Đơn giá có tối đa 16 chữ số phần nguyên và 2 chữ số phần thập phân';
     }
 
-    if (!formData.DonVi.trim()) {
-      newErrors.DonVi = 'Đơn vị không được để trống';
+    if (!formData.unit.trim()) {
+      newErrors.unit = 'Đơn vị tính không được để trống';
+    } else if (formData.unit.trim().length > 20) {
+      newErrors.unit = 'Đơn vị tính không được vượt quá 20 ký tự';
     }
 
-    if (formData.SLTon !== '' && formData.SLTon < 0) {
-      newErrors.SLTon = 'Số lượng tồn không hợp lệ';
+    if (formData.stockQuantity !== '' &&
+        (!/^\d+$/.test(String(formData.stockQuantity)) || Number(formData.stockQuantity) < 0)) {
+      newErrors.stockQuantity = 'Số lượng tồn kho phải là số nguyên không âm';
     }
 
     setErrors(newErrors);
@@ -74,22 +83,22 @@ const ServiceModal = ({
     
     if (validate()) {
       onSubmit({
-        TenDV: formData.TenDV,
-        IdLDV: parseInt(formData.IdLDV),
-        DonGia: parseFloat(formData.DonGia),
-        DonVi: formData.DonVi,
-        SLTon: formData.SLTon === '' ? null : parseInt(formData.SLTon)
+        serviceName: formData.serviceName.trim(),
+        serviceCategoryId: Number(formData.serviceCategoryId),
+        unitPrice: Number(formData.unitPrice),
+        unit: formData.unit.trim(),
+        stockQuantity: formData.stockQuantity === '' ? null : Number(formData.stockQuantity)
       });
     }
   };
 
   const handleClose = () => {
     const initialValues = {
-      TenDV: initialData?.TenDV || '',
-      IdLDV: initialData?.IdLDV || '',
-      DonGia: initialData?.DonGia || '',
-      DonVi: initialData?.DonVi || '',
-      SLTon: initialData?.SLTon === null ? '' : initialData?.SLTon
+      serviceName: initialData?.serviceName || '',
+      serviceCategoryId: initialData?.serviceCateroriesId ?? '',
+      unitPrice: initialData?.unitPrice ?? '',
+      unit: initialData?.unit || '',
+      stockQuantity: initialData?.stockQuality ?? ''
     };
     
     if (JSON.stringify(formData) !== JSON.stringify(initialValues)) {
@@ -115,6 +124,7 @@ const ServiceModal = ({
           </div>
           <button
             onClick={handleClose}
+            disabled={isSubmitting}
             className="p-space-sm rounded-full hover:bg-on-primary/10 transition-colors"
           >
             <span className="material-symbols-outlined text-[24px]">close</span>
@@ -131,19 +141,19 @@ const ServiceModal = ({
               </label>
               <input
                 type="text"
-                value={formData.TenDV}
-                onChange={(e) => setFormData({ ...formData, TenDV: e.target.value })}
+                value={formData.serviceName}
+                onChange={(e) => setFormData({ ...formData, serviceName: e.target.value })}
                 className={cn(
                   'w-full px-space-lg py-space-md rounded-lg border-2 bg-surface text-on-surface font-body-md',
                   'focus:outline-none transition-colors',
-                  errors.TenDV 
+                  errors.serviceName
                     ? 'border-error focus:border-error' 
                     : 'border-outline focus:border-primary'
                 )}
                 placeholder="VD: Ăn sáng buffet"
               />
-              {errors.TenDV && (
-                <p className="mt-space-xs text-error font-body-sm">{errors.TenDV}</p>
+              {errors.serviceName && (
+                <p className="mt-space-xs text-error font-body-sm">{errors.serviceName}</p>
               )}
             </div>
 
@@ -153,25 +163,25 @@ const ServiceModal = ({
                 Loại dịch vụ <span className="text-error">*</span>
               </label>
               <select
-                value={formData.IdLDV}
-                onChange={(e) => setFormData({ ...formData, IdLDV: e.target.value })}
+                value={formData.serviceCategoryId}
+                onChange={(e) => setFormData({ ...formData, serviceCategoryId: e.target.value })}
                 className={cn(
                   'w-full px-space-lg py-space-md rounded-lg border-2 bg-surface text-on-surface font-body-md',
                   'focus:outline-none transition-colors',
-                  errors.IdLDV 
+                  errors.serviceCategoryId
                     ? 'border-error focus:border-error' 
                     : 'border-outline focus:border-primary'
                 )}
               >
                 <option value="">-- Chọn loại dịch vụ --</option>
-                {serviceCategories.map(cat => (
-                  <option key={cat.IdLDV} value={cat.IdLDV}>
-                    {cat.TenLDV}
+                {serviceCategories.map(category => (
+                  <option key={category.serviceCategoryId} value={category.serviceCategoryId}>
+                    {category.serviceCategoryName}
                   </option>
                 ))}
               </select>
-              {errors.IdLDV && (
-                <p className="mt-space-xs text-error font-body-sm">{errors.IdLDV}</p>
+              {errors.serviceCategoryId && (
+                <p className="mt-space-xs text-error font-body-sm">{errors.serviceCategoryId}</p>
               )}
             </div>
 
@@ -185,19 +195,19 @@ const ServiceModal = ({
                   type="number"
                   min="0"
                   step="1000"
-                  value={formData.DonGia}
-                  onChange={(e) => setFormData({ ...formData, DonGia: e.target.value })}
+                  value={formData.unitPrice}
+                  onChange={(e) => setFormData({ ...formData, unitPrice: e.target.value })}
                   className={cn(
                     'w-full px-space-lg py-space-md rounded-lg border-2 bg-surface text-on-surface font-body-md',
                     'focus:outline-none transition-colors',
-                    errors.DonGia 
+                    errors.unitPrice
                       ? 'border-error focus:border-error' 
                       : 'border-outline focus:border-primary'
                   )}
                   placeholder="150000"
                 />
-                {errors.DonGia && (
-                  <p className="mt-space-xs text-error font-body-sm">{errors.DonGia}</p>
+                {errors.unitPrice && (
+                  <p className="mt-space-xs text-error font-body-sm">{errors.unitPrice}</p>
                 )}
               </div>
 
@@ -207,19 +217,19 @@ const ServiceModal = ({
                 </label>
                 <input
                   type="text"
-                  value={formData.DonVi}
-                  onChange={(e) => setFormData({ ...formData, DonVi: e.target.value })}
+                  value={formData.unit}
+                  onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
                   className={cn(
                     'w-full px-space-lg py-space-md rounded-lg border-2 bg-surface text-on-surface font-body-md',
                     'focus:outline-none transition-colors',
-                    errors.DonVi 
+                    errors.unit
                       ? 'border-error focus:border-error' 
                       : 'border-outline focus:border-primary'
                   )}
                   placeholder="VD: suất, kg, giờ"
                 />
-                {errors.DonVi && (
-                  <p className="mt-space-xs text-error font-body-sm">{errors.DonVi}</p>
+                {errors.unit && (
+                  <p className="mt-space-xs text-error font-body-sm">{errors.unit}</p>
                 )}
               </div>
             </div>
@@ -232,19 +242,19 @@ const ServiceModal = ({
               <input
                 type="number"
                 min="0"
-                value={formData.SLTon}
-                onChange={(e) => setFormData({ ...formData, SLTon: e.target.value })}
+                value={formData.stockQuantity}
+                onChange={(e) => setFormData({ ...formData, stockQuantity: e.target.value })}
                 className={cn(
                   'w-full px-space-lg py-space-md rounded-lg border-2 bg-surface text-on-surface font-body-md',
                   'focus:outline-none transition-colors',
-                  errors.SLTon 
+                  errors.stockQuantity
                     ? 'border-error focus:border-error' 
                     : 'border-outline focus:border-primary'
                 )}
                 placeholder="100"
               />
-              {errors.SLTon && (
-                <p className="mt-space-xs text-error font-body-sm">{errors.SLTon}</p>
+              {errors.stockQuantity && (
+                <p className="mt-space-xs text-error font-body-sm">{errors.stockQuantity}</p>
               )}
               <p className="mt-space-xs text-on-surface-variant font-body-sm">
                 Dùng cho dịch vụ có hàng tồn kho (minibar, nước uống, v.v.)
@@ -258,6 +268,7 @@ const ServiceModal = ({
           <button
             type="button"
             onClick={handleClose}
+            disabled={isSubmitting}
             className="px-space-xl py-space-md rounded-lg bg-surface-container-highest hover:bg-surface-container-high text-on-surface font-label-lg text-label-lg font-semibold transition-colors"
           >
             Hủy
@@ -265,10 +276,19 @@ const ServiceModal = ({
           <button
             type="submit"
             onClick={handleSubmit}
+            disabled={isSubmitting}
             className="px-space-xl py-space-md rounded-lg bg-primary hover:bg-primary/90 text-on-primary font-label-lg text-label-lg font-bold transition-colors shadow-lg flex items-center gap-space-sm"
           >
-            <span className="material-symbols-outlined">check_circle</span>
-            <span>{mode === 'add' ? 'Thêm dịch vụ' : 'Lưu thay đổi'}</span>
+            <span className="material-symbols-outlined">
+              {isSubmitting ? 'progress_activity' : 'check_circle'}
+            </span>
+            <span>
+              {isSubmitting
+                ? 'Đang lưu...'
+                : mode === 'add'
+                  ? 'Thêm dịch vụ'
+                  : 'Lưu thay đổi'}
+            </span>
           </button>
         </div>
       </div>

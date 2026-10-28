@@ -15,7 +15,6 @@ import com.example.hotel.repositorys.AccountRepository;
 import com.example.hotel.repositorys.EmployeeRepository;
 import com.example.hotel.services.IAccountService;
 import com.example.hotel.specification.AccountSpecification;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -23,26 +22,32 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 public class AccountService implements IAccountService {
 
-    @Autowired
-    private AccountRepository accountRepository;
+    private final AccountRepository accountRepository;
+    private final EmployeeRepository employeeRepository;
+    private final AccountMapper accountMapper;
+    private final EmployeeMapper employeeMapper;
+    private final PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private EmployeeRepository employeeRepository;
-
-    @Autowired
-    private AccountMapper accountMapper;
-
-    @Autowired
-    private EmployeeMapper employeeMapper;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    public AccountService(
+            AccountRepository accountRepository,
+            EmployeeRepository employeeRepository,
+            AccountMapper accountMapper,
+            EmployeeMapper employeeMapper,
+            PasswordEncoder passwordEncoder) {
+        this.accountRepository = accountRepository;
+        this.employeeRepository = employeeRepository;
+        this.accountMapper = accountMapper;
+        this.employeeMapper = employeeMapper;
+        this.passwordEncoder = passwordEncoder;
+    }
 
     @Override
     @Transactional
@@ -107,17 +112,13 @@ public class AccountService implements IAccountService {
     @Override
     @Transactional(readOnly = true)
     public List<EmployeeResponse> getEmployeesWithoutAccount() {
-        // Lấy danh sách ID nhân viên đã có tài khoản
-        List<Integer> employeeIdsWithAccount = accountRepository.findAllEmployeeIdsWithAccount();
+        // Lấy tập ID nhân viên đã có tài khoản
+        Set<Integer> employeeIdsWithAccount = new HashSet<>(accountRepository.findAllEmployeeIdsWithAccount());
 
-        // Lấy tất cả nhân viên đang hoạt động
-        List<employees> allActiveEmployees = employeeRepository.findAll()
+        // Lọc nhân viên đang hoạt động và chưa có tài khoản, chuyển sang DTO
+        return employeeRepository.findAll()
                 .stream()
-                .filter(employees::getIsActive)
-                .collect(Collectors.toList());
-
-        // Lọc ra những nhân viên chưa có tài khoản và chuyển sang DTO
-        return allActiveEmployees.stream()
+                .filter(employee -> Boolean.TRUE.equals(employee.getIsActive()))
                 .filter(employee -> !employeeIdsWithAccount.contains(employee.getEmployeeId()))
                 .map(employeeMapper::toEmployeeResponse)
                 .collect(Collectors.toList());
@@ -129,9 +130,9 @@ public class AccountService implements IAccountService {
             Integer accountId,
             AccountUpdateRequest request) {
 
-        if(accountId == null){
-                throw new IllegalArgumentException(
-                        "Tài khoản không tồn tại: " + accountId);
+        if (accountId == null || accountId <= 0) {
+            throw new IllegalArgumentException(
+                    "ID tài khoản không hợp lệ: " + accountId);
         }
         // Tìm tài khoản cần cập nhật
         accounts account = accountRepository.findById(accountId)
@@ -144,7 +145,7 @@ public class AccountService implements IAccountService {
         String newUsername = request.getUsername();
         if (newUsername != null && !newUsername.trim().isEmpty()) {
             newUsername = newUsername.trim();
-            
+
             // Chỉ kiểm tra trùng lặp nếu username mới khác với username hiện tại
             if (!newUsername.equals(account.getUsername())) {
                 // Kiểm tra username mới đã tồn tại chưa (ngoại trừ tài khoản hiện tại)
@@ -159,11 +160,11 @@ public class AccountService implements IAccountService {
             }
         }
 
-        // Cập nhật mật khẩu nếu có yêu cầu
+        // Cập nhật mật khẩu nếu có yêu cầu (trim giống createAccount)
         String newPassword = request.getNewPassword();
 
-        if (newPassword != null && !newPassword.isEmpty()) {
-            String newPasswordHash = passwordEncoder.encode(newPassword);
+        if (newPassword != null && !newPassword.trim().isEmpty()) {
+            String newPasswordHash = passwordEncoder.encode(newPassword.trim());
             account.setPasswordHash(newPasswordHash);
             isUpdated = true;
         }
@@ -199,10 +200,14 @@ public class AccountService implements IAccountService {
         // Trả về thông tin tài khoản
         return accountMapper.toAccountResponse(account);
     }
-    
+
     @Override
     @Transactional(readOnly = true)
     public AccountResponse getAccountById(Integer accountId) {
+        if (accountId == null || accountId <= 0) {
+            throw new IllegalArgumentException(
+                    "ID tài khoản không hợp lệ: " + accountId);
+        }
         accounts account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Không tìm thấy tài khoản với ID: " + accountId));
@@ -210,11 +215,10 @@ public class AccountService implements IAccountService {
         return accountMapper.toAccountResponse(account);
     }
 
-
     /**
      * Verify mật khẩu
      * So sánh plain password với BCrypt hash
-     * 
+     *
      * @param rawPassword     Mật khẩu plain text
      * @param encodedPassword Mật khẩu đã mã hóa BCrypt
      * @return true nếu khớp, false nếu không

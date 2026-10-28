@@ -26,6 +26,9 @@ import com.example.hotel.specification.EmployeeSpecification;
 
 @Service
 public class EmployeeService implements IEmployeeService {
+    private static final String AVATAR_MALE = "/avatars/profileNam.jpg";
+    private static final String AVATAR_FEMALE = "/avatars/profileNu.jpg";
+
     private final EmployeeRepository employeeRepository;
     private final EmployeeMapper employeeMapper;
     private final AccountRepository accountRepository;
@@ -60,44 +63,43 @@ public class EmployeeService implements IEmployeeService {
         String gender = request.getGender().trim();
         String email = request.getEmail().trim();
         String address = request.getAddress() != null ? request.getAddress().trim() : null;
-        
+
         // Kiểm tra sau khi trim - các trường bắt buộc không được rỗng
         if (fullName.isEmpty()) {
             throw new IllegalArgumentException("Họ và tên không được để trống");
         }
-        
+
         if (position.isEmpty()) {
             throw new IllegalArgumentException("Chức vụ không được để trống");
         }
-        
-        // Kiểm tra ngày sinh - phải đủ 18 tuổi và không nằm trong tương lai
+
+        // Kiểm tra ngày sinh - không nằm trong tương lai và phải đủ 18 tuổi
         LocalDate dateOfBirth = request.getDateOfBirth();
         LocalDate today = LocalDate.now();
-        
+
         if (dateOfBirth.isAfter(today)) {
             throw new IllegalArgumentException("Ngày sinh không được nằm trong tương lai");
         }
-        
-        LocalDate eighteenYearsAgo = today.minusYears(18);
-        if (dateOfBirth.isAfter(eighteenYearsAgo)) {
+
+        if (dateOfBirth.isAfter(today.minusYears(18))) {
             throw new IllegalArgumentException("Nhân viên phải đủ 18 tuổi");
         }
-        
+
         // Kiểm tra tính duy nhất của số điện thoại
         if (employeeRepository.existsByPhone(phone)) {
             throw new DuplicateResourceException("Số điện thoại", phone);
         }
-        
-        //  Kiểm tra tính duy nhất của số CCCD
+
+        // Kiểm tra tính duy nhất của số CCCD
         if (employeeRepository.existsByCitizenId(citizenId)) {
             throw new DuplicateResourceException("Số CCCD", citizenId);
         }
-        
+
         // Kiểm tra tính duy nhất của email
         if (employeeRepository.existsByEmail(email)) {
             throw new DuplicateResourceException("Email", email);
         }
-        
+
         // Tạo entity với dữ liệu đã chuẩn hóa
         employees employee = new employees();
         employee.setFullName(fullName);
@@ -109,21 +111,20 @@ public class EmployeeService implements IEmployeeService {
         employee.setGender(gender);
         employee.setAddress(address);
         employee.setEmail(email);
-        
-        //  Thiết lập ảnh đại diện mặc định theo giới tính và trạng thái Đang hoạt động
-        String defaultAvatar = getDefaultAvatarByGender(gender);
-        employee.setAvatar(defaultAvatar);
+
+        // Thiết lập ảnh đại diện mặc định theo giới tính và trạng thái đang hoạt động
+        employee.setAvatar(getDefaultAvatarByGender(gender));
         employee.setIsActive(true);
-        
-        
+
+        // Chỉ bọc lỗi phát sinh khi lưu, lỗi ánh xạ DTO không bị che
+        employees savedEmployee;
         try {
-            employees savedEmployee = employeeRepository.save(employee);
-            
-            return employeeMapper.toEmployeeResponse(savedEmployee);
+            savedEmployee = employeeRepository.save(employee);
         } catch (Exception e) {
-                    
             throw new RuntimeException("Không thể lưu thông tin nhân viên. Vui lòng thử lại sau.", e);
         }
+
+        return employeeMapper.toEmployeeResponse(savedEmployee);
     }
 
     @Override
@@ -177,7 +178,10 @@ public class EmployeeService implements IEmployeeService {
             employee.setPosition(position);
             isUpdated = true;
         }
-        if (request.getSalary() != null && request.getSalary().compareTo(employee.getSalary()) != 0) {
+        // So sánh bằng compareTo để bỏ qua khác biệt scale; an toàn khi lương hiện tại
+        // là null
+        if (request.getSalary() != null
+                && (employee.getSalary() == null || request.getSalary().compareTo(employee.getSalary()) != 0)) {
             employee.setSalary(request.getSalary());
             isUpdated = true;
         }
@@ -213,6 +217,7 @@ public class EmployeeService implements IEmployeeService {
             isUpdated = true;
         }
 
+        // Chỉ tìm tài khoản liên kết khi yêu cầu có trạng thái hoạt động
         Optional<accounts> linkedAccount = isActive == null
                 ? Optional.empty()
                 : accountRepository.findByEmployee_EmployeeId(employeeId);
@@ -244,18 +249,14 @@ public class EmployeeService implements IEmployeeService {
         }
         return normalized;
     }
-    
+
     /**
      * Lấy ảnh đại diện mặc định theo giới tính
      */
     private String getDefaultAvatarByGender(String gender) {
-        switch (gender) {
-            case "Nam":
-                return "/avatars/profileNam.jpg";
-            case "Nữ":
-                return "/avatars/profileNu.jpg";
-            default:
-                return "/avatars/profileNam.jpg";
+        if ("Nữ".equals(gender)) {
+            return AVATAR_FEMALE;
         }
+        return AVATAR_MALE;
     }
 }

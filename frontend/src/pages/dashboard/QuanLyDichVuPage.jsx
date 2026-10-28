@@ -1,9 +1,28 @@
-import React, { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { cn } from "@/utils/lib/util";
 import ServiceModal from "@/components/service-management/ServiceModal";
 import CategoryModal from "@/components/service-management/CategoryModal";
 import DeleteConfirmModal from "@/components/shared/DeleteConfirmModal";
 import { serviceAPI, serviceCategoryAPI } from "@/services/api";
+
+const toServiceViewModel = (service) => ({
+  serviceId: service.serviceId,
+  serviceCateroriesId:
+    service.serviceCateroriesId ?? service.serviceCategoryId,
+  serviceName: service.serviceName,
+  serviceCategoryName: service.serviceCategoryName,
+  unitPrice: service.unitPrice,
+  unit: service.unit,
+  stockQuality: service.stockQuality ?? service.stockQuantity ?? null,
+});
+
+const getApiErrorMessage = (error, fallbackMessage) => {
+  const responseData = error.response?.data;
+  if (responseData?.fieldErrors) {
+    return Object.values(responseData.fieldErrors).join("\n");
+  }
+  return responseData?.message || fallbackMessage;
+};
 
 const QuanLyDichVuPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -26,6 +45,8 @@ const QuanLyDichVuPage = () => {
   const [services, setServices] = useState([]);
 
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingServiceDetails, setIsLoadingServiceDetails] = useState(false);
   const [error, setError] = useState(null);
 
   const itemsPerPage = 10;
@@ -40,15 +61,7 @@ const QuanLyDichVuPage = () => {
         serviceAPI.getAll(),
       ]);
 
-      const serviceData = serviceResponse.map((item) => ({
-        serviceId: item.serviceId,
-        serviceCateroriesId: item.serviceCateroriesId,
-        serviceName: item.serviceName,
-        serviceCategoryName: item.serviceCategoryName,
-        unitPrice: item.unitPrice,
-        unit: item.unit,
-        stockQuality: item.stockQuality,
-      }));
+      const serviceData = serviceResponse.map(toServiceViewModel);
 
       setServiceCategories(categoryData);
       setServices(serviceData);
@@ -126,28 +139,27 @@ const QuanLyDichVuPage = () => {
 
   const handleAddService = async (data) => {
     try {
-      const newService = await serviceAPI.create(data);
-
-      setServices((prev) => [...prev, newService]);
-
+      setIsSubmitting(true);
+      const createdService = await serviceAPI.create(data);
+      setServices((prev) => [...prev, toServiceViewModel(createdService)]);
       setIsAddModalOpen(false);
     } catch (err) {
       console.error("Error adding service:", err);
-      alert("Không thể thêm dịch vụ. Vui lòng thử lại.");
+      alert(getApiErrorMessage(err, "Không thể thêm dịch vụ. Vui lòng thử lại."));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleEditService = async (data) => {
     try {
-      const updatedService = await serviceAPI.update(
-        selectedService.serviceId,
-        data,
-      );
+      setIsSubmitting(true);
+      const updatedService = await serviceAPI.update(selectedService.serviceId, data);
 
       setServices((prev) =>
         prev.map((service) =>
           service.serviceId === selectedService.serviceId
-            ? updatedService
+            ? toServiceViewModel(updatedService)
             : service,
         ),
       );
@@ -156,12 +168,15 @@ const QuanLyDichVuPage = () => {
       setSelectedService(null);
     } catch (err) {
       console.error("Error updating service:", err);
-      alert("Không thể cập nhật dịch vụ. Vui lòng thử lại.");
+      alert(getApiErrorMessage(err, "Không thể cập nhật dịch vụ. Vui lòng thử lại."));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleDeleteService = async () => {
     try {
+      setIsSubmitting(true);
       await serviceAPI.delete(selectedService.serviceId);
 
       setServices((prev) =>
@@ -174,7 +189,23 @@ const QuanLyDichVuPage = () => {
       setSelectedService(null);
     } catch (err) {
       console.error("Error deleting service:", err);
-      alert("Không thể xóa dịch vụ. Vui lòng thử lại.");
+      alert(getApiErrorMessage(err, "Không thể xóa dịch vụ. Vui lòng thử lại."));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleOpenEditService = async (service) => {
+    try {
+      setIsLoadingServiceDetails(true);
+      const serviceDetails = await serviceAPI.getById(service.serviceId);
+      setSelectedService(toServiceViewModel(serviceDetails));
+      setIsEditModalOpen(true);
+    } catch (err) {
+      console.error("Error fetching service details:", err);
+      alert(getApiErrorMessage(err, "Không thể tải thông tin dịch vụ. Vui lòng thử lại."));
+    } finally {
+      setIsLoadingServiceDetails(false);
     }
   };
 
@@ -207,7 +238,7 @@ const QuanLyDichVuPage = () => {
       // Cập nhật luôn categoryName trên các service đang hiển thị
       setServices((prev) =>
         prev.map((service) =>
-          service.serviceCategoryId === id
+          Number(service.serviceCateroriesId) === Number(id)
             ? {
                 ...service,
                 serviceCategoryName: updatedCategory.serviceCategoryName,
@@ -581,10 +612,8 @@ const QuanLyDichVuPage = () => {
                       <td className="px-space-lg py-space-lg">
                         <div className="flex items-center justify-center gap-space-sm">
                           <button
-                            onClick={() => {
-                              setSelectedService(service);
-                              setIsEditModalOpen(true);
-                            }}
+                            onClick={() => handleOpenEditService(service)}
+                            disabled={isLoadingServiceDetails}
                             className="p-space-md rounded-lg bg-blue-500/20 hover:bg-blue-500 text-blue-700 hover:text-white transition-all shadow-md"
                           >
                             <span className="material-symbols-outlined text-[20px]">
@@ -661,6 +690,7 @@ const QuanLyDichVuPage = () => {
             onSubmit={handleAddService}
             serviceCategories={serviceCategories}
             mode="add"
+            isSubmitting={isSubmitting}
           />
 
           <ServiceModal
@@ -673,6 +703,7 @@ const QuanLyDichVuPage = () => {
             serviceCategories={serviceCategories}
             mode="edit"
             initialData={selectedService}
+            isSubmitting={isSubmitting}
           />
 
           <DeleteConfirmModal

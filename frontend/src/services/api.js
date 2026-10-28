@@ -617,12 +617,12 @@ export const accountAPI = {
   },
 
   /**
-   * Lấy thông tin tài khoản theo username
-   * GET /api/accounts/{username}
+   * Lấy thông tin tài khoản theo ID
+   * GET /api/accounts/{accountId}
    */
-  getByUsername: async (username) => {
+  getById: async (accountId) => {
     try {
-      const response = await apiClient.get(`/accounts/${username}`);
+      const response = await apiClient.get(`/accounts/${accountId}`);
       return response.data;
     } catch (error) {
       throw error;
@@ -631,17 +631,18 @@ export const accountAPI = {
 
   /**
    * REQ-ACC-002 & REQ-ACC-003: Cập nhật tài khoản
-   * PUT /api/accounts/{username}
+   * PUT /api/accounts/{accountId}
    * 
-   * @param {string} username - Tên đăng nhập hiện tại
+   * @param {number} accountId - ID tài khoản
    * @param {Object} data - Dữ liệu cập nhật
+   * @param {string} data.username - Tên đăng nhập mới (optional)
    * @param {string} data.newPassword - Mật khẩu mới (optional)
    * @param {string} data.role - Vai trò mới (ADMIN/MANAGER/RECEPTIONIST) (optional)
    * @param {boolean} data.isActive - Trạng thái tài khoản (optional)
    */
-  update: async (username, data) => {
+  update: async (accountId, data) => {
     try {
-      const response = await apiClient.put(`/accounts/${username}`, data);
+      const response = await apiClient.put(`/accounts/${accountId}`, data);
       return response.data;
     } catch (error) {
       throw error;

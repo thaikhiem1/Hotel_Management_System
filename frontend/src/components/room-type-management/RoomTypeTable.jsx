@@ -144,7 +144,7 @@ const RoomTypeTable = ({ roomTypes, onEdit, onDelete, isLoading }) => {
               {/* Giá giờ */}
               <td className="px-space-md py-space-md text-right">
                 <span className="font-body-sm text-body-sm text-on-surface-variant">
-                  {roomType.hourlyRate ? formatCurrency(roomType.hourlyRate) : "—"}
+                  {formatCurrency(roomType.hourlyRate) }
                 </span>
               </td>
 

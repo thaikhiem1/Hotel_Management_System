@@ -117,7 +117,7 @@ const QuanLyTaiKhoanPage = () => {
     
     setIsLoading(true);
     try {
-      const response = await accountAPI.update(selectedAccount.username, formData);
+      const response = await accountAPI.update(selectedAccount.accountId, formData);
       
       if (response.message) {
         showSuccess(response.message);
@@ -268,7 +268,7 @@ const QuanLyTaiKhoanPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-space-md">
             {accounts.map((account) => (
               <AccountCard
-                key={account.username}
+                key={account.accountId}
                 account={account}
                 onClick={handleCardClick}
               />
