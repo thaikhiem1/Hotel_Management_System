@@ -1,32 +1,35 @@
 import { formatCurrency } from '@/utils/format';
 
 /**
- * BookingSummary - Tổng quan đặt phòng khi đang tạo phiếu thuê
+ * BookingSummary - Tổng quan đặt phòng khi đang tạo phiếu thuê (UC-REN-001 bước 9)
  *
- * Dựa theo Database.md:
- *   KhachHang { TenKH, SDT, CCCD_Passport }
- *   Phong { MaPH, loaiPhong.TenLPH, loaiPhong.GiaNgay, loaiPhong.GiaGio }
- *   CTDP { SoNguoi, NgayCheckIn, NgayCheckOut, DonGia, ThanhTien }
+ * Mọi con số tiền đều do máy chủ tính (UC-REN-010) và truyền vào qua `estimate`;
+ * component này không tự tính giá.
  *
  * Props:
  *   khachHang: KhachHang | null
- *   checkInDate: string (YYYY-MM-DD)
- *   checkInTime: string (HH:mm)
- *   checkOutDate: string (YYYY-MM-DD)
- *   checkOutTime: string (HH:mm)
- *   selectedRooms: Phong[] — mảng phòng đã chọn
+ *   nhanVien: tên nhân viên lập phiếu (tài khoản đang đăng nhập)
+ *   checkInDate, checkInTime, checkOutDate, checkOutTime
+ *   selectedRooms: Phong[]
  *   soNguoi: number
  *   hinhThucThue: 'NGAY' | 'GIO'
+ *   estimate: { lines, totalAmount } | null — kết quả POST /api/rental-receipts/estimate
+ *   estimateLoading: boolean
+ *   estimateError: string | null
  */
 const BookingSummary = ({
   khachHang,
+  nhanVien,
   checkInDate,
   checkInTime = '14:00',
   checkOutDate,
   checkOutTime = '12:00',
   selectedRooms = [],
   soNguoi = 1,
-  hinhThucThue = 'NGAY'
+  hinhThucThue = 'NGAY',
+  estimate = null,
+  estimateLoading = false,
+  estimateError = null
 }) => {
   const formatDateTimeDisplay = (dateStr, timeStr) => {
     if (!dateStr) return '';
@@ -40,42 +43,8 @@ const BookingSummary = ({
     return `${timeStr || '12:00'} - ${datePart}`;
   };
 
-  // Tính số lượng thời gian thuê
-  const calculateDuration = () => {
-    if (!checkInDate || !checkOutDate) return 0;
-    const start = new Date(`${checkInDate}T${checkInTime || '00:00'}`);
-    const end = new Date(`${checkOutDate}T${checkOutTime || '00:00'}`);
-    const diffMs = end - start;
-    if (diffMs <= 0) return 0;
-
-    if (hinhThucThue === 'GIO') {
-      const diffHours = Math.ceil(diffMs / (1000 * 60 * 60));
-      return Math.max(1, diffHours);
-    } else {
-      const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-      return Math.max(1, diffDays);
-    }
-  };
-
-  const duration = calculateDuration();
-
-  const calculateRoomTotal = (phong) => {
-    if (duration <= 0) return 0;
-    const loaiPhong = phong.loaiPhong;
-    if (hinhThucThue === 'GIO') {
-      const donGia = loaiPhong?.GiaGio || (loaiPhong?.GiaNgay ? Math.round(loaiPhong.GiaNgay / 10) : 0);
-      return donGia * duration;
-    } else {
-      const donGia = loaiPhong?.GiaNgay || 0;
-      return donGia * duration;
-    }
-  };
-
-  const calculateTotal = () => {
-    return selectedRooms.reduce((sum, phong) => sum + calculateRoomTotal(phong), 0);
-  };
-
-  const tongTien = calculateTotal();
+  const unitLabel = hinhThucThue === 'GIO' ? 'giờ' : 'đêm';
+  const linesByRoom = new Map((estimate?.lines ?? []).map((line) => [line.roomId, line]));
   const hasData = khachHang || checkInDate || selectedRooms.length > 0;
 
   return (
@@ -96,11 +65,11 @@ const BookingSummary = ({
       )}
 
       <div className="space-y-space-md">
-        {/* Thông tin khách hàng */}
+        {/* Khách hàng đại diện */}
         {khachHang && (
           <div className="pb-space-md border-b border-surface-container">
             <p className="font-label-sm text-label-sm text-outline mb-space-xs">
-              Khách hàng
+              Khách hàng đại diện
             </p>
             <p className="font-body-md text-body-md text-on-surface font-semibold">
               {khachHang.TenKH}
@@ -116,13 +85,25 @@ const BookingSummary = ({
           </div>
         )}
 
-        {/* Thời gian có kèm giờ */}
+        {/* Nhân viên lập phiếu */}
+        {nhanVien && (
+          <div className="pb-space-md border-b border-surface-container">
+            <p className="font-label-sm text-label-sm text-outline mb-space-xs">
+              Nhân viên lập phiếu
+            </p>
+            <p className="font-body-md text-body-md text-on-surface font-semibold">
+              {nhanVien}
+            </p>
+          </div>
+        )}
+
+        {/* Thời gian dự kiến */}
         {(checkInDate || checkOutDate) && (
           <div className="pb-space-md border-b border-surface-container space-y-space-xs">
             {checkInDate && (
               <div>
                 <p className="font-label-sm text-label-sm text-outline">
-                  Nhận phòng (Check-in)
+                  Nhận phòng dự kiến
                 </p>
                 <p className="font-body-md text-body-md text-on-surface font-medium">
                   {formatDateTimeDisplay(checkInDate, checkInTime)}
@@ -132,29 +113,21 @@ const BookingSummary = ({
             {checkOutDate && (
               <div>
                 <p className="font-label-sm text-label-sm text-outline">
-                  Trả phòng (Check-out)
+                  Trả phòng dự kiến
                 </p>
                 <p className="font-body-md text-body-md text-on-surface font-medium">
                   {formatDateTimeDisplay(checkOutDate, checkOutTime)}
                 </p>
               </div>
             )}
-            {duration > 0 && (
-              <div className="pt-space-xs">
-                <span className="inline-flex items-center gap-space-xs px-space-sm py-space-xs rounded bg-surface-container text-primary font-body-sm text-body-sm font-semibold">
-                  <span className="material-symbols-outlined text-[16px]">schedule</span>
-                  {duration} {hinhThucThue === 'GIO' ? 'giờ' : 'ngày (đêm)'}
-                </span>
-              </div>
-            )}
           </div>
         )}
 
-        {/* Số người */}
+        {/* Số khách */}
         {soNguoi > 0 && (
           <div className="pb-space-md border-b border-surface-container">
             <p className="font-label-sm text-label-sm text-outline mb-space-xs">
-              Số người (SoNguoi)
+              Số khách
             </p>
             <p className="font-body-md text-body-md text-on-surface">
               {soNguoi} khách / phòng
@@ -162,7 +135,7 @@ const BookingSummary = ({
           </div>
         )}
 
-        {/* Danh sách phòng đã chọn */}
+        {/* Phòng đã chọn và thành tiền từng phòng */}
         {selectedRooms.length > 0 && (
           <div className="pb-space-md border-b border-surface-container">
             <p className="font-label-sm text-label-sm text-outline mb-space-sm">
@@ -170,12 +143,7 @@ const BookingSummary = ({
             </p>
             <div className="space-y-space-xs">
               {selectedRooms.map((phong) => {
-                const loaiPhong = phong.loaiPhong;
-                const donGia = hinhThucThue === 'GIO'
-                  ? (loaiPhong?.GiaGio || Math.round((loaiPhong?.GiaNgay || 0) / 10))
-                  : (loaiPhong?.GiaNgay || 0);
-                const roomTotal = calculateRoomTotal(phong);
-
+                const line = linesByRoom.get(phong.IdPH);
                 return (
                   <div
                     key={phong.IdPH}
@@ -186,15 +154,17 @@ const BookingSummary = ({
                         {phong.MaPH}
                       </p>
                       <p className="text-[10px] text-on-surface-variant">
-                        {loaiPhong?.TenLPH}
+                        {phong.loaiPhong?.TenLPH}
                       </p>
                     </div>
                     <div className="text-right">
                       <p className="font-body-sm text-body-sm text-on-surface font-semibold">
-                        {formatCurrency(roomTotal)}
+                        {line ? formatCurrency(line.amount) : '—'}
                       </p>
                       <p className="text-[10px] text-on-surface-variant">
-                        {formatCurrency(donGia)}/{hinhThucThue === 'GIO' ? 'giờ' : 'ngày'}
+                        {line
+                          ? `${line.billedUnits} ${unitLabel} × ${formatCurrency(line.unitPrice)}`
+                          : estimateLoading ? 'Đang tính...' : ''}
                       </p>
                     </div>
                   </div>
@@ -204,19 +174,26 @@ const BookingSummary = ({
           </div>
         )}
 
-        {/* Tổng tiền dự kiến */}
-        {tongTien > 0 && (
+        {/* Lỗi khi tính chi phí */}
+        {estimateError && (
+          <div className="p-space-sm rounded bg-error/10 border border-error/20 text-error font-body-sm text-body-sm">
+            {estimateError}
+          </div>
+        )}
+
+        {/* Tổng chi phí dự kiến */}
+        {estimate && !estimateError && (
           <div className="pt-space-xs">
             <div className="flex items-center justify-between">
               <span className="font-label-lg text-label-lg text-on-surface uppercase tracking-wider">
-                Tổng tiền
+                Chi phí dự kiến
               </span>
               <span className="font-headline-md text-headline-md text-primary font-bold">
-                {formatCurrency(tongTien)}
+                {formatCurrency(estimate.totalAmount)}
               </span>
             </div>
             <p className="font-body-sm text-body-sm text-on-surface-variant mt-space-xs text-right">
-              {duration} {hinhThucThue === 'GIO' ? 'giờ' : 'ngày'} × {selectedRooms.length} phòng
+              Chưa gồm dịch vụ; số tiền thanh toán cuối cùng tính khi trả phòng
             </p>
           </div>
         )}

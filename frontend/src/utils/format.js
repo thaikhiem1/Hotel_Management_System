@@ -50,7 +50,7 @@ export const RENTAL_TYPE_LABELS = {
 };
 
 export const RECEIPT_STATUS_LABELS = {
-  DA_DAT: "Đã đặt",
+  DA_XAC_NHAN: "Đã xác nhận",
   DANG_LUU_TRU: "Đang lưu trú",
   DA_TRA_PHONG: "Đã trả phòng",
 };

@@ -30,11 +30,21 @@ public class CustomerSpecification {
             String keyword = "%" + search.trim().toLowerCase() + "%";
             
             // Tìm kiếm trong họ tên, số điện thoại, số giấy tờ tùy thân/hộ chiếu
-            return criteriaBuilder.or(
+            var matchesText = criteriaBuilder.or(
                 criteriaBuilder.like(criteriaBuilder.lower(root.get("fullName")), keyword),
                 criteriaBuilder.like(root.get("phone"), keyword),
                 criteriaBuilder.like(criteriaBuilder.lower(root.get("citizenId")), keyword)
             );
+
+            // UC-REN-008: cho phép tra cứu theo mã khách hàng (chuỗi số ngắn, tránh tràn Integer)
+            String trimmed = search.trim();
+            if (trimmed.matches("\\d{1,9}")) {
+                return criteriaBuilder.or(
+                    matchesText,
+                    criteriaBuilder.equal(root.get("customerId"), Integer.valueOf(trimmed))
+                );
+            }
+            return matchesText;
         };
     }
 

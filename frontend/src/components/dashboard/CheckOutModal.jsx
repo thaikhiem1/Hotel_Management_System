@@ -347,11 +347,7 @@ const CheckOutForm = ({ stay, employeeId, onClose, onCompleted, onRefresh }) => 
           </li>
           <li>Hóa đơn được tạo với trạng thái Chưa thanh toán (UNPAID); phòng chuyển sang "Đang dọn dẹp".</li>
           <li>Trả phòng này không tự động trả các phòng khác trong cùng phiếu thuê.</li>
-          <li>
-            Quy tắc làm tròn thời lượng đang tạm áp dụng:{" "}
-            {BILLING_RULES.rounding === "CEIL" ? "làm tròn lên" : "theo cấu hình"}, tối thiểu{" "}
-            {BILLING_RULES.minimumUnits} đơn vị (chờ nghiệp vụ chốt).
-          </li>
+          <li>Cách tính thời lượng — {BILLING_RULES[detail.rentalType]}.</li>
         </ul>
       </section>
     </ModalShell>

@@ -56,6 +56,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/accounts/**", "/api/employees/**")
                         .hasAnyRole(MANAGEMENT_ROLES)
 
+                        // Lập phiếu thuê: lễ tân là actor chính; quản lý/admin cũng được dùng
+                        .requestMatchers("/api/rental-receipts/**")
+                        .hasAnyRole("ADMIN", "MANAGER", "RECEPTIONIST")
+
                         .requestMatchers(HttpMethod.GET,
                                 "/api/rooms/**", "/api/roomTypes/**",
                                 "/api/services/**", "/api/service-categories/**")

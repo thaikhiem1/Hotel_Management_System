@@ -112,6 +112,25 @@ export const employeeAPI = {
 // PHIẾU THUÊ (Booking)
 export const bookingAPI = createCrudApi("/booking");
 
+// PHIẾU THUÊ (Rental Receipt) - UC-REN-001, UC-REN-009, UC-REN-010
+export const rentalReceiptAPI = {
+  /** GET /api/rental-receipts?page&size - mới nhất trước */
+  getAll: ({ page = 0, size = 20 } = {}) =>
+    unwrap(apiClient.get("/rental-receipts", { params: { page, size } })),
+
+  getById: (id) => unwrap(apiClient.get(`/rental-receipts/${id}`)),
+
+  /** UC-REN-009: GET /api/rental-receipts/available-rooms?checkIn&checkOut (ISO yyyy-MM-ddTHH:mm:ss) */
+  getAvailableRooms: ({ checkIn, checkOut }) =>
+    unwrap(apiClient.get("/rental-receipts/available-rooms", { params: { checkIn, checkOut } })),
+
+  /** UC-REN-010: tính chi phí dự kiến. details: [{ roomId, numberOfGuests, checkIn, checkOut, pricingMethod }] */
+  estimate: (details) => unwrap(apiClient.post("/rental-receipts/estimate", { details })),
+
+  /** UC-REN-001: { customerId, details, expectedTotalAmount? } - đơn giá do máy chủ tự tính */
+  create: (data) => unwrap(apiClient.post("/rental-receipts", data)),
+};
+
 // HÓA ĐƠN (Invoice)
 export const invoiceAPI = createCrudApi("/invoice");
 

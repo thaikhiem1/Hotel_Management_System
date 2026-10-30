@@ -53,7 +53,7 @@ const toContext = ({ receipt, detail }) => {
     receipt: {
       id: receipt.IdPT,
       createdDate: receipt.NgPT,
-      status: receipt.TrangThai || "DA_DAT",
+      status: receipt.TrangThai || "DA_XAC_NHAN",
       employeeName: employee?.TenNV ?? "N/A",
     },
     detail: {
@@ -92,8 +92,8 @@ const syncReceiptStatus = (receipt) => {
   if (statuses.includes(STATUS_CODE.CHECKED_IN)) {
     receipt.TrangThai = "DANG_LUU_TRU";
   } else if (statuses.includes(STATUS_CODE.RESERVED)) {
-    // còn chi tiết chưa nhận: không chuyển sang DA_TRA_PHONG, quay về trạng thái đặt phòng
-    receipt.TrangThai = "DA_DAT";
+    // còn chi tiết chưa nhận: không chuyển sang DA_TRA_PHONG, quay về trạng thái đã xác nhận
+    receipt.TrangThai = "DA_XAC_NHAN";
   } else {
     receipt.TrangThai = "DA_TRA_PHONG";
   }

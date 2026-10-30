@@ -38,8 +38,10 @@ const BookingDetailDialog = ({
       const hours = Math.ceil(diffMs / (1000 * 60 * 60));
       return `${Math.max(1, hours)} giờ`;
     } else {
-      const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-      return `${Math.max(1, days)} ngày (đêm)`;
+      // Theo ngày: số đêm theo ngày lịch giữa ngày nhận và ngày trả, tối thiểu 1 đêm (UC-REN-010)
+      const toDay = (d) => Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
+      const nights = Math.round((toDay(end) - toDay(start)) / (1000 * 60 * 60 * 24));
+      return `${Math.max(1, nights)} đêm`;
     }
   };
 
@@ -50,10 +52,8 @@ const BookingDetailDialog = ({
 
   const handleRemoveSingleRoom = (ct) => {
     const maPhong = ct.phong?.MaPH || `ID ${ct.IdPH}`;
-    if (window.confirm(`Bạn có chắc muốn xóa phòng ${maPhong} khỏi phiếu thuê này?\nGiá tiền của phiếu thuê sẽ được tự động tính lại.`)) {
-      if (onRemoveRoom) {
-        onRemoveRoom(phieuThue.IdPT, ct.IdCTDP);
-      }
+    if (onRemoveRoom) {
+      onRemoveRoom(phieuThue.IdPT, ct.IdCTDP, maPhong);
     }
   };
 
@@ -71,7 +71,7 @@ const BookingDetailDialog = ({
         <div className="sticky top-0 flex items-center justify-between p-space-lg border-b border-surface-container-high bg-surface-container-low z-10">
           <div>
             <h2 className="font-headline-md text-headline-md text-on-surface font-bold">
-              Chi tiết phiếu thuê {formatReceiptCode(phieuThue.IdPT)}
+              Chi tiết phiếu thuê {(phieuThue.receiptCode || formatReceiptCode(phieuThue.IdPT))}
             </h2>
             <p className="font-body-sm text-body-sm text-on-surface-variant">
               Ngày lập: {formatDate(phieuThue.NgPT)}
@@ -102,7 +102,7 @@ const BookingDetailDialog = ({
                   Mã phiếu thuê
                 </p>
                 <p className="font-body-lg text-body-lg text-primary font-bold">
-                  {formatReceiptCode(phieuThue.IdPT)}
+                  {(phieuThue.receiptCode || formatReceiptCode(phieuThue.IdPT))}
                 </p>
               </div>
               <div>
@@ -327,10 +327,7 @@ const BookingDetailDialog = ({
           <button
             type="button"
             onClick={() => {
-              if (window.confirm(`Bạn có chắc muốn hủy và xóa toàn bộ phiếu thuê ${formatReceiptCode(phieuThue.IdPT)}?`)) {
-                onCancel(phieuThue);
-                onClose();
-              }
+              onCancel(phieuThue);
             }}
             className="flex items-center gap-space-xs px-space-lg py-space-md rounded-lg bg-error-container hover:bg-error text-on-error-container hover:text-on-error font-label-lg text-label-lg font-semibold transition-colors"
           >

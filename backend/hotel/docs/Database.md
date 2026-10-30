@@ -245,6 +245,18 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_booking_room_checked_in
     ON booking_details (room_id)
     WHERE booking_status = 'CHECKED_IN';
 
+-- ---------------------------------------------------------
+-- V2 (db/migration/V2__rental_receipts_booking_details.sql) bổ sung so với bản trên:
+--  * CREATE EXTENSION btree_gist (cần cho EXCLUDE USING gist)
+--  * chk_booking_estimated_units_rule: GIO = CEIL(tổng giờ) tối thiểu 1;
+--    NGAY = số đêm theo ngày lịch (check_out_at::date - check_in_at::date) tối thiểu 1 (BR-REN-010-09/10)
+--  * trg_rental_receipts_set_code: receipt_code = 'PT' + id (tối thiểu 3 chữ số), luôn do hệ thống sinh
+--  * trg_booking_details_validate: số khách <= maximum_occupancy; không đặt phòng UNDER_MAINTENANCE/CLEANING
+--  * trg_booking_details_refresh_total: estimated_total_amount = SUM(estimated_amount) các chi tiết chưa CANCELLED
+--  * trg_rental_receipts_require_detail: phiếu phải có >= 1 chi tiết (kiểm tra lúc COMMIT)
+--  * Index: idx_rental_receipts_(customer|employee|date), idx_booking_details_(receipt|room_status)
+-- ---------------------------------------------------------
+
 
 -- =========================================================
 -- 8. SERVICE CATEGORY

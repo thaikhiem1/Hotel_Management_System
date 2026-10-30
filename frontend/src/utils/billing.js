@@ -3,18 +3,17 @@
 // Đơn giá phòng và dịch vụ là GIÁ ĐÃ CHỐT của lượt lưu trú, không lấy bảng giá hiện hành.
 
 /**
- * QUY TẮC LÀM TRÒN THỜI LƯỢNG — CHƯA CÓ QUY ĐỊNH NGHIỆP VỤ.
- * UC yêu cầu không tự mặc định; giá trị dưới đây chỉ là tạm cho bản mock và
- * được gom về một chỗ để đổi khi nghiệp vụ chốt (đồng bộ với backend).
+ * QUY TẮC TÍNH SỐ ĐƠN VỊ — thống nhất với UC-REN-010 và backend (RentalPricing.java):
+ *  - GIO : tổng thời lượng làm tròn lên theo giờ, tối thiểu 1 giờ
+ *  - NGAY: số đêm theo ngày lịch giữa ngày nhận và ngày trả, tối thiểu 1 đêm
  */
 export const BILLING_RULES = {
-  rounding: "CEIL", // CEIL: làm tròn lên | FLOOR: làm tròn xuống | EXACT: giữ số lẻ
-  minimumUnits: 1, // thuê tối thiểu 1 ngày / 1 giờ
+  GIO: "Theo giờ: làm tròn lên theo tổng thời lượng, tối thiểu 1 giờ",
+  NGAY: "Theo ngày: tính theo số đêm giữa ngày nhận và ngày trả, tối thiểu 1 đêm",
 };
 
 const HOUR_MS = 60 * 60 * 1000;
-const UNIT_MS = { NGAY: 24 * HOUR_MS, GIO: HOUR_MS };
-const UNIT_LABELS = { NGAY: "ngày", GIO: "giờ" };
+const UNIT_LABELS = { NGAY: "đêm", GIO: "giờ" };
 
 /** code: INVALID_TIME (thời gian trả phòng không hợp lệ) | MISSING_DATA (thiếu dữ liệu tính tiền) */
 export class BillingError extends Error {
@@ -25,14 +24,14 @@ export class BillingError extends Error {
   }
 }
 
-const roundUnits = (raw) => {
-  const rounded =
-    BILLING_RULES.rounding === "CEIL"
-      ? Math.ceil(raw)
-      : BILLING_RULES.rounding === "FLOOR"
-        ? Math.floor(raw)
-        : raw;
-  return Math.max(BILLING_RULES.minimumUnits, rounded);
+const toUtcDay = (date) => Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+
+const billedUnits = (rentalType, from, to) => {
+  if (rentalType === "GIO") {
+    return Math.max(1, Math.ceil((to - from) / HOUR_MS));
+  }
+  const nights = Math.round((toUtcDay(new Date(to)) - toUtcDay(new Date(from))) / (24 * HOUR_MS));
+  return Math.max(1, nights);
 };
 
 const isMoney = (n) => typeof n === "number" && Number.isFinite(n) && n >= 0;
@@ -44,7 +43,7 @@ export function calculateStay({
   checkOutAt,
   services = [],
 }) {
-  if (!UNIT_MS[rentalType] || !isMoney(unitPrice)) {
+  if (!UNIT_LABELS[rentalType] || !isMoney(unitPrice)) {
     throw new BillingError(
       "MISSING_DATA",
       "Không xác định được hình thức thuê hoặc đơn giá phòng đã chốt.",
@@ -69,7 +68,7 @@ export function calculateStay({
     );
   }
 
-  const units = roundUnits((to - from) / UNIT_MS[rentalType]);
+  const units = billedUnits(rentalType, from, to);
   const roomTotal = Math.round(units * unitPrice);
 
   const serviceLines = services.map((s) => ({

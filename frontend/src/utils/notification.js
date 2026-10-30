@@ -146,6 +146,22 @@ export const handleApiError = (error) => {
 };
 
 /**
+ * Lấy thông điệp lỗi dễ đọc từ lỗi axios: gộp lỗi theo trường (fieldErrors) nếu có,
+ * nếu không thì dùng message của máy chủ.
+ */
+export const getErrorMessage = (error, fallback = "Đã có lỗi xảy ra. Vui lòng thử lại.") => {
+  const data = error?.response?.data;
+  if (data?.fieldErrors && Object.keys(data.fieldErrors).length > 0) {
+    return Object.values(data.fieldErrors).join("; ");
+  }
+  if (data?.message) return data.message;
+  if (error?.request && !error?.response) {
+    return "Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng.";
+  }
+  return fallback;
+};
+
+/**
  * Hiển thị loading notification
  * @param {string} message - Nội dung loading
  * @returns {function} Function để dismiss loading

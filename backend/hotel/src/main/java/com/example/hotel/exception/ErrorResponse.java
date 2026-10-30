@@ -21,4 +21,6 @@ public class ErrorResponse {
     private String message;
     private String path;
     private Map<String, String> fieldErrors;
+    /** Dữ liệu kèm theo lỗi, ví dụ chi phí mới khi giá thay đổi hoặc danh sách phòng không khả dụng */
+    private Object data;
 }

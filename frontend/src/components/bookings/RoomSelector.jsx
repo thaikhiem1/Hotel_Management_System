@@ -15,6 +15,8 @@ import { formatCurrency } from '@/utils/format';
  *   onToggleRoom(phong): toggle chọn/bỏ chọn phòng
  *   checkInDate, checkOutDate: ngày nhận/trả
  *   hinhThucThue: 'NGAY' | 'GIO'
+ *   isLoading: đang tra cứu phòng khả dụng (UC-REN-009)
+ *   emptyMessage: thông báo khi không có phòng
  */
 const RoomSelector = ({
   danhSachPhong = [],
@@ -22,7 +24,9 @@ const RoomSelector = ({
   onToggleRoom,
   checkInDate,
   checkOutDate,
-  hinhThucThue = 'NGAY'
+  hinhThucThue = 'NGAY',
+  isLoading = false,
+  emptyMessage = 'Không tìm thấy phòng phù hợp với bộ lọc'
 }) => {
   const [filterLoaiPhong, setFilterLoaiPhong] = useState('all');
 
@@ -102,13 +106,20 @@ const RoomSelector = ({
       </div>
 
       {/* Danh sách phòng trống */}
-      {filteredPhong.length === 0 ? (
+      {isLoading ? (
+        <div className="text-center py-margin">
+          <div className="mx-auto mb-space-sm w-8 h-8 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+          <p className="font-body-md text-body-md text-on-surface-variant">
+            Đang tra cứu phòng khả dụng...
+          </p>
+        </div>
+      ) : filteredPhong.length === 0 ? (
         <div className="text-center py-margin">
           <span className="material-symbols-outlined text-[48px] text-outline mb-space-xs block">
             meeting_room_off
           </span>
           <p className="font-body-md text-body-md text-on-surface-variant">
-            Không tìm thấy phòng phù hợp với bộ lọc
+            {emptyMessage}
           </p>
         </div>
       ) : (

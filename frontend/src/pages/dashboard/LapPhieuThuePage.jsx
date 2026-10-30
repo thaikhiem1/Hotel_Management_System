@@ -1,15 +1,14 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   BookingFilters,
   BookingTable,
   BookingDetailDialog,
   CreateBookingDialog
 } from '@/components/bookings';
-import {
-  mockKhachHang,
-  mockPhong,
-  mockPhieuThue as initialMockPhieuThue
-} from '@/services/mockData';
+import { rentalReceiptAPI } from '@/services/api';
+import { formatCurrency, formatReceiptCode } from '@/utils/format';
+import { handleApiError, showSuccess, showWarning } from '@/utils/notification';
+import { toPhieuThue } from '@/utils/rentalMappers';
 
 // ========== Helpers: chuyển đổi data DB → data UI ==========
 
@@ -30,19 +29,40 @@ const layTrangThaiPhieuThue = (chiTiet = []) => {
   return 'DA_DAT';
 };
 
+// Số phiếu thuê tải về mỗi lần (mới nhất trước)
+const PAGE_SIZE = 50;
+
 // ===================== PAGE COMPONENT =====================
 
 const LapPhieuThuePage = () => {
-  const [phieuThueList, setPhieuThueList] = useState(initialMockPhieuThue);
+  const [phieuThueList, setPhieuThueList] = useState([]);
   const [filters, setFilters] = useState({
     search: '',
     status: 'all',
     date: ''
   });
-  const [isLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedPhieuThue, setSelectedPhieuThue] = useState(null);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+
+  // Tải danh sách phiếu thuê từ máy chủ khi mở trang
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const response = await rentalReceiptAPI.getAll({ page: 0, size: PAGE_SIZE });
+        if (!cancelled) setPhieuThueList(response.data.content.map(toPhieuThue));
+      } catch (error) {
+        if (!cancelled) handleApiError(error);
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Lọc danh sách phiếu thuê
   const filteredPhieuThue = phieuThueList.filter((pt) => {
@@ -52,7 +72,7 @@ const LapPhieuThuePage = () => {
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
       const matchesSearch =
-        `PT${String(pt.IdPT).padStart(3, '0')}`.toLowerCase().includes(searchLower) ||
+        (pt.receiptCode || formatReceiptCode(pt.IdPT)).toLowerCase().includes(searchLower) ||
         pt.khachHang?.TenKH?.toLowerCase().includes(searchLower) ||
         pt.khachHang?.SDT?.includes(searchLower) ||
         chiTiet.some(ct => ct.phong?.MaPH?.toLowerCase().includes(searchLower));
@@ -85,78 +105,22 @@ const LapPhieuThuePage = () => {
     setShowDetailDialog(true);
   };
 
-  // Hủy toàn bộ phiếu thuê (xóa luôn phiếu thuê)
-  const handleCancel = (phieuThue) => {
-    const maPT = `PT${String(phieuThue.IdPT).padStart(3, '0')}`;
-    if (window.confirm(`Bạn có chắc muốn hủy và xóa phiếu thuê ${maPT}?`)) {
-      setPhieuThueList(prev => prev.filter(pt => pt.IdPT !== phieuThue.IdPT));
-      if (selectedPhieuThue && selectedPhieuThue.IdPT === phieuThue.IdPT) {
-        setShowDetailDialog(false);
-        setSelectedPhieuThue(null);
-      }
-      alert(`Đã hủy phiếu thuê ${maPT}`);
-    }
+  // Hủy phiếu / bỏ phòng khỏi phiếu: chưa có API phía máy chủ (UC-REN-002, UC-REN-003)
+  const notSupportedYet = () => {
+    showWarning(
+      'Chưa hỗ trợ',
+      'Hủy phiếu thuê và bỏ phòng khỏi phiếu sẽ được bổ sung cùng API tương ứng.'
+    );
   };
 
-  // Xóa 1 phòng khỏi phiếu thuê (khi phiếu có từ 2 phòng trở lên) và cập nhật lại tiền
-  const handleRemoveRoom = (IdPT, IdCTDP) => {
-    setPhieuThueList(prev => {
-      return prev
-        .map(pt => {
-          if (pt.IdPT !== IdPT) return pt;
-          const updatedChiTiet = pt.chiTiet.filter(ct => ct.IdCTDP !== IdCTDP);
-          return {
-            ...pt,
-            chiTiet: updatedChiTiet
-          };
-        })
-        .filter(pt => pt.chiTiet.length > 0); // Nếu hết phòng thì xóa luôn phiếu
-    });
-
-    // Cập nhật lại đối tượng đang mở trong dialog
-    setSelectedPhieuThue(prev => {
-      if (!prev || prev.IdPT !== IdPT) return prev;
-      const updatedChiTiet = prev.chiTiet.filter(ct => ct.IdCTDP !== IdCTDP);
-      if (updatedChiTiet.length === 0) {
-        setShowDetailDialog(false);
-        return null;
-      }
-      return {
-        ...prev,
-        chiTiet: updatedChiTiet
-      };
-    });
-  };
-
-  // Tạo phiếu thuê mới
-  const handleCreatePhieuThue = (formData) => {
-    const newIdPT = Math.max(...phieuThueList.map(pt => pt.IdPT), 0) + 1;
-    const today = new Date().toISOString().split('T')[0];
-
-    const newPhieuThue = {
-      IdPT: newIdPT,
-      NgPT: today,
-      IdKH: formData.khachHang.IdKH || (newIdPT + 100),
-      IdNV: 1, // Lễ tân hiện tại
-      khachHang: formData.khachHang,
-      chiTiet: formData.chiTiet.map((ct, index) => ({
-        IdCTDP: newIdPT * 100 + index,
-        IdPT: newIdPT,
-        IdPH: ct.phong.IdPH,
-        SoNguoi: ct.SoNguoi,
-        NgayCheckIn: ct.NgayCheckIn,
-        NgayCheckOut: ct.NgayCheckOut,
-        HinhThucThue: ct.HinhThucThue || 'NGAY',
-        TrangThaiDatPhong: 0, // 0: Đã đặt
-        DonGia: ct.DonGia,
-        ThanhTien: ct.ThanhTien,
-        phong: ct.phong
-      }))
-    };
-
-    setPhieuThueList([newPhieuThue, ...phieuThueList]);
+  // Phiếu thuê vừa được máy chủ lưu thành công (UC-REN-001)
+  const handleCreated = (receipt) => {
+    setPhieuThueList(prev => [toPhieuThue(receipt), ...prev.filter(pt => pt.IdPT !== receipt.rentalReceiptId)]);
     setShowCreateDialog(false);
-    alert(`Tạo phiếu thuê thành công!\nMã phiếu: PT${String(newIdPT).padStart(3, '0')}`);
+    showSuccess(
+      'Tạo phiếu thuê thành công',
+      `Mã phiếu ${receipt.receiptCode} - chi phí dự kiến ${formatCurrency(receipt.estimatedTotalAmount)}`
+    );
   };
 
   return (
@@ -183,22 +147,6 @@ const LapPhieuThuePage = () => {
         </button>
       </div>
 
-      {/* Thông tin kịch bản test tránh xung đột phòng */}
-      <div className="p-space-md rounded-lg bg-surface-container-high border border-primary/20 flex items-start gap-space-md">
-        <span className="material-symbols-outlined text-primary text-[24px]">
-          info
-        </span>
-        <div className="text-body-sm text-body-sm">
-          <p className="font-bold text-on-surface">
-            💡 Dữ liệu mẫu kiểm tra tránh xung đột phòng (Database.md):
-          </p>
-          <p className="text-on-surface-variant mt-0.5">
-            Phòng <span className="font-bold text-primary">P101</span> đã có lịch đặt từ <span className="font-semibold text-on-surface">14:00 23/09/2026</span> đến <span className="font-semibold text-on-surface">02:00 24/09/2026</span>.
-            Khi bạn nhấn &quot;Tạo phiếu thuê&quot; và chọn thời gian trùng khoảng này, phòng P101 sẽ tự động ẩn đi. Khi chọn ngoài khoảng giờ trên, phòng P101 sẽ xuất hiện trở lại để bạn đặt phòng.
-          </p>
-        </div>
-      </div>
-
       {/* Filters */}
       <BookingFilters
         filters={filters}
@@ -221,7 +169,7 @@ const LapPhieuThuePage = () => {
         <BookingTable
           phieuThueList={filteredPhieuThue}
           onViewDetail={handleViewDetail}
-          onCancel={handleCancel}
+          onCancel={notSupportedYet}
           isLoading={isLoading}
           tinhTongTien={tinhTongTien}
           layTrangThaiPhieuThue={layTrangThaiPhieuThue}
@@ -236,20 +184,17 @@ const LapPhieuThuePage = () => {
           setShowDetailDialog(false);
           setSelectedPhieuThue(null);
         }}
-        onCancel={handleCancel}
-        onRemoveRoom={handleRemoveRoom}
+        onCancel={notSupportedYet}
+        onRemoveRoom={notSupportedYet}
         tinhTongTien={tinhTongTien}
         layTrangThaiPhieuThue={layTrangThaiPhieuThue}
       />
 
-      {/* Create Dialog - Truyền phieuThueList để kiểm tra xung đột */}
+      {/* Create Dialog - khách hàng, phòng khả dụng và chi phí lấy từ API */}
       <CreateBookingDialog
         isOpen={showCreateDialog}
         onClose={() => setShowCreateDialog(false)}
-        onSubmit={handleCreatePhieuThue}
-        danhSachKhachHang={mockKhachHang}
-        danhSachPhong={mockPhong}
-        phieuThueList={phieuThueList}
+        onCreated={handleCreated}
       />
     </div>
   );

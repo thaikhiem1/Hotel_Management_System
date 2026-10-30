@@ -10,6 +10,7 @@ import {
   CheckInModal,
   CheckOutModal
 } from '@/components/dashboard';
+import { CreateBookingDialog } from '@/components/bookings';
 import { useAuth } from '@/contexts/AuthContext';
 import { rentalService } from '@/services/mockRentalService';
 import { showError, showSuccess } from '@/utils/notification';
@@ -31,6 +32,7 @@ const DashboardPage = () => {
   // Form nhận phòng (UC-REN-004) và trả phòng (UC-REN-007): giữ dữ liệu lưu trú đã tải
   const [checkInStay, setCheckInStay] = useState(null);
   const [checkOutStay, setCheckOutStay] = useState(null);
+  const [bookingRoom, setBookingRoom] = useState(null); // phòng đang đặt (UC-REN-001 từ sơ đồ phòng)
   const [dataVersion, setDataVersion] = useState(0); // tăng để tính lại sơ đồ phòng sau khi mock data đổi
   const { user } = useAuth();
 
@@ -169,6 +171,15 @@ const DashboardPage = () => {
     }
   };
 
+  const handleBookingCreated = (receipt) => {
+    setBookingRoom(null);
+    showSuccess(
+      'Tạo phiếu thuê thành công',
+      `Mã phiếu ${receipt.receiptCode} - ${receipt.details.length} phòng`
+    );
+    handleRefresh();
+  };
+
   const handleCheckInSuccess = (result) => {
     setCheckInStay(null);
     showSuccess(
@@ -197,11 +208,8 @@ const DashboardPage = () => {
         break;
 
       case 'book':
-        // TODO: Điều hướng tới trang đặt phòng với phòng được chọn sẵn
-        // API: GET /api/rooms/{IdPH}/availability (kiểm tra tính khả dụng)
-        // Sau đó chuyển đến form đặt phòng
-        // Authorization: Bearer token (quyền lễ tân/quản lý)
-        alert(`Điều hướng tới trang lập phiếu thuê phòng ${room.name}`);
+        // "Đặt phòng ngay": mở form lập phiếu thuê với phòng và khoảng thời gian đang lọc
+        setBookingRoom(room);
         break;
 
       case 'checkin':
@@ -398,6 +406,20 @@ const DashboardPage = () => {
           // Không set selectedRoom = null để có thể quay lại modal chi tiết
         }}
         onSubmit={handleAddService}
+      />
+
+      {/* Đặt phòng - UC-REN-001: phòng chọn sẵn + thời gian theo bộ lọc của sơ đồ phòng */}
+      <CreateBookingDialog
+        isOpen={Boolean(bookingRoom)}
+        onClose={() => setBookingRoom(null)}
+        onCreated={handleBookingCreated}
+        initial={bookingRoom && {
+          roomCode: bookingRoom.name,
+          checkInDate: dateTimeFilter.checkIn.date,
+          checkInTime: dateTimeFilter.checkIn.time,
+          checkOutDate: dateTimeFilter.checkOut.date,
+          checkOutTime: dateTimeFilter.checkOut.time
+        }}
       />
 
       {/* Check-in Modal - UC-REN-004 */}

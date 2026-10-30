@@ -1,209 +1,226 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import CustomerSelector from './CustomerSelector';
 import RoomSelector from './RoomSelector';
 import BookingSummary from './BookingSummary';
-import { checkRoomAvailability } from '@/services/mockData';
+import { rentalReceiptAPI } from '@/services/api';
+import { useAuth } from '@/contexts/AuthContext';
+import { getErrorMessage } from '@/utils/notification';
+import { toPhong } from '@/utils/rentalMappers';
 
 /**
- * CreateBookingDialog - Hộp thoại tạo phiếu thuê mới
- * Có kiểm tra và tự động ẩn phòng bị xung đột thời gian (vd: P101 từ 14:00 - 02:00)
+ * CreateBookingDialog - Hộp thoại tạo phiếu thuê (UC-REN-001)
+ *
+ * Kết nối API thật:
+ *   - UC-REN-008: tra cứu / tạo khách hàng (CustomerSelector)
+ *   - UC-REN-009: GET  /api/rental-receipts/available-rooms (phòng khả dụng theo khoảng thời gian)
+ *   - UC-REN-010: POST /api/rental-receipts/estimate        (chi phí do máy chủ tính)
+ *   - UC-REN-001: POST /api/rental-receipts                 (lưu phiếu + chi tiết trong 1 transaction)
+ *
+ * Đơn giá, thành tiền và nhân viên lập phiếu không do giao diện quyết định; giao diện chỉ gửi
+ * tổng tiền người dùng đã xem để máy chủ phát hiện giá thay đổi (UC-REN-010 E6).
+ *
+ * Props:
+ *   isOpen, onClose
+ *   onCreated(receipt): gọi sau khi tạo phiếu thành công (receipt là RentalReceiptResponse)
+ *   initial: { checkInDate, checkInTime, checkOutDate, checkOutTime, roomCode } - giá trị ban đầu,
+ *            dùng khi mở từ nút "Đặt phòng" trên sơ đồ phòng
  */
-const CreateBookingDialog = ({
-  isOpen,
-  onClose,
-  onSubmit,
-  danhSachKhachHang = [],
-  danhSachPhong = [],
-  phieuThueList = []
-}) => {
+
+const localDateStr = (date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+
+const defaultTimes = (type) => {
+  const today = new Date();
+  const tomorrow = new Date();
+  tomorrow.setDate(today.getDate() + 1);
+  return type === 'GIO'
+    ? { checkInDate: localDateStr(today), checkInTime: '09:00', checkOutDate: localDateStr(today), checkOutTime: '13:00' }
+    : { checkInDate: localDateStr(today), checkInTime: '14:00', checkOutDate: localDateStr(tomorrow), checkOutTime: '12:00' };
+};
+
+const CreateBookingForm = ({ onClose, onCreated, initial }) => {
+  const { user } = useAuth();
+  const startDefaults = { ...defaultTimes('NGAY'), ...initial };
+
   // Hình thức thuê: 'NGAY' | 'GIO'
   const [hinhThucThue, setHinhThucThue] = useState('NGAY');
-
-  // Khách hàng được chọn (KhachHang object)
   const [selectedKhachHang, setSelectedKhachHang] = useState(null);
-
-  // Thời gian
-  const todayStr = new Date().toISOString().split('T')[0];
-  const [checkInDate, setCheckInDate] = useState('');
-  const [checkInTime, setCheckInTime] = useState('14:00');
-  const [checkOutDate, setCheckOutDate] = useState('');
-  const [checkOutTime, setCheckOutTime] = useState('12:00');
-
-  // Số người chung cho mỗi phòng
+  const [checkInDate, setCheckInDate] = useState(startDefaults.checkInDate);
+  const [checkInTime, setCheckInTime] = useState(startDefaults.checkInTime);
+  const [checkOutDate, setCheckOutDate] = useState(startDefaults.checkOutDate);
+  const [checkOutTime, setCheckOutTime] = useState(startDefaults.checkOutTime);
   const [soNguoi, setSoNguoi] = useState(1);
-
-  // Danh sách phòng đã chọn (Phong[])
   const [selectedRooms, setSelectedRooms] = useState([]);
 
-  // Reset form khi dialog mở hoặc đóng
-  useEffect(() => {
-    if (isOpen) {
-      setHinhThucThue('NGAY');
-      setSelectedKhachHang(null);
-      setCheckInDate(todayStr);
-      setCheckInTime('14:00');
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      setCheckOutDate(tomorrow.toISOString().split('T')[0]);
-      setCheckOutTime('12:00');
-      setSoNguoi(1);
-      setSelectedRooms([]);
-    } else {
-      setSelectedKhachHang(null);
-      setSelectedRooms([]);
-    }
-  }, [isOpen, todayStr]);
+  // Phòng khả dụng (UC-REN-009)
+  const [availability, setAvailability] = useState({ rooms: [], loading: false, error: null, message: null });
+  const [refreshToken, setRefreshToken] = useState(0);
+  // Phòng chọn sẵn từ sơ đồ phòng, chỉ áp dụng một lần khi danh sách khả dụng tải xong
+  const preselectRoomCode = useRef(initial?.roomCode ?? null);
 
-  // Xử lý chuyển đổi hình thức thuê
+  // Chi phí dự kiến (UC-REN-010)
+  const [estimate, setEstimate] = useState({ data: null, loading: false, error: null });
+  const [priceChanged, setPriceChanged] = useState(false);
+
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
+
+  const startStr = checkInDate && checkInTime ? `${checkInDate}T${checkInTime}:00` : null;
+  const endStr = checkOutDate && checkOutTime ? `${checkOutDate}T${checkOutTime}:00` : null;
+  const timeValid = Boolean(startStr && endStr && new Date(endStr) > new Date(startStr));
+
   const handleSwitchHinhThuc = (type) => {
+    const times = defaultTimes(type);
     setHinhThucThue(type);
-    if (type === 'GIO') {
-      setCheckInDate(todayStr);
-      setCheckInTime('09:00');
-      setCheckOutDate(todayStr);
-      setCheckOutTime('13:00');
-    } else {
-      setCheckInDate(todayStr);
-      setCheckInTime('14:00');
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      setCheckOutDate(tomorrow.toISOString().split('T')[0]);
-      setCheckOutTime('12:00');
-    }
+    setCheckInDate(times.checkInDate);
+    setCheckInTime(times.checkInTime);
+    setCheckOutDate(times.checkOutDate);
+    setCheckOutTime(times.checkOutTime);
   };
 
-  // Chuỗi ISO của thời gian bắt đầu và kết thúc
-  const currentStartStr = useMemo(() => {
-    if (!checkInDate || !checkInTime) return null;
-    return `${checkInDate}T${checkInTime}:00`;
-  }, [checkInDate, checkInTime]);
-
-  const currentEndStr = useMemo(() => {
-    if (!checkOutDate || !checkOutTime) return null;
-    return `${checkOutDate}T${checkOutTime}:00`;
-  }, [checkOutDate, checkOutTime]);
-
-  /**
-   * LỌC PHÒNG KHẢ DỤNG - TRÁNH XUNG ĐỘT PHÒNG
-   * Ví dụ: P101 đã có lịch đặt từ 14:00 23/09/2026 đến 02:00 24/09/2026
-   * Nếu người dùng chọn thời gian giao thoa với khoảng này, P101 sẽ KHÔNG xuất hiện
-   */
-  const { availableRooms, conflictedRooms } = useMemo(() => {
-    if (!currentStartStr || !currentEndStr) {
-      return {
-        availableRooms: danhSachPhong.filter(p => p.TrangThaiPhong === 0),
-        conflictedRooms: []
-      };
-    }
-
-    const available = [];
-    const conflicted = [];
-
-    danhSachPhong.forEach((phong) => {
-      // Chỉ kiểm tra các phòng không đang sửa chữa
-      if (phong.TrangThaiPhong === 0) {
-        const isFree = checkRoomAvailability(phong.IdPH, currentStartStr, currentEndStr, phieuThueList);
-        if (isFree) {
-          available.push(phong);
-        } else {
-          conflicted.push(phong);
-        }
-      }
-    });
-
-    return { availableRooms: available, conflictedRooms: conflicted };
-  }, [danhSachPhong, currentStartStr, currentEndStr, phieuThueList]);
-
-  // Nếu người dùng đã chọn một phòng mà sau đó đổi giờ dẫn tới bị xung đột, tự động bỏ chọn phòng đó
+  // UC-REN-009: tra cứu phòng khả dụng mỗi khi khoảng thời gian thay đổi
   useEffect(() => {
-    if (selectedRooms.length > 0 && conflictedRooms.length > 0) {
-      const conflictedIds = new Set(conflictedRooms.map(r => r.IdPH));
-      setSelectedRooms(prev => prev.filter(r => !conflictedIds.has(r.IdPH)));
-    }
-  }, [conflictedRooms]);
+    if (!timeValid) return undefined;
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      setAvailability((prev) => ({ ...prev, loading: true, error: null }));
+      try {
+        const response = await rentalReceiptAPI.getAvailableRooms({ checkIn: startStr, checkOut: endStr });
+        if (cancelled) return;
+        const rooms = response.data.map(toPhong);
+        setAvailability({ rooms, loading: false, error: null, message: response.message });
+
+        // Bỏ chọn phòng không còn khả dụng; áp dụng phòng chọn sẵn từ sơ đồ phòng
+        const preselect = preselectRoomCode.current;
+        preselectRoomCode.current = null;
+        const ids = new Set(rooms.map((r) => r.IdPH));
+        setSelectedRooms((prev) => {
+          const kept = prev.filter((r) => ids.has(r.IdPH));
+          const match = preselect && rooms.find((r) => r.MaPH === preselect);
+          return match && !kept.some((r) => r.IdPH === match.IdPH) ? [...kept, match] : kept;
+        });
+      } catch (error) {
+        if (cancelled) return;
+        // Không hiển thị kết quả chưa được xác minh là khả dụng
+        setAvailability({
+          rooms: [],
+          loading: false,
+          error: getErrorMessage(error, 'Không thể tra cứu phòng khả dụng. Vui lòng thử lại.'),
+          message: null
+        });
+        setSelectedRooms([]);
+      }
+    }, 300);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [startStr, endStr, timeValid, refreshToken]);
+
+  // Chi tiết gửi lên máy chủ; không có đơn giá hay thành tiền
+  const detailsPayload = useMemo(
+    () =>
+      selectedRooms.map((phong) => ({
+        roomId: phong.IdPH,
+        numberOfGuests: soNguoi,
+        checkIn: startStr,
+        checkOut: endStr,
+        pricingMethod: hinhThucThue
+      })),
+    [selectedRooms, soNguoi, startStr, endStr, hinhThucThue]
+  );
+  const canEstimate = timeValid && selectedRooms.length > 0 && soNguoi > 0;
+
+  // UC-REN-010: tính lại chi phí khi phòng, thời gian, số khách hoặc phương thức tính giá thay đổi
+  useEffect(() => {
+    if (!canEstimate) return undefined;
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      setEstimate((prev) => ({ ...prev, loading: true }));
+      try {
+        const response = await rentalReceiptAPI.estimate(detailsPayload);
+        if (cancelled) return;
+        setEstimate({ data: response.data, loading: false, error: null });
+        setPriceChanged(false);
+      } catch (error) {
+        if (cancelled) return;
+        setEstimate({
+          data: null,
+          loading: false,
+          error: getErrorMessage(error, 'Không thể tính chi phí phiếu thuê. Vui lòng thử lại.')
+        });
+      }
+    }, 350);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [canEstimate, detailsPayload]);
+
+  const availableRooms = timeValid ? availability.rooms : [];
+  const estimateData = canEstimate ? estimate.data : null;
+  const estimateError = canEstimate ? estimate.error : null;
+  const estimateLoading = canEstimate && estimate.loading;
+  const maxGuests = selectedRooms.length > 0
+    ? Math.min(...selectedRooms.map((r) => r.loaiPhong?.SoNguoiToiDa ?? Infinity))
+    : null;
+  const guestsExceeded = maxGuests !== null && soNguoi > maxGuests;
 
   const handleToggleRoom = (phong) => {
-    setSelectedRooms(prev => {
-      const exists = prev.some(r => r.IdPH === phong.IdPH);
-      if (exists) {
-        return prev.filter(r => r.IdPH !== phong.IdPH);
-      } else {
-        return [...prev, phong];
-      }
-    });
-  };
-
-  // Tính số lượng thời gian thuê
-  const calculateDuration = () => {
-    if (!checkInDate || !checkOutDate) return 0;
-    const start = new Date(`${checkInDate}T${checkInTime || '00:00'}`);
-    const end = new Date(`${checkOutDate}T${checkOutTime || '00:00'}`);
-    const diffMs = end - start;
-    if (diffMs <= 0) return 0;
-
-    if (hinhThucThue === 'GIO') {
-      const diffHours = Math.ceil(diffMs / (1000 * 60 * 60));
-      return Math.max(1, diffHours);
-    } else {
-      const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-      return Math.max(1, diffDays);
-    }
-  };
-
-  const duration = calculateDuration();
-
-  const isDateTimeValid = () => {
-    if (!checkInDate || !checkOutDate || !checkInTime || !checkOutTime) return false;
-    const start = new Date(`${checkInDate}T${checkInTime}`);
-    const end = new Date(`${checkOutDate}T${checkOutTime}`);
-    return end > start;
-  };
-
-  const canSubmit = () => {
-    return (
-      selectedKhachHang &&
-      selectedRooms.length > 0 &&
-      soNguoi > 0 &&
-      isDateTimeValid() &&
-      duration > 0
+    setSubmitError(null);
+    setSelectedRooms((prev) =>
+      prev.some((r) => r.IdPH === phong.IdPH)
+        ? prev.filter((r) => r.IdPH !== phong.IdPH)
+        : [...prev, phong]
     );
   };
 
-  const handleSubmit = () => {
-    if (!canSubmit()) return;
+  const canSubmit =
+    Boolean(selectedKhachHang) &&
+    selectedRooms.length > 0 &&
+    timeValid &&
+    !guestsExceeded &&
+    Boolean(estimateData) &&
+    !estimateLoading &&
+    !availability.loading &&
+    !submitting;
 
-    // Tạo chi tiết đặt phòng (CTDP) cho từng phòng đã chọn
-    const chiTiet = selectedRooms.map((phong) => {
-      const loaiPhong = phong.loaiPhong;
-      const donGia = hinhThucThue === 'GIO'
-        ? (loaiPhong?.GiaGio || Math.round((loaiPhong?.GiaNgay || 0) / 10))
-        : (loaiPhong?.GiaNgay || 0);
-      const thanhTien = donGia * duration;
-
-      return {
-        phong,
-        SoNguoi: soNguoi,
-        NgayCheckIn: `${checkInDate}T${checkInTime}:00`,
-        NgayCheckOut: `${checkOutDate}T${checkOutTime}:00`,
-        HinhThucThue: hinhThucThue,
-        SoLuongThoiGian: duration,
-        DonGia: donGia,
-        ThanhTien: thanhTien
-      };
-    });
-
-    onSubmit({
-      khachHang: selectedKhachHang,
-      chiTiet
-    });
+  const handleSubmit = async () => {
+    if (!canSubmit) return;
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      const response = await rentalReceiptAPI.create({
+        customerId: selectedKhachHang.IdKH,
+        details: detailsPayload,
+        expectedTotalAmount: estimateData.totalAmount
+      });
+      onCreated?.(response.data);
+    } catch (error) {
+      const body = error.response?.data;
+      if (error.response?.status === 409 && body?.data?.totalAmount !== undefined) {
+        // UC-REN-010 E6: giá đã đổi -> hiển thị chi phí mới, người dùng xác nhận lại
+        setEstimate({ data: body.data, loading: false, error: null });
+        setPriceChanged(true);
+      } else if (error.response?.status === 409 && body?.data?.unavailableRoomIds) {
+        // UC-REN-001 A9 / UC-REN-009 E5: phòng vừa bị đặt -> tra cứu lại
+        setSubmitError(body.message);
+        setRefreshToken((token) => token + 1);
+      } else if (error.response?.status === 409) {
+        setSubmitError(getErrorMessage(error));
+        setRefreshToken((token) => token + 1);
+      } else {
+        setSubmitError(getErrorMessage(error, 'Không thể tạo phiếu thuê. Vui lòng thử lại.'));
+      }
+    } finally {
+      setSubmitting(false);
+    }
   };
-
-  if (!isOpen) return null;
 
   return (
     <>
       {/* Overlay */}
-      <div className="fixed inset-0 bg-black/50 z-50" onClick={onClose} />
+      <div className="fixed inset-0 bg-black/50 z-50" onClick={submitting ? undefined : onClose} />
 
       {/* Dialog */}
       <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-6xl max-h-[92vh] overflow-y-auto rounded-lg bg-surface-container-low shadow-2xl">
@@ -214,13 +231,14 @@ const CreateBookingDialog = ({
               Tạo phiếu thuê mới
             </h2>
             <p className="font-body-sm text-body-sm text-on-surface-variant mt-space-xs">
-              Lập phiếu thuê phòng (PhieuThue & CTDP) - Tự động tránh trùng lịch đặt phòng
+              Chọn khách hàng, khoảng thời gian và phòng khả dụng; chi phí do hệ thống tính
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-space-sm rounded-lg hover:bg-surface-container-high transition-colors"
+            disabled={submitting}
+            className="p-space-sm rounded-lg hover:bg-surface-container-high transition-colors disabled:opacity-50"
           >
             <span className="material-symbols-outlined text-[24px] text-on-surface">
               close
@@ -267,28 +285,21 @@ const CreateBookingDialog = ({
                 </div>
               </div>
 
-              {/* Bước 1: Chọn khách hàng (KhachHang) */}
+              {/* Bước 1: Khách hàng đại diện (UC-REN-008) */}
               <CustomerSelector
                 selectedKhachHang={selectedKhachHang}
                 onSelectKhachHang={setSelectedKhachHang}
-                danhSachKhachHang={danhSachKhachHang}
               />
 
-              {/* Bước 2: Thời gian lưu trú (có ngày và giờ) */}
+              {/* Bước 2: Thời gian lưu trú */}
               <div className="p-space-lg rounded-lg bg-surface-container-high">
                 <div className="flex items-center justify-between mb-space-md">
                   <h3 className="font-label-lg text-label-lg text-on-surface-variant uppercase tracking-wider">
                     Thời gian lưu trú ({hinhThucThue === 'GIO' ? 'Theo giờ' : 'Theo ngày'})
                   </h3>
-                  {duration > 0 && isDateTimeValid() && (
-                    <span className="font-body-sm text-body-sm text-primary font-bold">
-                      ⏱ {duration} {hinhThucThue === 'GIO' ? 'giờ' : 'ngày (đêm)'}
-                    </span>
-                  )}
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
-                  {/* Check-in: Ngày & Giờ */}
                   <div>
                     <label className="block font-label-sm text-label-sm text-on-surface-variant mb-space-xs">
                       Ngày nhận phòng <span className="text-error">*</span>
@@ -313,7 +324,6 @@ const CreateBookingDialog = ({
                     />
                   </div>
 
-                  {/* Check-out: Ngày & Giờ */}
                   <div>
                     <label className="block font-label-sm text-label-sm text-on-surface-variant mb-space-xs">
                       Ngày trả phòng <span className="text-error">*</span>
@@ -339,65 +349,91 @@ const CreateBookingDialog = ({
                     />
                   </div>
 
-                  {/* Số người (SoNguoi trong CTDP) */}
+                  {/* Số khách mỗi phòng */}
                   <div className="sm:col-span-2">
                     <label className="block font-label-sm text-label-sm text-on-surface-variant mb-space-xs">
-                      Số khách mỗi phòng (SoNguoi) <span className="text-error">*</span>
+                      Số khách mỗi phòng <span className="text-error">*</span>
                     </label>
                     <input
                       type="number"
                       min="1"
                       value={soNguoi}
                       onChange={(e) => setSoNguoi(parseInt(e.target.value) || 1)}
-                      className="w-full px-space-md py-space-sm rounded-lg bg-surface-container text-on-surface font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary"
+                      className={`w-full px-space-md py-space-sm rounded-lg bg-surface-container text-on-surface font-body-md text-body-md focus:outline-none focus:ring-2 ${
+                        guestsExceeded ? 'ring-2 ring-error focus:ring-error' : 'focus:ring-primary'
+                      }`}
                     />
+                    {guestsExceeded && (
+                      <p className="mt-space-xs font-body-sm text-body-sm text-error">
+                        Các phòng đã chọn chỉ cho phép tối đa {maxGuests} khách mỗi phòng.
+                      </p>
+                    )}
                   </div>
                 </div>
 
                 {/* Cảnh báo ngày giờ không hợp lệ */}
-                {!isDateTimeValid() && (
+                {!timeValid && (
                   <div className="mt-space-md p-space-md rounded-lg bg-error/10 border border-error/20 flex items-center gap-space-xs text-error">
                     <span className="material-symbols-outlined text-[18px]">error</span>
                     <span className="font-body-sm text-body-sm">
-                      Thời gian trả phòng phải sau thời gian nhận phòng!
+                      {checkInDate && checkOutDate
+                        ? 'Thời gian nhận phòng phải trước thời gian trả phòng.'
+                        : 'Vui lòng nhập thời gian nhận phòng và trả phòng dự kiến.'}
                     </span>
                   </div>
                 )}
               </div>
 
-              {/* Thông báo tránh xung đột phòng nếu có phòng bị trùng lịch */}
-              {conflictedRooms.length > 0 && (
-                <div className="p-space-md rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-start gap-space-sm">
-                  <span className="material-symbols-outlined text-amber-500 text-[20px] mt-0.5">
-                    event_busy
-                  </span>
-                  <div>
-                    <p className="font-label-md text-label-md text-amber-600 dark:text-amber-400 font-bold">
-                      Tránh xung đột lịch đặt ({conflictedRooms.length} phòng đã ẩn)
-                    </p>
-                    <p className="font-body-sm text-body-sm text-on-surface-variant mt-space-xs">
-                      Phòng <span className="font-semibold text-on-surface">{conflictedRooms.map(r => r.MaPH).join(', ')}</span> đã có khách đặt trong khoảng thời gian này nên tự động ẩn khỏi danh sách.
-                    </p>
-                  </div>
+              {/* Lỗi tra cứu phòng khả dụng */}
+              {timeValid && availability.error && (
+                <div className="p-space-md rounded-lg bg-error/10 border border-error/20 flex items-center gap-space-sm text-error">
+                  <span className="material-symbols-outlined text-[20px]">error</span>
+                  <span className="font-body-sm text-body-sm flex-1">{availability.error}</span>
+                  <button
+                    type="button"
+                    onClick={() => setRefreshToken((token) => token + 1)}
+                    className="px-space-md py-space-xs rounded-lg bg-error-container text-on-error-container font-label-md text-label-md font-semibold"
+                  >
+                    Thử lại
+                  </button>
                 </div>
               )}
 
-              {/* Bước 3: Chọn phòng (Chỉ hiển thị phòng trống không bị xung đột) */}
+              {/* Bước 3: Phòng khả dụng (UC-REN-009) */}
               <RoomSelector
                 danhSachPhong={availableRooms}
                 selectedRooms={selectedRooms}
                 onToggleRoom={handleToggleRoom}
-                checkInDate={checkInDate}
-                checkOutDate={checkOutDate}
+                checkInDate={timeValid ? checkInDate : ''}
+                checkOutDate={timeValid ? checkOutDate : ''}
                 hinhThucThue={hinhThucThue}
+                isLoading={timeValid && availability.loading}
+                emptyMessage={
+                  !timeValid
+                    ? 'Nhập khoảng thời gian hợp lệ để tra cứu phòng khả dụng.'
+                    : availability.message || 'Không tìm thấy phòng khả dụng trong khoảng thời gian đã chọn.'
+                }
               />
             </div>
 
             {/* Cột phải — Tổng quan */}
             <div className="lg:col-span-1">
-              <div className="sticky top-24">
+              <div className="sticky top-24 space-y-space-md">
+                {priceChanged && (
+                  <div className="p-space-md rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-start gap-space-sm">
+                    <span className="material-symbols-outlined text-amber-600 dark:text-amber-400 text-[20px]">
+                      price_change
+                    </span>
+                    <p className="font-body-sm text-body-sm text-on-surface">
+                      Chi phí đã thay đổi so với số bạn vừa xem. Hãy kiểm tra chi phí mới bên dưới
+                      rồi nhấn xác nhận để lập phiếu.
+                    </p>
+                  </div>
+                )}
+
                 <BookingSummary
                   khachHang={selectedKhachHang}
+                  nhanVien={user?.employee?.fullName}
                   checkInDate={checkInDate}
                   checkInTime={checkInTime}
                   checkOutDate={checkOutDate}
@@ -405,6 +441,9 @@ const CreateBookingDialog = ({
                   selectedRooms={selectedRooms}
                   soNguoi={soNguoi}
                   hinhThucThue={hinhThucThue}
+                  estimate={estimateData}
+                  estimateLoading={estimateLoading}
+                  estimateError={estimateError}
                 />
               </div>
             </div>
@@ -412,30 +451,49 @@ const CreateBookingDialog = ({
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 flex items-center justify-end gap-space-sm p-space-lg border-t border-surface-container-high bg-surface-container-low">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-space-lg py-space-md rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-label-lg text-label-lg font-semibold transition-colors"
-          >
-            Hủy
-          </button>
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={!canSubmit()}
-            className={`px-space-lg py-space-md rounded-lg font-label-lg text-label-lg font-semibold transition-colors ${
-              canSubmit()
-                ? 'bg-primary-container hover:bg-primary text-on-primary-container hover:text-on-primary shadow-sm'
-                : 'bg-surface-container text-outline cursor-not-allowed'
-            }`}
-          >
-            Lập phiếu thuê
-          </button>
+        <div className="sticky bottom-0 p-space-lg border-t border-surface-container-high bg-surface-container-low">
+          {submitError && (
+            <div className="mb-space-md p-space-md rounded-lg bg-error/10 border border-error/20 flex items-start gap-space-sm text-error">
+              <span className="material-symbols-outlined text-[20px]">error</span>
+              <span className="font-body-sm text-body-sm">{submitError}</span>
+            </div>
+          )}
+          <div className="flex items-center justify-end gap-space-sm">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={submitting}
+              className="px-space-lg py-space-md rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-label-lg text-label-lg font-semibold transition-colors disabled:opacity-50"
+            >
+              Hủy
+            </button>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={!canSubmit}
+              className={`px-space-lg py-space-md rounded-lg font-label-lg text-label-lg font-semibold transition-colors ${
+                canSubmit
+                  ? 'bg-primary-container hover:bg-primary text-on-primary-container hover:text-on-primary shadow-sm'
+                  : 'bg-surface-container text-outline cursor-not-allowed'
+              }`}
+            >
+              {submitting
+                ? 'Đang lưu phiếu...'
+                : priceChanged
+                  ? 'Xác nhận chi phí mới và lập phiếu'
+                  : 'Lập phiếu thuê'}
+            </button>
+          </div>
         </div>
       </div>
     </>
   );
+};
+
+const CreateBookingDialog = ({ isOpen, onClose, onCreated, initial }) => {
+  if (!isOpen) return null;
+  // Mount khi mở: mỗi lần mở là một form mới, không cần reset thủ công
+  return <CreateBookingForm onClose={onClose} onCreated={onCreated} initial={initial} />;
 };
 
 export default CreateBookingDialog;

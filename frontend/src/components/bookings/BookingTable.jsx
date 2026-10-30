@@ -124,7 +124,7 @@ const BookingTable = ({
                 {/* Mã phiếu */}
                 <td className="px-space-lg py-space-lg">
                   <span className="font-label-lg text-label-lg text-primary font-bold">
-                    {formatReceiptCode(pt.IdPT)}
+                    {pt.receiptCode || formatReceiptCode(pt.IdPT)}
                   </span>
                 </td>
 

@@ -8,6 +8,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
@@ -140,8 +142,77 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleAccessDenied(
             AccessDeniedException ex,
             WebRequest request) {
-        return buildError(HttpStatus.FORBIDDEN, "Forbidden",
-                "Bạn không có quyền thực hiện chức năng này", request);
+        // Thông điệp nghiệp vụ tự đặt (vd: không xác định được nhân viên lập phiếu) được giữ lại
+        String message = "Access Denied".equals(ex.getMessage()) || ex.getMessage() == null
+                ? "Bạn không có quyền thực hiện chức năng này"
+                : ex.getMessage();
+        return buildError(HttpStatus.FORBIDDEN, "Forbidden", message, request);
+    }
+
+    /**
+     * Dữ liệu nghiệp vụ không hợp lệ, có thể kèm nhiều lỗi theo trường -> 400
+     */
+    @ExceptionHandler(BusinessValidationException.class)
+    public ResponseEntity<ErrorResponse> handleBusinessValidation(
+            BusinessValidationException ex,
+            WebRequest request) {
+        ErrorResponse body = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Bad Request")
+                .message(ex.getMessage())
+                .path(request.getDescription(false).replace("uri=", ""))
+                .fieldErrors(ex.getFieldErrors().isEmpty() ? null : ex.getFieldErrors())
+                .build();
+        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+    }
+
+    /**
+     * Phòng vừa được giao dịch khác đặt / lịch chồng lấn -> 409, kèm danh sách phòng cần tra cứu lại
+     */
+    @ExceptionHandler(RoomUnavailableException.class)
+    public ResponseEntity<ErrorResponse> handleRoomUnavailable(
+            RoomUnavailableException ex,
+            WebRequest request) {
+        ErrorResponse body = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.CONFLICT.value())
+                .error("Conflict")
+                .message(ex.getMessage())
+                .path(request.getDescription(false).replace("uri=", ""))
+                .data(Map.of("unavailableRoomIds", ex.getRoomIds()))
+                .build();
+        return new ResponseEntity<>(body, HttpStatus.CONFLICT);
+    }
+
+    /**
+     * Giá tính lại khác số tiền đã xác nhận -> 409 kèm chi phí mới để người dùng xác nhận lại
+     */
+    @ExceptionHandler(PriceChangedException.class)
+    public ResponseEntity<ErrorResponse> handlePriceChanged(
+            PriceChangedException ex,
+            WebRequest request) {
+        ErrorResponse body = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.CONFLICT.value())
+                .error("Conflict")
+                .message(ex.getMessage())
+                .path(request.getDescription(false).replace("uri=", ""))
+                .data(ex.getNewEstimate())
+                .build();
+        return new ResponseEntity<>(body, HttpStatus.CONFLICT);
+    }
+
+    /**
+     * JSON sai định dạng, ngày giờ hoặc giá trị enum không hợp lệ -> 400
+     */
+    @ExceptionHandler({HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class})
+    public ResponseEntity<ErrorResponse> handleUnreadableRequest(
+            Exception ex,
+            WebRequest request) {
+        return buildError(HttpStatus.BAD_REQUEST, "Bad Request",
+                "Dữ liệu gửi lên không hợp lệ. Vui lòng kiểm tra lại định dạng ngày giờ và các giá trị đã chọn.",
+                request);
     }
 
     private ResponseEntity<ErrorResponse> buildError(

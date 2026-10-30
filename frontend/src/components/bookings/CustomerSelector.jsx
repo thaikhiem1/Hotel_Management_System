@@ -1,50 +1,87 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { customerAPI } from '@/services/api';
+import { getErrorMessage } from '@/utils/notification';
+import { toKhachHang } from '@/utils/rentalMappers';
+
+const EMPTY_NEW_KHACH_HANG = {
+  TenKH: '',
+  SDT: '',
+  CCCD_Passport: '',
+  QuocTich: 'Việt Nam',
+  GioiTinh: 'Nam'
+};
 
 /**
- * CustomerSelector - Chọn hoặc tạo khách hàng cho phiếu thuê
+ * CustomerSelector - Tra cứu / chọn / tạo khách hàng đại diện cho phiếu thuê (UC-REN-008)
  *
- * Dựa theo Database.md:
- *   KhachHang { IdKH, TenKH, SDT, CCCD_Passport, QuocTich, GioiTinh }
+ * Dữ liệu lấy từ API khách hàng; chỉ chọn được khách hàng có thật trong hệ thống.
+ * Khách hàng mới được lưu qua API quản lý khách hàng (đúng quy tắc nhập liệu và kiểm tra trùng).
  *
- * Không có field: address, email (loại bỏ theo đúng schema)
+ * Props:
+ *   selectedKhachHang: KhachHang | null  (IdKH, TenKH, SDT, CCCD_Passport, QuocTich, GioiTinh)
+ *   onSelectKhachHang(khachHang | null)
  */
-const CustomerSelector = ({ selectedKhachHang, onSelectKhachHang, danhSachKhachHang }) => {
+const CustomerSelector = ({ selectedKhachHang, onSelectKhachHang }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [results, setResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState('');
   const [showNewForm, setShowNewForm] = useState(false);
-  const [newKhachHang, setNewKhachHang] = useState({
-    TenKH: '',
-    SDT: '',
-    CCCD_Passport: '',
-    QuocTich: 'Việt Nam',
-    GioiTinh: 'Nam'
-  });
+  const [newKhachHang, setNewKhachHang] = useState(EMPTY_NEW_KHACH_HANG);
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState('');
 
-  const filteredKhachHang = danhSachKhachHang.filter(kh =>
-    kh.TenKH.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    kh.SDT.includes(searchTerm) ||
-    (kh.CCCD_Passport && kh.CCCD_Passport.includes(searchTerm))
-  );
+  const keyword = searchTerm.trim();
 
-  const handleCreateKhachHang = () => {
-    if (!newKhachHang.TenKH || !newKhachHang.SDT || !newKhachHang.CCCD_Passport) {
-      alert('Vui lòng điền đầy đủ thông tin bắt buộc: Họ tên, SĐT, CCCD/Hộ chiếu');
+  // Tra cứu theo mã khách hàng / họ tên / SĐT / CCCD (có chờ 350ms sau khi ngừng gõ)
+  useEffect(() => {
+    if (!keyword) return undefined;
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      setSearching(true);
+      setSearchError('');
+      try {
+        const page = await customerAPI.getAll({ search: keyword, size: 10 });
+        if (!cancelled) setResults((page.content ?? []).map(toKhachHang));
+      } catch {
+        if (!cancelled) {
+          setResults([]);
+          setSearchError('Không thể tra cứu khách hàng lúc này. Vui lòng thử lại sau.');
+        }
+      } finally {
+        if (!cancelled) setSearching(false);
+      }
+    }, 350);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [keyword]);
+
+  const handleCreateKhachHang = async () => {
+    if (!newKhachHang.TenKH.trim() || !newKhachHang.SDT.trim() || !newKhachHang.CCCD_Passport.trim()) {
+      setCreateError('Vui lòng điền đầy đủ thông tin bắt buộc: Họ tên, SĐT, CCCD/Hộ chiếu');
       return;
     }
 
-    const khachHang = {
-      IdKH: Date.now(), // Tạm thời — API sẽ trả về IdKH thực
-      ...newKhachHang
-    };
-
-    onSelectKhachHang(khachHang);
-    setShowNewForm(false);
-    setNewKhachHang({
-      TenKH: '',
-      SDT: '',
-      CCCD_Passport: '',
-      QuocTich: 'Việt Nam',
-      GioiTinh: 'Nam'
-    });
+    setCreating(true);
+    setCreateError('');
+    try {
+      const response = await customerAPI.create({
+        fullName: newKhachHang.TenKH.trim(),
+        phone: newKhachHang.SDT.trim(),
+        citizenId: newKhachHang.CCCD_Passport.trim(),
+        nationality: newKhachHang.QuocTich.trim(),
+        gender: newKhachHang.GioiTinh
+      });
+      onSelectKhachHang(toKhachHang(response.data));
+      setShowNewForm(false);
+      setNewKhachHang(EMPTY_NEW_KHACH_HANG);
+    } catch (error) {
+      setCreateError(getErrorMessage(error, 'Không thể tạo khách hàng. Vui lòng kiểm tra lại thông tin.'));
+    } finally {
+      setCreating(false);
+    }
   };
 
   return (
@@ -64,7 +101,7 @@ const CustomerSelector = ({ selectedKhachHang, onSelectKhachHang, danhSachKhachH
               </span>
               <input
                 type="text"
-                placeholder="Tìm tên / SĐT / CCCD hoặc hộ chiếu..."
+                placeholder="Tìm mã KH / tên / SĐT / CCCD hoặc hộ chiếu..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="bg-transparent flex-1 text-on-surface placeholder:text-outline focus:outline-none font-body-md text-body-md"
@@ -79,11 +116,19 @@ const CustomerSelector = ({ selectedKhachHang, onSelectKhachHang, danhSachKhachH
               )}
             </div>
 
-            {/* Danh sách khách hàng */}
-            {searchTerm && (
+            {/* Kết quả tra cứu */}
+            {keyword && (
               <div className="max-h-60 overflow-y-auto space-y-space-xs mb-space-md">
-                {filteredKhachHang.length > 0 ? (
-                  filteredKhachHang.map((kh) => (
+                {searching ? (
+                  <p className="text-center py-space-lg font-body-sm text-body-sm text-on-surface-variant">
+                    Đang tra cứu...
+                  </p>
+                ) : searchError ? (
+                  <p className="text-center py-space-lg font-body-sm text-body-sm text-error">
+                    {searchError}
+                  </p>
+                ) : results.length > 0 ? (
+                  results.map((kh) => (
                     <button
                       key={kh.IdKH}
                       onClick={() => {
@@ -96,7 +141,7 @@ const CustomerSelector = ({ selectedKhachHang, onSelectKhachHang, danhSachKhachH
                         {kh.TenKH}
                       </p>
                       <p className="font-body-sm text-body-sm text-on-surface-variant">
-                        {kh.SDT} • {kh.CCCD_Passport}
+                        Mã KH: {kh.IdKH} • {kh.SDT} • {kh.CCCD_Passport}
                       </p>
                       <p className="font-body-sm text-body-sm text-on-surface-variant">
                         {kh.QuocTich} • {kh.GioiTinh}
@@ -105,7 +150,7 @@ const CustomerSelector = ({ selectedKhachHang, onSelectKhachHang, danhSachKhachH
                   ))
                 ) : (
                   <p className="text-center py-space-lg font-body-sm text-body-sm text-on-surface-variant">
-                    Không tìm thấy khách hàng
+                    Không tìm thấy khách hàng phù hợp.
                   </p>
                 )}
               </div>
@@ -255,19 +300,31 @@ const CustomerSelector = ({ selectedKhachHang, onSelectKhachHang, danhSachKhachH
             </div>
           </div>
 
+          {createError && (
+            <p className="flex items-start gap-space-xs text-error font-body-sm text-body-sm">
+              <span className="material-symbols-outlined text-[18px]">error</span>
+              <span>{createError}</span>
+            </p>
+          )}
+
           {/* Buttons */}
           <div className="flex gap-space-sm">
             <button
-              onClick={() => setShowNewForm(false)}
+              onClick={() => {
+                setShowNewForm(false);
+                setCreateError('');
+              }}
+              disabled={creating}
               className="flex-1 px-space-lg py-space-md rounded-lg bg-surface-container hover:bg-surface-container-highest text-on-surface font-label-lg text-label-lg font-semibold transition-colors"
             >
               Hủy
             </button>
             <button
               onClick={handleCreateKhachHang}
+              disabled={creating}
               className="flex-1 px-space-lg py-space-md rounded-lg bg-primary-container hover:bg-primary text-on-primary-container hover:text-on-primary font-label-lg text-label-lg font-semibold transition-colors"
             >
-              Tạo khách hàng
+              {creating ? 'Đang lưu...' : 'Tạo khách hàng'}
             </button>
           </div>
         </div>
