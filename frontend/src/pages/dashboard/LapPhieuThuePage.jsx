@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   BookingFilters,
   BookingTable,
@@ -39,7 +39,7 @@ const LapPhieuThuePage = () => {
     status: 'all',
     date: ''
   });
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading] = useState(false);
   const [selectedPhieuThue, setSelectedPhieuThue] = useState(null);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);

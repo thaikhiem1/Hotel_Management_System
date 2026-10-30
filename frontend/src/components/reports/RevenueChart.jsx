@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   LineChart,
   Line,
@@ -11,20 +10,14 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts';
+import { getChartColors } from '@/utils/chartColors';
 
 /**
  * RevenueChart - Biểu đồ doanh thu
  * Hỗ trợ dark mode và light mode
  */
 const RevenueChart = ({ data, chartType = 'line', isDarkMode = false }) => {
-  const colors = {
-    primary: '#D4AF37',
-    secondary: '#B8941E',
-    grid: isDarkMode ? '#3f3f46' : '#e4e4e7',
-    text: isDarkMode ? '#e4e4e7' : '#27272a',
-    tooltip: isDarkMode ? '#27272a' : '#ffffff',
-    tooltipBorder: isDarkMode ? '#52525b' : '#d4d4d8'
-  };
+  const colors = getChartColors(isDarkMode);
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {

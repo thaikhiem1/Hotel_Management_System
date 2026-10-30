@@ -1,8 +1,11 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 function LoginForm() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { login } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -22,20 +25,27 @@ function LoginForm() {
     setAlertMessage("");
     setAlertType("");
 
-    // Simulate authentication process
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      const user = await login(username.trim(), password, rememberMe);
       setAlertType("success");
       setAlertMessage(
-        `Chứng thực hợp lệ cho tài khoản "${username}". Đang chuyển hướng PMS...`,
+        `Xin chào ${user.employee?.fullName || user.username}. Đang chuyển hướng PMS...`,
       );
-      // In a real application, handle navigation here
-      // Example: navigate('/dashboard');
       setTimeout(() => {
         setAlertMessage("");
-        navigate("/dashboard");
-      }, 900);
-    }, 500);
+        navigate(location.state?.from?.pathname || "/dashboard", {
+          replace: true,
+        });
+      }, 600);
+    } catch (error) {
+      setAlertType("error");
+      setAlertMessage(
+        error.response?.data?.message ||
+          "Không thể kết nối máy chủ. Vui lòng thử lại.",
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -62,7 +72,7 @@ function LoginForm() {
               placeholder="Nhập tên đăng nhập"
               required
               autoComplete="username"
-              className="w-full pl-11 pr-4 py-3.5 bg-surface-container text-on-surface placeholder:text-on-surface-variant/40 rounded text-body-md font-body-md transition-all shadow-inner focus:outline-none focus:bg-surface-container-high focus:shadow-[0_0_0_1px_#D4AF37,0_0_16px_rgba(212,175,55,0.2)]"
+              className="w-full pl-11 pr-4 py-3.5 bg-surface-container text-on-surface placeholder:text-on-surface-variant/40 rounded text-body-md font-body-md transition-all shadow-inner focus:outline-none focus:bg-surface-container-high focus:shadow-focus"
             />
           </div>
         </div>
@@ -88,7 +98,7 @@ function LoginForm() {
               placeholder="Nhập mật khẩu quản trị"
               required
               autoComplete="current-password"
-              className="w-full pl-11 pr-11 py-3.5 bg-surface-container text-on-surface placeholder:text-on-surface-variant/40 rounded text-body-md font-body-md transition-all shadow-inner focus:outline-none focus:bg-surface-container-high focus:shadow-[0_0_0_1px_#D4AF37,0_0_16px_rgba(212,175,55,0.2)]"
+              className="w-full pl-11 pr-11 py-3.5 bg-surface-container text-on-surface placeholder:text-on-surface-variant/40 rounded text-body-md font-body-md transition-all shadow-inner focus:outline-none focus:bg-surface-container-high focus:shadow-focus"
             />
             <button
               type="button"
@@ -156,7 +166,7 @@ function LoginForm() {
         <button
           type="submit"
           disabled={isLoading}
-          className="relative w-full py-3.5 px-6 rounded bg-primary text-on-primary font-label-lg text-label-lg uppercase tracking-wider font-semibold transition-all duration-300 shadow-md hover:bg-primary-fixed-dim hover:shadow-[0_0_24px_rgba(212,175,55,0.35)] active:scale-[0.99] flex items-center justify-center gap-2 overflow-hidden disabled:opacity-80"
+          className="relative w-full py-3.5 px-6 rounded bg-primary text-on-primary font-label-lg text-label-lg uppercase tracking-wider font-semibold transition-all duration-300 shadow-md hover:bg-primary-fixed-dim hover:shadow-glow-lg active:scale-[0.99] flex items-center justify-center gap-2 overflow-hidden disabled:opacity-80"
         >
           {isLoading ? (
             <>

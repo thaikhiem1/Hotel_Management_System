@@ -28,6 +28,11 @@ public interface AccountRepository extends JpaRepository<accounts, Integer>, Jpa
     boolean existsByUsernameAndAccountIdNot(String username, Integer accountId);
     
     /**
+     * Kiểm tra hệ thống đã có tài khoản với vai trò này chưa
+     */
+    boolean existsByRole(com.example.hotel.Enums.Role role);
+
+    /**
      * Kiểm tra employee đã có tài khoản chưa
      */
     boolean existsByEmployee_EmployeeId(Integer employeeId);

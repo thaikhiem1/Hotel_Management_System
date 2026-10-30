@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import RoomTable from "@/components/room-management/RoomTable";
 import RoomFormDialog from "@/components/room-management/RoomFormDialog";
 import DeleteConfirmDialog from "@/components/room-management/DeleteConfirmDialog";
@@ -140,7 +140,7 @@ const QuanLyPhongPage = () => {
     try {
       // Gọi API xóa phòng
       await roomAPI.delete(selectedRoom.room_id);
-      setRooms(rooms.filter((r) => rooms.room_id != selectedRoom.room_id));
+      setRooms(rooms.filter((r) => r.room_id !== selectedRoom.room_id));
       setIsDeleteDialogOpen(false);
       setSelectedRoom(null);
       // Điều chỉnh trang nếu trang hiện tại không còn dữ liệu

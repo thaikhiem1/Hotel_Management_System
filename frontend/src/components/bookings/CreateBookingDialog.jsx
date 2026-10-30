@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import CustomerSelector from './CustomerSelector';
 import RoomSelector from './RoomSelector';
 import BookingSummary from './BookingSummary';

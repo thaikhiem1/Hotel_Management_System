@@ -4,37 +4,7 @@ Các component quản lý hóa đơn thanh toán, chuẩn hóa 100% theo Databas
 
 ## Components
 
-### 1. InvoiceModal
-Modal xuất phiếu hóa đơn thanh toán khi khách hàng checkout.
-
-**Props:**
-- `room`: Thông tin phòng đang checkout
-- `rentalReceipt`: Thông tin phiếu thuê (rental_receipts table)
-- `bookingDetail`: Chi tiết đặt phòng (booking_details table)
-- `services`: Danh sách dịch vụ đã sử dụng (booking_detail_services table)
-- `isOpen`: Trạng thái modal
-- `onClose`: Callback đóng modal
-- `onConfirm`: Callback xác nhận thanh toán
-
-**Features:**
-- Hiển thị đầy đủ thông tin khách hàng, nhân viên, phòng
-- Tính toán tự động: tiền phòng + tiền dịch vụ = tổng thanh toán
-- Giao diện responsive, hỗ trợ dark/light mode
-- Xác nhận thanh toán và tạo hóa đơn
-
-**API Integration:**
-```javascript
-// POST /api/invoices
-{
-  rental_receipt_id: number,
-  employee_id: number,
-  invoice_date: string (ISO date),
-  total_amount: number,
-  payment_status: 'PAID'
-}
-```
-
-### 2. InvoiceCard
+### 1. InvoiceCard
 Card hiển thị tóm tắt thông tin hóa đơn trong danh sách.
 
 **Props:**
@@ -48,7 +18,7 @@ Card hiển thị tóm tắt thông tin hóa đơn trong danh sách.
 - Actions: Xem chi tiết, In hóa đơn
 - Giao diện card với hover effects
 
-### 3. InvoiceDetailModal
+### 2. InvoiceDetailModal
 Modal xem chi tiết hóa đơn đã tạo.
 
 **Props:**
@@ -65,44 +35,7 @@ Modal xem chi tiết hóa đơn đã tạo.
 
 ## Usage
 
-### Trong DashboardPage (Checkout Flow)
-```jsx
-import { InvoiceModal } from '@/components/invoice';
-
-const DashboardPage = () => {
-  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
-  const [invoiceData, setInvoiceData] = useState(null);
-  
-  const handleCheckout = async (room) => {
-    // Fetch invoice data từ API
-    const data = await fetchInvoiceData(room.id);
-    setInvoiceData(data);
-    setIsInvoiceModalOpen(true);
-  };
-
-  const handleInvoiceConfirm = async (invoiceResult) => {
-    // Gọi API tạo hóa đơn
-    await createInvoice(invoiceResult);
-    // Refresh danh sách phòng
-    refreshRooms();
-  };
-
-  return (
-    <>
-      {/* ... */}
-      <InvoiceModal
-        room={selectedRoom}
-        rentalReceipt={invoiceData?.rentalReceipt}
-        bookingDetail={invoiceData?.bookingDetail}
-        services={invoiceData?.services}
-        isOpen={isInvoiceModalOpen}
-        onClose={() => setIsInvoiceModalOpen(false)}
-        onConfirm={handleInvoiceConfirm}
-      />
-    </>
-  );
-};
-```
+> Tạo hóa đơn khi trả phòng do `CheckOutModal` (components/dashboard) đảm nhiệm (UC-REN-007).
 
 ### Trong QuanLyHoaDonPage
 ```jsx

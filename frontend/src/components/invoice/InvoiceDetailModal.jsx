@@ -1,5 +1,5 @@
-import React from "react";
 import { cn } from "@/utils/lib/util";
+import { formatDate } from "@/utils/format";
 
 /**
  * InvoiceDetailModal - Modal xem chi tiết hóa đơn đã tạo
@@ -22,12 +22,6 @@ const InvoiceDetailModal = ({
   if (!isOpen || !invoice) return null;
 
   // Format ngày
-  const formatDate = (dateStr) => {
-    if (!dateStr) return "";
-    const date = new Date(dateStr);
-    return date.toLocaleDateString("vi-VN");
-  };
-
   // Lấy thông tin từ rental_receipt và booking_details
   const rentalReceipt = invoice.rental_receipt || {};
   const bookingDetails = rentalReceipt.booking_details || [];

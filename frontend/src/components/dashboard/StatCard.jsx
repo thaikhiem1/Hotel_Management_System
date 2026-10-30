@@ -1,4 +1,3 @@
-import React from 'react';
 import { cn } from '@/utils/lib/util';
 
 const StatCard = ({ icon, label, value, subValue, trend, colorClass = 'text-primary' }) => {

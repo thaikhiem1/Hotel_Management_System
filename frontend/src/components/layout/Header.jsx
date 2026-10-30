@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
-import ThemeToggle from "./ThemeToggle";
+import { useEffect, useState } from "react";
+import ThemeToggle from "../ui/ThemeToggle";
 import UserProfileMenu from "./UserProfileMenu";
 import { EmployeeProfileDialog } from "@/components/employee-management";
 import avatar from "@/assets/ronaldo_01.jpg";
+import { useAuth } from "@/contexts/AuthContext";
 const Header = ({ sidebarWidth = 384 }) => {
   const [time, setTime] = useState(new Date());
   const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
@@ -15,20 +16,22 @@ const Header = ({ sidebarWidth = 384 }) => {
     return () => clearInterval(timer);
   }, []);
 
-  // Mock current user - TODO: Get from auth context
-  const mockCurrentUser = {
-    idNV: 1,
-    tenNV: "Sir Alex Fergusion",
-    chucVu: "Tổng Giám Đốc",
-    luong: 50000000,
-    sdt: "0901234567",
-    cccd: "001234567890",
-    ngaySinh: "1980-05-15",
-    gioiTinh: "Nam",
-    diaChi: "123 Nguyễn Huệ, Quận 1, TP.HCM",
-    email: "",
-    avatar: avatar,
-    isWorking: true,
+  // Nhân viên của tài khoản đang đăng nhập (từ JWT -> /api/auth/me)
+  const { user } = useAuth();
+  const emp = user?.employee;
+  const currentEmployee = emp && {
+    idNV: emp.employeeId,
+    tenNV: emp.fullName,
+    chucVu: emp.position,
+    luong: emp.salary,
+    sdt: emp.phone,
+    cccd: emp.citizenId,
+    ngaySinh: emp.dateOfBirth,
+    gioiTinh: emp.gender,
+    diaChi: emp.address,
+    email: emp.email,
+    avatar: emp.avatar || avatar,
+    isWorking: emp.isActive,
   };
 
   const handleOpenProfile = (user) => {
@@ -86,11 +89,11 @@ const Header = ({ sidebarWidth = 384 }) => {
             <span className="material-symbols-outlined text-[24px]">
               notifications
             </span>
-            <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-primary shadow-[0_0_8px_rgba(242,202,80,0.6)]"></span>
+            <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-primary shadow-glow"></span>
           </button>
           <div className="h-8 w-[1px] bg-surface-container-high"></div>
           <UserProfileMenu
-            currentUser={mockCurrentUser}
+            currentUser={currentEmployee}
             onOpenProfile={handleOpenProfile}
           />
         </div>

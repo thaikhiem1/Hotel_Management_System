@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { cn } from "@/utils/lib/util";
-import { accountAPI, employeeAPI } from "@/services/api";
+import { accountAPI } from "@/services/api";
 import { showSuccess, handleApiError } from "@/utils/notification";
 import AccountCard from "@/components/account-management/AccountCard";
 import AccountFormDialog from "@/components/account-management/AccountFormDialog";

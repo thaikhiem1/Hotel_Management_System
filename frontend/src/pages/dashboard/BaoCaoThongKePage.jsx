@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { cn } from '@/utils/lib/util';
 import {
   RevenueChart,
@@ -159,7 +159,7 @@ const BaoCaoThongKePage = () => {
           value={`${(stats.totalRevenue / 1000000).toFixed(1)}tr`}
           subtitle={`${stats.totalInvoices} hóa đơn`}
           icon="trending_up"
-          gradient="from-[#D4AF37] to-[#B8941E]"
+          gradient="from-brand-light to-brand-dark"
           trend="+12.5% so với kỳ trước"
           trendUp={true}
         />
@@ -223,7 +223,7 @@ const BaoCaoThongKePage = () => {
                 <p className="font-label-sm text-on-surface-variant mb-space-xs">
                   Hiệu suất doanh thu
                 </p>
-                <p className="font-title-lg font-bold text-emerald-600">
+                <p className="font-title-lg font-bold text-emerald-700 dark:text-emerald-400">
                   Tốt
                 </p>
               </div>
@@ -326,7 +326,7 @@ const BaoCaoThongKePage = () => {
                         </p>
                       </td>
                       <td className="px-space-lg py-space-lg text-right">
-                        <p className="font-title-md font-bold text-[#D4AF37]">
+                        <p className="font-title-md font-bold text-primary">
                           {item.total_revenue.toLocaleString('vi-VN')}đ
                         </p>
                       </td>

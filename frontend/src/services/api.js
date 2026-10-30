@@ -1,666 +1,142 @@
 import axios from "axios";
-
-
-// Cấu hình base URL
+import { clearAuth, getToken } from "@/utils/auth";
 
 const BASE_URL = "http://localhost:8080/api";
 
-
-// Tạo axios instance với config mặc định
-
 const apiClient = axios.create({
   baseURL: BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
+  headers: { "Content-Type": "application/json" },
   timeout: 10000, // 10 seconds
 });
 
-// Request Interceptor - Thêm token vào header
-apiClient.interceptors.request.use(
-  (config) => {
-    // Lấy token từ localStorage hoặc sessionStorage
-    const token = localStorage.getItem("accessToken");
+// Request: gắn JWT vào header Authorization
+apiClient.interceptors.request.use((config) => {
+  const token = getToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  },
-);
-
-// Response Interceptor - Xử lý response và error
-
+// Response: 401 -> token hết hạn/không hợp lệ, xóa phiên và báo cho AuthContext
+// (trừ chính request đăng nhập: 401 ở đó nghĩa là sai mật khẩu)
 apiClient.interceptors.response.use(
-  (response) => {
-    return response;
-  },
+  (response) => response,
   (error) => {
-    // Xử lý các lỗi HTTP khác nhau
-    if (error.response) {
-      switch (error.response.status) {
-        case 401:
-          // Unauthorized - Chuyển về trang login
-          break;
-        case 403:
-          // Forbidden - Không có quyền
-          break;
-        case 404:
-          // Not Found
-          break;
-        case 500:
-          // Server Error
-          break;
-        default:
-          // Other errors
-          break;
-      }
+    if (
+      error.response?.status === 401 &&
+      !error.config?.url?.includes("/auth/login")
+    ) {
+      clearAuth();
+      window.dispatchEvent(new Event("auth:expired"));
     }
-
     return Promise.reject(error);
   },
 );
 
+// Các hàm gọi API trả về response.data (ApiResponse / Page) và để lỗi axios tự ném cho nơi gọi xử lý.
+const unwrap = (request) => request.then((response) => response.data);
 
-// LOẠI PHÒNG API (RoomType)
+/**
+ * Tạo bộ CRUD chuẩn cho một resource: getAll, getById, create, update, delete.
+ * @param {string} path - ví dụ "/rooms"
+ * @param {{updateMethod?: "put"|"patch"}} options
+ */
+const createCrudApi = (path, { updateMethod = "put" } = {}) => ({
+  getAll: (params) => unwrap(apiClient.get(path, { params })),
+  getById: (id) => unwrap(apiClient.get(`${path}/${id}`)),
+  create: (data) => unwrap(apiClient.post(path, data)),
+  update: (id, data) => unwrap(apiClient[updateMethod](`${path}/${id}`, data)),
+  delete: (id) => unwrap(apiClient.delete(`${path}/${id}`)),
+});
 
+/** Bỏ các tham số lọc rỗng (chuỗi trống / null / undefined) trước khi gửi lên server */
+const compactParams = (params) =>
+  Object.fromEntries(
+    Object.entries(params).filter(
+      ([, value]) =>
+        value !== null &&
+        value !== undefined &&
+        !(typeof value === "string" && value.trim() === ""),
+    ),
+  );
+
+// XÁC THỰC (Auth)
+export const authAPI = {
+  /** POST /api/auth/login - { username, password } -> { accessToken, tokenType, expiresIn, user } */
+  login: (data) => unwrap(apiClient.post("/auth/login", data)),
+
+  /** GET /api/auth/me - tài khoản + nhân viên của người đang đăng nhập */
+  me: () => unwrap(apiClient.get("/auth/me")),
+};
+
+// LOẠI PHÒNG (RoomType)
+const roomTypeCrud = createCrudApi("/roomTypes");
 export const roomTypeAPI = {
-  /**
-   * UC-RTY-004: Lấy danh sách loại phòng với phân trang
-   * GET /api/roomTypes?page=0&size=16
-   * 
-   * @param {Object} params - Tham số phân trang
-   * @param {number} params.page - Số trang (bắt đầu từ 0)
-   * @param {number} params.size - Số bản ghi mỗi trang
-   * @returns {Promise<ApiResponse<Page<RoomTypeResponse>>>}
-   */
-  getAll: async ({ page = 0, size = 16 } = {}) => {
-    try {
-      const response = await apiClient.get("/roomTypes", {
-        params: { page, size }
-      });
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  /**
-   * Lấy chi tiết loại phòng theo ID
-   * GET /api/roomTypes/{id}
-   * 
-   * @param {number} id - ID loại phòng
-   * @returns {Promise<ApiResponse<RoomTypeResponse>>}
-   */
-  getById: async (id) => {
-    try {
-      const response = await apiClient.get(`/roomTypes/${id}`);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  /**
-   * UC-RTY-001: Tạo loại phòng mới
-   * POST /api/roomTypes
-   *
-   * @param {Object} data - Dữ liệu loại phòng
-   * @param {string} data.roomTypeName - Tên loại phòng (max 100 chars, chỉ chữ cái + khoảng trắng)
-   * @param {number} data.numberOfBeds - Số giường [1-10]
-   * @param {number} data.maximumOccupancy - Số người tối đa [2-20]
-   * @param {number} data.dailyRate - Giá ngày (>=0, max 2 chữ số thập phân)
-   * @param {number} data.hourlyRate - Giá giờ (>=0, max 2 chữ số thập phân)
-   * @returns {Promise<ApiResponse<RoomTypeResponse>>}
-   */
-  create: async (data) => {
-    try {
-      const response = await apiClient.post("/roomTypes", data);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  /**
-   * UC-RTY-002: Cập nhật loại phòng
-   * PUT /api/roomTypes/{id}
-   * 
-   * @param {number} id - ID loại phòng
-   * @param {Object} data - Dữ liệu cập nhật
-   * @returns {Promise<ApiResponse<RoomTypeResponse>>}
-   */
-  update: async (id, data) => {
-    try {
-      const response = await apiClient.put(`/roomTypes/${id}`, data);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  /**
-   * UC-RTY-003: Xóa loại phòng
-   * DELETE /api/roomTypes/{id}
-   * 
-   * Chỉ xóa được nếu không có phòng nào đang sử dụng loại phòng này
-   * 
-   * @param {number} id - ID loại phòng
-   * @returns {Promise<ApiResponse<void>>}
-   */
-  delete: async (id) => {
-    try {
-      const response = await apiClient.delete(`/roomTypes/${id}`);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
+  ...roomTypeCrud,
+  /** GET /api/roomTypes?page=0&size=16 (phân trang, page bắt đầu từ 0) */
+  getAll: ({ page = 0, size = 16 } = {}) => roomTypeCrud.getAll({ page, size }),
 };
 
+// PHÒNG (Room)
+export const roomAPI = createCrudApi("/rooms");
 
-// PHÒNG API (Room)
-
-export const roomAPI = {
-  /**
-   * Lấy danh sách tất cả phòng
-   * GET /api/room
-   */
-  getAll: async () => {
-    try {
-      const response = await apiClient.get("/rooms");
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  /**
-   * Lấy chi tiết phòng theo ID
-   * GET /api/room/{id}
-   */
-  getById: async (id) => {
-    try {
-      const response = await apiClient.get(`/rooms/${id}`);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  /**
-   * Tạo phòng mới
-   * POST /api/room
-   */
-  create: async (data) => {
-    try {
-      const response = await apiClient.post("/rooms", data);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  /**
-   * Cập nhật phòng
-   * PUT /api/room/{id}
-   */
-  update: async (id, data) => {
-    try {
-      const response = await apiClient.put(`/rooms/${id}`, data);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  /**
-   * Xóa phòng
-   * DELETE /api/room/{id}
-   */
-  delete: async (id) => {
-    try {
-      const response = await apiClient.delete(`/rooms/${id}`);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-};
-
-
-// KHÁCH HÀNG API (Customer)
-
+// KHÁCH HÀNG (Customer)
+const customerCrud = createCrudApi("/customers");
 export const customerAPI = {
-  /**
-   * GET /api/customers?page=0&size=16&search=keyword&gender=Nam&nationality=Việt Nam
-   */
-  getAll: async ({ page = 0, size = 16, search = "", gender = "", nationality = "" } = {}) => {
-    try {
-      const params = { page, size };
-      
-      if (search && search.trim()) {
-        params.search = search.trim();
-      }
-      
-      if (gender && gender.trim()) {
-        params.gender = gender.trim();
-      }
-      
-      if (nationality && nationality.trim()) {
-        params.nationality = nationality.trim();
-      }
-      
-      const response = await apiClient.get("/customers", { params });
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  getById: async (id) => {
-    try {
-      const response = await apiClient.get(`/customers/${id}`);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  create: async (data) => {
-    try {
-      const response = await apiClient.post("/customers", data);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  update: async (id, data) => {
-    try {
-      const response = await apiClient.put(`/customers/${id}`, data);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  delete: async (id) => {
-    try {
-      const response = await apiClient.delete(`/customers/${id}`);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
+  ...customerCrud,
+  /** GET /api/customers?page&size&search&gender&nationality */
+  getAll: ({ page = 0, size = 16, search, gender, nationality } = {}) =>
+    customerCrud.getAll(
+      compactParams({
+        page,
+        size,
+        search: search?.trim(),
+        gender: gender?.trim(),
+        nationality: nationality?.trim(),
+      }),
+    ),
 };
 
-// NHÂN VIÊN API (Employee)
-
+// NHÂN VIÊN (Employee)
+const employeeCrud = createCrudApi("/employees");
 export const employeeAPI = {
-  getAll: async ({
-    page = 0,
-    size = 16,
-    search = "",
-    isActive = null,
-    position = "",
-  } = {}) => {
-    const params = {
-      page,
-      size,
-    };
-
-    if (search.trim()) {
-      params.search = search.trim();
-    }
-
-    if (isActive !== null) {
-      params.isActive = isActive;
-    }
-
-    if (position) {
-      params.position = position;
-    }
-
-    const response = await apiClient.get("/employees", {
-      params,
-    });
-
-    return response.data;
-  },
-  getById: async (id) => {
-    try {
-      const response = await apiClient.get(`/employees/${id}`);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  create: async (data) => {
-    try {
-      const response = await apiClient.post("/employees", data);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  update: async (id, data) => {
-    try {
-      const response = await apiClient.put(`/employees/${id}`, data);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  delete: async (id) => {
-    try {
-      const response = await apiClient.delete(`/employees/${id}`);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
+  ...employeeCrud,
+  /** GET /api/employees?page&size&search&isActive&position */
+  getAll: ({ page = 0, size = 16, search, isActive, position } = {}) =>
+    employeeCrud.getAll(
+      compactParams({ page, size, search: search?.trim(), isActive, position }),
+    ),
 };
 
-// PHIẾU THUÊ API (Booking)
+// PHIẾU THUÊ (Booking)
+export const bookingAPI = createCrudApi("/booking");
 
-export const bookingAPI = {
-  getAll: async () => {
-    try {
-      const response = await apiClient.get("/booking");
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
+// HÓA ĐƠN (Invoice)
+export const invoiceAPI = createCrudApi("/invoice");
 
-  getById: async (id) => {
-    try {
-      const response = await apiClient.get(`/booking/${id}`);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
+// LOẠI DỊCH VỤ (Service Categories) - cập nhật bằng PATCH
+export const serviceCategoryAPI = createCrudApi("/service-categories", {
+  updateMethod: "patch",
+});
 
-  create: async (data) => {
-    try {
-      const response = await apiClient.post("/booking", data);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
+// DỊCH VỤ (Service)
+export const serviceAPI = createCrudApi("/services");
 
-  update: async (id, data) => {
-    try {
-      const response = await apiClient.put(`/booking/${id}`, data);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  delete: async (id) => {
-    try {
-      const response = await apiClient.delete(`/booking/${id}`);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-};
-
-// HÓA ĐƠN API (Invoice)
-
-export const invoiceAPI = {
-  getAll: async () => {
-    try {
-      const response = await apiClient.get("/invoice");
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  getById: async (id) => {
-    try {
-      const response = await apiClient.get(`/invoice/${id}`);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  create: async (data) => {
-    try {
-      const response = await apiClient.post("/invoice", data);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  update: async (id, data) => {
-    try {
-      const response = await apiClient.put(`/invoice/${id}`, data);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  delete: async (id) => {
-    try {
-      const response = await apiClient.delete(`/invoice/${id}`);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-};
-
-// LOẠI DỊCH VỤ API (Service Categories)
-
-export const serviceCategoryAPI = {
-  /**
-   * Lấy danh sách tất cả loại dịch vụ
-   * GET /api/service-categories
-   */
-  getAll: async () => {
-    try {
-      const response = await apiClient.get("/service-categories");
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  /**
-   * Tạo loại dịch vụ mới
-   * POST /api/service-categories
-   *
-   * @param {Object} data - Dữ liệu loại dịch vụ
-   * @param {string} data.serviceCategoryName - Tên loại dịch vụ
-   */
-  create: async (data) => {
-    try {
-      const response = await apiClient.post("/service-categories", data);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  /**
-   * Cập nhật loại dịch vụ
-   * PATCH /api/service-categories/{id}
-   */
-  update: async (id, data) => {
-    try {
-      const response = await apiClient.patch(`/service-categories/${id}`, data);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  /**
-   * Xóa loại dịch vụ
-   * DELETE /api/service-categories/{id}
-   */
-  delete: async (id) => {
-    try {
-      const response = await apiClient.delete(`/service-categories/${id}`);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-};
-
-// DỊCH VỤ API (Service)
-
-export const serviceAPI = {
-  getAll: async () => {
-    try {
-      const response = await apiClient.get("/services");
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  getById: async (id) => {
-    try {
-      const response = await apiClient.get(`/services/${id}`);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  create: async (data) => {
-    try {
-      const response = await apiClient.post("/services", data);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  update: async (id, data) => {
-    try {
-      const response = await apiClient.put(`/services/${id}`, data);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  delete: async (id) => {
-    try {
-      const response = await apiClient.delete(`/services/${id}`);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-};
-
-// TÀI KHOẢN API (Account)
-
+// TÀI KHOẢN (Account)
+const accountCrud = createCrudApi("/accounts");
 export const accountAPI = {
-  /**
-   * UC-ACC-001: Tạo tài khoản mới
-   * POST /api/accounts
-   * 
-   * @param {Object} data - Dữ liệu tài khoản
-   * @param {string} data.username - Tên đăng nhập
-   * @param {string} data.password - Mật khẩu
-   * @param {number} data.employeeId - ID nhân viên
-   */
-  create: async (data) => {
-    try {
-      const response = await apiClient.post("/accounts", data);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
+  create: accountCrud.create,
+  getById: accountCrud.getById,
+  update: accountCrud.update,
 
-  /**
-   * Lấy danh sách tất cả tài khoản có phân trang
-   * GET /api/accounts?page=0&size=16&isActive=true
-   */
-  getAll: async ({ page = 0, size = 16, isActive = null } = {}) => {
-    try {
-      const params = { page, size };
-      
-      // Chỉ thêm isActive vào params nếu có giá trị
-      if (isActive !== null && isActive !== undefined) {
-        params.isActive = isActive;
-      }
-      
-      const response = await apiClient.get("/accounts", { params });
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
+  /** GET /api/accounts?page&size&isActive */
+  getAll: ({ page = 0, size = 16, isActive } = {}) =>
+    accountCrud.getAll(compactParams({ page, size, isActive })),
 
-  /**
-   * Lấy thông tin tài khoản theo ID
-   * GET /api/accounts/{accountId}
-   */
-  getById: async (accountId) => {
-    try {
-      const response = await apiClient.get(`/accounts/${accountId}`);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  /**
-   * REQ-ACC-002 & REQ-ACC-003: Cập nhật tài khoản
-   * PUT /api/accounts/{accountId}
-   * 
-   * @param {number} accountId - ID tài khoản
-   * @param {Object} data - Dữ liệu cập nhật
-   * @param {string} data.username - Tên đăng nhập mới (optional)
-   * @param {string} data.newPassword - Mật khẩu mới (optional)
-   * @param {string} data.role - Vai trò mới (ADMIN/MANAGER/RECEPTIONIST) (optional)
-   * @param {boolean} data.isActive - Trạng thái tài khoản (optional)
-   */
-  update: async (accountId, data) => {
-    try {
-      const response = await apiClient.put(`/accounts/${accountId}`, data);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  /**
-   * Lấy danh sách nhân viên chưa có tài khoản
-   * GET /api/accounts/available-employees
-   */
-  getAvailableEmployees: async () => {
-    try {
-      const response = await apiClient.get("/accounts/available-employees");
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
+  /** GET /api/accounts/available-employees - nhân viên chưa có tài khoản */
+  getAvailableEmployees: () =>
+    unwrap(apiClient.get("/accounts/available-employees")),
 };
 
 export default apiClient;

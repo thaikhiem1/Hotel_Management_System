@@ -1,4 +1,3 @@
-import React from "react";
 import GenericDeleteDialog from "@/components/shared/GenericDeleteDialog";
 
 const DeleteConfirmDialog = ({

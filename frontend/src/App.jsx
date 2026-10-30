@@ -1,17 +1,17 @@
-import { useState } from 'react'
-import LoginPage from './pages/LoginPage'
-import ResetPasswordPage from './pages/ResetPasswordPage'
 import './styles/index.css'
 import { BrowserRouter } from 'react-router-dom'
 import AppRoutes from './routes/AppRoutes'
 import { ToastProvider } from './contexts/ToastContext'
+import { AuthProvider } from './contexts/AuthContext'
 
 function App() {
   return (
     <BrowserRouter>
-      <ToastProvider>
-        <AppRoutes/>
-      </ToastProvider>
+      <AuthProvider>
+        <ToastProvider>
+          <AppRoutes/>
+        </ToastProvider>
+      </AuthProvider>
     </BrowserRouter>
   )
 }

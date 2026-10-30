@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import {
   DateTimeFilter,
   QuickActions,
@@ -6,9 +6,13 @@ import {
   RoomFilterTabs,
   RoomGrid,
   RoomDetailModal,
-  AddServiceModal
+  AddServiceModal,
+  CheckInModal,
+  CheckOutModal
 } from '@/components/dashboard';
-import { InvoiceModal } from '@/components/invoice';
+import { useAuth } from '@/contexts/AuthContext';
+import { rentalService } from '@/services/mockRentalService';
+import { showError, showSuccess } from '@/utils/notification';
 import {
   mockPhong,
   mockLoaiPhong,
@@ -24,8 +28,11 @@ const DashboardPage = () => {
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isAddServiceModalOpen, setIsAddServiceModalOpen] = useState(false);
-  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
-  const [invoiceData, setInvoiceData] = useState(null);
+  // Form nhận phòng (UC-REN-004) và trả phòng (UC-REN-007): giữ dữ liệu lưu trú đã tải
+  const [checkInStay, setCheckInStay] = useState(null);
+  const [checkOutStay, setCheckOutStay] = useState(null);
+  const [dataVersion, setDataVersion] = useState(0); // tăng để tính lại sơ đồ phòng sau khi mock data đổi
+  const { user } = useAuth();
 
   // Bộ lọc ngày giờ (mặc định hôm nay lúc 14:00 đến 12:00 hôm sau)
   const todayStr = new Date().toISOString().split('T')[0];
@@ -65,11 +72,13 @@ const DashboardPage = () => {
         checkInTime: statusInfo.checkInTime,
         checkOutTime: statusInfo.checkOutTime,
         maintenanceReason: statusInfo.maintenanceReason,
+        bookingDetailId: statusInfo.bookingDetailId,
         // Dữ liệu gốc theo Database.md
         rawData: phong
       };
     });
-  }, [startDateTimeStr, endDateTimeStr]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- dataVersion buộc tính lại sau khi mock data đổi
+  }, [startDateTimeStr, endDateTimeStr, dataVersion]);
 
   // Thống kê số lượng phòng theo từng trạng thái tại khung giờ được lọc
   const roomCounts = useMemo(() => {
@@ -123,6 +132,7 @@ const DashboardPage = () => {
 
   const handleRefresh = () => {
     setIsLoading(true);
+    setDataVersion((v) => v + 1);
     setTimeout(() => {
       setIsLoading(false);
     }, 600);
@@ -130,6 +140,50 @@ const DashboardPage = () => {
 
   const handleFilterAvailableNow = () => {
     setActiveFilter('available');
+  };
+
+  // UC-REN-004 bước 1-4: lấy dữ liệu + kiểm tra điều kiện, hợp lệ mới mở form Check-in
+  const openCheckIn = async (room) => {
+    try {
+      const stay = await rentalService.getCheckInContext({
+        roomId: room.id,
+        detailId: room.bookingDetailId
+      });
+      setCheckInStay(stay);
+    } catch (error) {
+      showError('Không thể nhận phòng', error.message);
+      if (error.code === 'E1') handleRefresh();
+    }
+  };
+
+  // UC-REN-007 bước 1-8: xác định lượt lưu trú CHECKED_IN, tính tiền dự kiến rồi mở form Trả phòng
+  const openCheckOut = async (room) => {
+    try {
+      const stay = await rentalService.getCheckOutContext({
+        roomId: room.id,
+        detailId: room.bookingDetailId
+      });
+      setCheckOutStay(stay);
+    } catch (error) {
+      showError('Không thể trả phòng', error.message);
+    }
+  };
+
+  const handleCheckInSuccess = (result) => {
+    setCheckInStay(null);
+    showSuccess(
+      'Nhận phòng thành công',
+      `Phòng ${result.roomCode} - khách ${result.customerName} (${result.actualGuests} người)`
+    );
+    handleRefresh();
+  };
+
+  const handleCheckOutCompleted = (result) => {
+    showSuccess(
+      'Trả phòng thành công',
+      `Hóa đơn #${String(result.invoice.invoiceId).padStart(6, '0')} - chưa thanh toán`
+    );
+    handleRefresh();
   };
 
   const handleRoomAction = (actionId, room) => {
@@ -151,16 +205,7 @@ const DashboardPage = () => {
         break;
 
       case 'checkin':
-        // TODO: API xử lý nhận phòng (chuyển từ "đã đặt" sang "đang thuê")
-        // API: POST /api/rental-details/{IdCTDP}/checkin
-        // Body: { checkinTime: ISO string, actualGuests: number }
-        // Authorization: Bearer token (quyền lễ tân)
-        if (confirm(`Xác nhận nhận phòng ${room.name} cho khách ${room.guestName}?`)) {
-          console.log('Processing check-in for room:', room);
-          alert('Đang xử lý nhận phòng...');
-          // Sau khi API thành công, cần refresh lại danh sách phòng
-          handleRefresh();
-        }
+        openCheckIn(room);
         break;
 
       case 'cancel':
@@ -180,103 +225,9 @@ const DashboardPage = () => {
         setIsAddServiceModalOpen(true);
         break;
 
-      case 'checkout': {
-        // TODO: API lấy thông tin đầy đủ để xuất hóa đơn
-        // API: GET /api/rental-details/{IdCTDP}/invoice-data
-        // Bao gồm: rental_receipt, booking_detail, customer, services
-        // Authorization: Bearer token (quyền lễ tân)
-        
-        // Tìm phiếu thuê và chi tiết đặt phòng từ mock data
-        let foundRentalReceipt = null;
-        let foundBookingDetail = null;
-        
-        for (const phieuThue of mockPhieuThue) {
-          const chiTiet = phieuThue.chiTiet?.find(ct => 
-            ct.IdPH === room.id && ct.TrangThaiDatPhong === 1 // 1: Đang thuê
-          );
-          
-          if (chiTiet) {
-            foundBookingDetail = chiTiet;
-            foundRentalReceipt = phieuThue;
-            break;
-          }
-        }
-        
-        if (!foundRentalReceipt || !foundBookingDetail) {
-          alert('Không tìm thấy thông tin phiếu thuê cho phòng này!\nVui lòng kiểm tra lại trạng thái phòng.');
-          break;
-        }
-        
-        // Chuyển đổi từ format mock data sang format Database.md
-        const rentalReceipt = {
-          rental_receipt_id: foundRentalReceipt.IdPT,
-          rental_date: foundRentalReceipt.NgPT,
-          customer_id: foundRentalReceipt.IdKH,
-          employee_id: foundRentalReceipt.IdNV,
-          customer: {
-            customer_id: foundRentalReceipt.khachHang.IdKH,
-            full_name: foundRentalReceipt.khachHang.TenKH,
-            phone: foundRentalReceipt.khachHang.SDT,
-            citizen_id_passport: foundRentalReceipt.khachHang.CCCD_Passport,
-            nationality: foundRentalReceipt.khachHang.QuocTich,
-            gender: foundRentalReceipt.khachHang.GioiTinh
-          },
-          employee: {
-            employee_id: mockNhanVien.find(nv => nv.IdNV === foundRentalReceipt.IdNV)?.IdNV || 1,
-            full_name: mockNhanVien.find(nv => nv.IdNV === foundRentalReceipt.IdNV)?.TenNV || 'N/A',
-            position: mockNhanVien.find(nv => nv.IdNV === foundRentalReceipt.IdNV)?.ChucVu || 'N/A'
-          }
-        };
-
-        const bookingDetail = {
-          booking_detail_id: foundBookingDetail.IdCTDP,
-          rental_receipt_id: foundRentalReceipt.IdPT,
-          room_id: foundBookingDetail.IdPH,
-          number_of_guests: foundBookingDetail.SoNguoi,
-          check_in_date: foundBookingDetail.NgayCheckIn?.split('T')[0] || '',
-          check_out_date: foundBookingDetail.NgayCheckOut?.split('T')[0] || '',
-          booking_status: 'CHECKED_IN',
-          unit_price: foundBookingDetail.DonGia,
-          total_amount: foundBookingDetail.ThanhTien
-        };
-
-        // Mock services - TODO: lấy từ API thực
-        const services = [
-          {
-            booking_detail_id: foundBookingDetail.IdCTDP,
-            service_id: 1,
-            unit_price: 150000,
-            quantity: 2,
-            total_amount: 300000,
-            service: {
-              service_id: 1,
-              service_name: 'Ăn sáng buffet',
-              unit: 'suất'
-            }
-          },
-          {
-            booking_detail_id: foundBookingDetail.IdCTDP,
-            service_id: 2,
-            unit_price: 30000,
-            quantity: 5,
-            total_amount: 150000,
-            service: {
-              service_id: 2,
-              service_name: 'Giặt ủi',
-              unit: 'kg'
-            }
-          }
-        ];
-
-        setInvoiceData({
-          rentalReceipt: rentalReceipt,
-          bookingDetail: bookingDetail,
-          services: services
-        });
-        setSelectedRoom(room);
-        setIsInvoiceModalOpen(true);
+      case 'checkout':
+        openCheckOut(room);
         break;
-      }
 
       case 'ready':
         // TODO: API đánh dấu phòng sẵn sàng sau khi dọn dẹp
@@ -318,22 +269,6 @@ const DashboardPage = () => {
     alert(`Đã thêm ${services.length} dịch vụ cho phòng ${room.name}\nTổng: ${totalAmount.toLocaleString('vi-VN')}đ`);
     
     // Refresh sau khi thêm dịch vụ thành công
-    handleRefresh();
-  };
-
-  const handleInvoiceConfirm = (invoiceResult) => {
-    // TODO: API tạo hóa đơn và cập nhật trạng thái phòng
-    // API: POST /api/invoices
-    // Body: { rental_receipt_id, employee_id, total_amount, invoice_date, payment_status: 'PAID' }
-    // Authorization: Bearer token (quyền lễ tân)
-    
-    console.log('Invoice created:', invoiceResult);
-    alert(`Đã tạo hóa đơn thành công!\nTổng thanh toán: ${invoiceResult.totalAmount.toLocaleString('vi-VN')}đ\nPhòng sẽ chuyển sang trạng thái "Đang dọn dẹp"`);
-    
-    // Đóng modal và refresh
-    setIsInvoiceModalOpen(false);
-    setSelectedRoom(null);
-    setInvoiceData(null);
     handleRefresh();
   };
 
@@ -465,19 +400,22 @@ const DashboardPage = () => {
         onSubmit={handleAddService}
       />
 
-      {/* Invoice Modal - Phiếu hóa đơn thanh toán */}
-      <InvoiceModal
-        room={selectedRoom}
-        rentalReceipt={invoiceData?.rentalReceipt}
-        bookingDetail={invoiceData?.bookingDetail}
-        services={invoiceData?.services}
-        isOpen={isInvoiceModalOpen}
-        onClose={() => {
-          setIsInvoiceModalOpen(false);
-          setSelectedRoom(null);
-          setInvoiceData(null);
-        }}
-        onConfirm={handleInvoiceConfirm}
+      {/* Check-in Modal - UC-REN-004 */}
+      <CheckInModal
+        isOpen={Boolean(checkInStay)}
+        stay={checkInStay}
+        onClose={() => setCheckInStay(null)}
+        onSuccess={handleCheckInSuccess}
+      />
+
+      {/* Check-out Modal - UC-REN-007 */}
+      <CheckOutModal
+        isOpen={Boolean(checkOutStay)}
+        stay={checkOutStay}
+        employeeId={user?.employee?.employeeId}
+        onClose={() => setCheckOutStay(null)}
+        onCompleted={handleCheckOutCompleted}
+        onRefresh={handleRefresh}
       />
     </div>
   );

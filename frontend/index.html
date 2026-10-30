@@ -1,12 +1,22 @@
 <!doctype html>
-<html lang="en" class="dark">
+<html lang="vi" class="dark">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Hệ Thống Quản Trị Khách Sạn</title>
+    <meta name="color-scheme" content="dark light" />
     <meta name="description" content="Hệ Thống Quản Trị & Vận Hành Khách Sạn Cao Cấp Grand Astoria" />
     
+    <!-- Áp dụng chế độ sáng/tối trước khi vẽ giao diện để không bị nháy màu -->
+    <script>
+      try {
+        var t = localStorage.getItem("theme") === "light" ? "light" : "dark";
+        document.documentElement.classList.remove("dark", "light");
+        document.documentElement.classList.add(t);
+      } catch (e) {}
+    </script>
+
     <!-- Material Symbols Font -->
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
   </head>

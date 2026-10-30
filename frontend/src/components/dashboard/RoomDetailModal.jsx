@@ -1,5 +1,3 @@
-import React from 'react';
-import { cn } from '@/utils/lib/util';
 
 /**
  * RoomDetailModal - Modal hiển thị chi tiết đầy đủ của phòng
@@ -186,7 +184,7 @@ const RoomDetailModal = ({ room, isOpen, onClose, onOpenAddService }) => {
                 </div>
               ) : (
                 <div className="space-y-space-sm">
-                  {usedServices.map((service, index) => (
+                  {usedServices.map((service) => (
                     <div
                       key={service.id}
                       className="p-space-lg rounded-lg bg-surface-container-low border border-outline-variant hover:shadow-md transition-shadow"

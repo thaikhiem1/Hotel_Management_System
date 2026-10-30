@@ -1,4 +1,3 @@
-import React from 'react';
 import { cn } from '@/utils/lib/util';
 
 const CustomerTable = ({ customers, onEdit, onDelete, isLoading }) => {

@@ -1,9 +1,10 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import RoomTypeTable from '@/components/room-type-management/RoomTypeTable';
 import RoomTypeFormDialog from '@/components/room-type-management/RoomTypeFormDialog';
 import RoomTypeDeleteDialog from '@/components/room-type-management/RoomTypeDeleteDialog';
 import { roomTypeAPI } from '@/services/api';
 import { showSuccess, handleApiError } from '@/utils/notification';
+import { formatCurrency } from '@/utils/format';
 
 const QuanLyLoaiPhongPage = () => {
   // State quản lý dữ liệu loại phòng từ API
@@ -154,13 +155,6 @@ const QuanLyLoaiPhongPage = () => {
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    }).format(amount);
   };
 
   return (

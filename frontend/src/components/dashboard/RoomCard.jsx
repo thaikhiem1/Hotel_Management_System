@@ -1,4 +1,3 @@
-import React from 'react';
 import { cn } from '@/utils/lib/util';
 
 const RoomCard = ({ room, onAction }) => {
@@ -40,7 +39,7 @@ const RoomCard = ({ room, onAction }) => {
       },
       cleaning: {
         label: 'Đang dọn dẹp',
-        color: 'bg-amber-500/20 text-amber-600',
+        color: 'bg-amber-500/20 text-amber-700 dark:text-amber-400',
         icon: 'cleaning_services',
         actions: [
           { id: 'view', label: 'Xem chi tiết', icon: 'visibility', variant: 'secondary', roles: [0, 1, 2] },

@@ -1,4 +1,3 @@
-import React from 'react';
 
 /**
  * BookingFilters - Bộ lọc danh sách phiếu thuê

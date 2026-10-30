@@ -1,5 +1,5 @@
-import React from 'react';
 import StatusBadge from './StatusBadge';
+import { formatDateTime, formatDate, formatCurrency, formatReceiptCode } from '@/utils/format';
 
 /**
  * BookingDetailDialog - Hộp thoại xem chi tiết phiếu thuê
@@ -27,47 +27,6 @@ const BookingDetailDialog = ({
   layTrangThaiPhieuThue
 }) => {
   if (!isOpen || !phieuThue) return null;
-
-  // Format ngày kèm giờ (HH:mm - DD/MM/YYYY)
-  const formatDateTime = (dateString) => {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return dateString;
-
-    const time = date.toLocaleTimeString('vi-VN', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    });
-
-    const dayMonthYear = date.toLocaleDateString('vi-VN', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
-
-    return `${time} - ${dayMonthYear}`;
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return dateString;
-    return date.toLocaleDateString('vi-VN', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
-  };
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    }).format(amount || 0);
-  };
-
-  const getMaPT = (IdPT) => `PT${String(IdPT).padStart(3, '0')}`;
 
   const calculateDuration = (NgayCheckIn, NgayCheckOut, hinhThuc) => {
     const start = new Date(NgayCheckIn);
@@ -112,7 +71,7 @@ const BookingDetailDialog = ({
         <div className="sticky top-0 flex items-center justify-between p-space-lg border-b border-surface-container-high bg-surface-container-low z-10">
           <div>
             <h2 className="font-headline-md text-headline-md text-on-surface font-bold">
-              Chi tiết phiếu thuê {getMaPT(phieuThue.IdPT)}
+              Chi tiết phiếu thuê {formatReceiptCode(phieuThue.IdPT)}
             </h2>
             <p className="font-body-sm text-body-sm text-on-surface-variant">
               Ngày lập: {formatDate(phieuThue.NgPT)}
@@ -143,7 +102,7 @@ const BookingDetailDialog = ({
                   Mã phiếu thuê
                 </p>
                 <p className="font-body-lg text-body-lg text-primary font-bold">
-                  {getMaPT(phieuThue.IdPT)}
+                  {formatReceiptCode(phieuThue.IdPT)}
                 </p>
               </div>
               <div>
@@ -368,7 +327,7 @@ const BookingDetailDialog = ({
           <button
             type="button"
             onClick={() => {
-              if (window.confirm(`Bạn có chắc muốn hủy và xóa toàn bộ phiếu thuê ${getMaPT(phieuThue.IdPT)}?`)) {
+              if (window.confirm(`Bạn có chắc muốn hủy và xóa toàn bộ phiếu thuê ${formatReceiptCode(phieuThue.IdPT)}?`)) {
                 onCancel(phieuThue);
                 onClose();
               }

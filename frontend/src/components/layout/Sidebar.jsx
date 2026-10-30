@@ -1,13 +1,14 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/utils/lib/util";
 import ResizeHandle from "./ResizeHandle";
 import logo from "@/assets/ronaldo_02.jpg";
 import avatar from "@/assets/ronaldo_10.webp";
+import { useAuth } from "@/contexts/AuthContext";
+import { MANAGEMENT_ROLES, ROLE_LABELS } from "@/utils/auth";
 const Sidebar = ({ onWidthChange }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState("");
 
   // Load saved width from localStorage or use default
   const [sidebarWidth, setSidebarWidth] = useState(() => {
@@ -21,13 +22,12 @@ const Sidebar = ({ onWidthChange }) => {
   const MIN_WIDTH = 280; // Minimum sidebar width
   const MAX_WIDTH = 600; // Maximum sidebar width
 
-  const handleLogout = () => {
-    // TODO: Clear authentication tokens/session
-    // localStorage.removeItem('token');
-    // sessionStorage.clear();
+  const { user, logout } = useAuth();
+  const employee = user?.employee;
 
-    // Navigate to login page
-    navigate("/login");
+  const handleLogout = () => {
+    logout();
+    navigate("/login", { replace: true });
   };
 
   const startResizing = (e) => {
@@ -80,7 +80,7 @@ const Sidebar = ({ onWidthChange }) => {
     }
   }, []);
 
-  const navigationSections = [
+  const allSections = [
     {
       title: "Tổng quan & Đặt phòng",
       items: [
@@ -138,20 +138,33 @@ const Sidebar = ({ onWidthChange }) => {
           path: "/employees",
           label: "Quản lý nhân viên",
           icon: "group",
+          roles: MANAGEMENT_ROLES,
         },
         {
           path: "/accounts",
           label: "Quản lý tài khoản",
           icon: "manage_accounts",
+          roles: MANAGEMENT_ROLES,
         },
         {
           path: "/reports",
           label: "Báo cáo & Thống kê",
           icon: "insights",
+          roles: MANAGEMENT_ROLES,
         },
       ],
     },
   ];
+
+  // Ẩn mục menu mà vai trò hiện tại không được truy cập
+  const navigationSections = allSections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter(
+        (item) => !item.roles || item.roles.includes(user?.role),
+      ),
+    }))
+    .filter((section) => section.items.length > 0);
 
   const isActive = (path) => location.pathname === path;
 
@@ -190,7 +203,7 @@ const Sidebar = ({ onWidthChange }) => {
                 className={cn(
                   "flex items-center px-space-md py-space-sm rounded-lg font-label-lg text-label-lg transition-all",
                   isActive(item.path)
-                    ? "bg-primary-container text-on-primary-container font-bold shadow-[0_0_15px_rgba(212,175,55,0.2)]"
+                    ? "bg-primary-container text-on-primary-container font-bold shadow-glow"
                     : "text-on-surface-variant hover:bg-surface-container hover:text-on-surface",
                 )}
               >
@@ -213,14 +226,14 @@ const Sidebar = ({ onWidthChange }) => {
               <img
                 alt="User Avatar"
                 className="w-10 h-10 rounded-full object-cover"
-                src={avatar}
+                src={employee?.avatar || avatar}
               />
               <div className="flex-1 min-w-0">
                 <p className="font-label-lg text-label-lg text-on-surface font-semibold truncate">
-                  Sir Alex Fergusion
+                  {employee?.fullName || user?.username}
                 </p>
                 <p className="font-label-sm text-label-sm text-primary uppercase tracking-wider">
-                  Tổng Giám Đốc
+                  {ROLE_LABELS[user?.role] || employee?.position}
                 </p>
               </div>
             </div>

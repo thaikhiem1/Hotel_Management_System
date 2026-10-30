@@ -1,5 +1,4 @@
-import ResetPasswordForm from '../hotel/ResetPasswordForm';
-import { Link } from 'react-router-dom';
+import ResetPasswordForm from './ResetPasswordForm';
 
 /**
  * ResetPasswordRightPanel - Password Reset Interface

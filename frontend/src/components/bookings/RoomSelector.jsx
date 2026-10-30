@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { cn } from '@/utils/lib/util';
+import { formatCurrency } from '@/utils/format';
 
 /**
  * RoomSelector - Chọn phòng cho phiếu thuê
@@ -24,13 +25,6 @@ const RoomSelector = ({
   hinhThucThue = 'NGAY'
 }) => {
   const [filterLoaiPhong, setFilterLoaiPhong] = useState('all');
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    }).format(amount || 0);
-  };
 
   // Hỗ trợ cả trường hợp selectedRooms là Phong[] hoặc { phong: Phong }[]
   const isRoomSelected = (IdPH) => {
@@ -140,7 +134,7 @@ const RoomSelector = ({
                   'p-space-lg rounded-lg border-2 transition-all text-left relative cursor-pointer',
                   available
                     ? selected
-                      ? 'border-primary bg-primary/10 shadow-[0_0_15px_rgba(242,202,80,0.3)]'
+                      ? 'border-primary bg-primary/10 shadow-glow'
                       : 'border-surface-container-highest bg-surface-container hover:border-primary/50 hover:bg-surface-container-highest'
                     : 'border-surface-container-high bg-surface-container opacity-50 cursor-not-allowed'
                 )}

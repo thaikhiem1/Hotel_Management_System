@@ -1,16 +1,9 @@
-import React from "react";
+import { formatCurrency } from "@/utils/format";
 
 const RoomTypeTable = ({ roomTypes, onEdit, onDelete, isLoading }) => {
   /**
    * Format số tiền theo định dạng Việt Nam
    */
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    }).format(amount);
-  };
-
   if (isLoading) {
     return (
       <div

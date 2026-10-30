@@ -1,11 +1,11 @@
-import ResetPasswordLeftPanel from "../components/layout/ResetPasswordLeftPanel";
-import ResetPasswordRightPanel from "../components/layout/ResetPasswordRightPanel";
+import ResetPasswordLeftPanel from "../components/auth/ResetPasswordLeftPanel";
+import ResetPasswordRightPanel from "../components/auth/ResetPasswordRightPanel";
 
 function ResetPasswordPage() {
   return (
     <div className="bg-background font-body-md text-on-surface antialiased min-h-screen relative selection:bg-primary selection:text-on-primary">
       {/* Background Radial Gradient Overlay */}
-      <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_80%_60%_at_80%_-10%,rgba(27,42,74,0.3),transparent_70%)] z-0" />
+      <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_80%_60%_at_80%_-10%,color-mix(in_srgb,var(--color-primary)_14%,transparent),transparent_70%)] z-0" />
 
       <main className="relative z-10 w-full min-h-screen bg-transparent flex flex-col justify-center">
         <div className="flex flex-col w-full">

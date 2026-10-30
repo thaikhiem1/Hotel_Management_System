@@ -2,6 +2,9 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "@/pages/LoginPage";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
 
+import ProtectedRoute from "@/routes/ProtectedRoute";
+import { MANAGEMENT_ROLES } from "@/utils/auth";
+
 // Dashboard Layout
 import DashboardLayout from "@/components/layout/DashboardLayout";
 
@@ -27,18 +30,24 @@ function AppRoutes() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-      {/* Dashboard */}
-      <Route path="/" element={<DashboardLayout />}>
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/bookings" element={<LapPhieuThuePage />} />
-        <Route path="/rooms" element={<QuanLyPhongPage />} />
-        <Route path="/roomtypes" element={<QuanLyLoaiPhongPage />} />
-        <Route path="/customers" element={<QuanLyKhachHangPage />} />
-        <Route path="/payments" element={<QuanLyHoaDonPage />} />
-        <Route path="/services" element={<QuanLyDichVuPage />} />
-        <Route path="/employees" element={<QuanLyNhanVienPage />} />
-        <Route path="/accounts" element={<QuanLyTaiKhoanPage />} />
-        <Route path="/reports" element={<BaoCaoThongKePage />} />
+      {/* Dashboard - yêu cầu đăng nhập */}
+      <Route element={<ProtectedRoute />}>
+        <Route path="/" element={<DashboardLayout />}>
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/bookings" element={<LapPhieuThuePage />} />
+          <Route path="/rooms" element={<QuanLyPhongPage />} />
+          <Route path="/roomtypes" element={<QuanLyLoaiPhongPage />} />
+          <Route path="/customers" element={<QuanLyKhachHangPage />} />
+          <Route path="/payments" element={<QuanLyHoaDonPage />} />
+          <Route path="/services" element={<QuanLyDichVuPage />} />
+
+          {/* Chỉ ADMIN / MANAGER */}
+          <Route element={<ProtectedRoute roles={MANAGEMENT_ROLES} />}>
+            <Route path="/employees" element={<QuanLyNhanVienPage />} />
+            <Route path="/accounts" element={<QuanLyTaiKhoanPage />} />
+            <Route path="/reports" element={<BaoCaoThongKePage />} />
+          </Route>
+        </Route>
       </Route>
     </Routes>
   );

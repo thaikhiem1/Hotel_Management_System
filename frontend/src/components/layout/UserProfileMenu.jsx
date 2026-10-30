@@ -1,6 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/utils/lib/util';
+import { useAuth } from '@/contexts/AuthContext';
 
 /**
  * UserProfileMenu - Component hiển thị menu dropdown profile user
@@ -8,6 +9,7 @@ import { cn } from '@/utils/lib/util';
  */
 const UserProfileMenu = ({ currentUser, onOpenProfile }) => {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -55,8 +57,8 @@ const UserProfileMenu = ({ currentUser, onOpenProfile }) => {
 
   const handleLogout = () => {
     setIsOpen(false);
-    // TODO: Clear authentication tokens/session
-    navigate('/login');
+    logout();
+    navigate('/login', { replace: true });
   };
 
   // Xác định màu sắc theo chức vụ

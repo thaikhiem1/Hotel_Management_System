@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { CustomerTable, CustomerFormDialog } from '@/components/customer-management';
 import { GenericDeleteDialog } from '@/components/shared';
 import { showSuccess, handleApiError } from '@/utils/notification';

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 /**
  * CustomerSelector - Chọn hoặc tạo khách hàng cho phiếu thuê

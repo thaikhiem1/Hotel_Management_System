@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   BarChart,
   Bar,
@@ -10,19 +9,14 @@ import {
   ResponsiveContainer,
   Cell
 } from 'recharts';
+import { getChartColors } from '@/utils/chartColors';
 
 /**
  * SalaryChart - Biểu đồ lương nhân viên
  * Hỗ trợ dark mode và light mode
  */
 const SalaryChart = ({ data, isDarkMode = false }) => {
-  const colors = {
-    bars: ['#D4AF37', '#B8941E', '#3b82f6', '#10b981', '#8b5cf6', '#f59e0b'],
-    grid: isDarkMode ? '#3f3f46' : '#e4e4e7',
-    text: isDarkMode ? '#e4e4e7' : '#27272a',
-    tooltip: isDarkMode ? '#27272a' : '#ffffff',
-    tooltipBorder: isDarkMode ? '#52525b' : '#d4d4d8'
-  };
+  const colors = getChartColors(isDarkMode);
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {

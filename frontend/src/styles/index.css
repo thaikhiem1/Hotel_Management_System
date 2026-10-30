@@ -11,6 +11,9 @@
 /* Tailwind CSS */
 @import "tailwindcss";
 
+/* Chế độ tối theo class .dark do ThemeContext đặt trên <html> (không theo cài đặt hệ điều hành) */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ============================================
    Base Layer - Reset & Defaults
    ============================================ */
@@ -25,6 +28,7 @@
   }
 
   html {
+    color-scheme: dark;
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -48,13 +52,13 @@
 
   /* Better Selection Styles */
   ::selection {
-    background-color: rgb(212 175 55 / 0.3);
+    background-color: color-mix(in srgb, var(--color-primary) 30%, transparent);
     color: inherit;
   }
 
   /* Accessibility Focus Styles */
   *:focus-visible {
-    outline: 2px solid rgb(212 175 55 / 0.6);
+    outline: 2px solid color-mix(in srgb, var(--color-primary) 65%, transparent);
     outline-offset: 2px;
   }
 }
@@ -81,74 +85,78 @@
 }
 
 /* ============================================
-   Light Mode Color Overrides
+   Light Mode - "Ivory & Brass"
+   Nền ngà ấm, chữ mực xanh đen, điểm nhấn vàng đồng.
+   Độ tương phản chữ >= 4.5:1 (WCAG AA).
    ============================================ */
 html.light {
-  /* Primary - Luxury Gold (vibrant for light background) */
-  --color-primary: #b8941f;
+  color-scheme: light;
+
+  /* Primary - Brass (vàng đồng) */
+  --color-primary: #82641a;
+  --color-primary-fixed: #ffe9a8;
+  --color-primary-fixed-dim: #a8832f;
   --color-on-primary: #ffffff;
-  --color-primary-container: #ffedb3;
-  --color-on-primary-container: #3d2f00;
+  --color-on-primary-fixed: #241a00;
+  --color-on-primary-fixed-variant: #574500;
+  --color-primary-container: #f4e7c3;
+  --color-on-primary-container: #3a2a00;
 
-  /* Secondary - Teal Accent (darker & vibrant) */
-  --color-secondary: #2d5753;
+  /* Secondary - Deep Teal */
+  --color-secondary: #2f6168;
+  --color-secondary-fixed: #cde8e4;
+  --color-secondary-fixed-dim: #8fb8b6;
   --color-on-secondary: #ffffff;
-  --color-secondary-container: #b0e8e0;
-  --color-on-secondary-container: #001412;
+  --color-on-secondary-fixed: #061f1d;
+  --color-on-secondary-fixed-variant: #334b49;
+  --color-secondary-container: #d3e9e8;
+  --color-on-secondary-container: #0a2a2c;
 
-  /* Tertiary - Blue Accent (darker & vibrant) */
-  --color-tertiary: #3d4f7a;
+  /* Tertiary - Slate Blue */
+  --color-tertiary: #3b5c8f;
+  --color-tertiary-fixed: #d9e2ff;
+  --color-tertiary-fixed-dim: #a9bce0;
   --color-on-tertiary: #ffffff;
-  --color-tertiary-container: #d5e3ff;
-  --color-on-tertiary-container: #001a41;
+  --color-on-tertiary-fixed: #0a1a3a;
+  --color-on-tertiary-fixed-variant: #384668;
+  --color-tertiary-container: #dce6f7;
+  --color-on-tertiary-container: #0f2748;
 
-  /* Background & Surface - Light (với độ tương phản tốt) */
-  --color-background: #f8f8f8;
-  --color-on-background: #1c1c1c;
-  --color-surface: #ffffff;
-  --color-surface-dim: #dcdcdc;
+  /* Background & Surface - Ivory */
+  --color-background: #f6f2ea;
+  --color-on-background: #1e2229;
+  --color-surface: #fbf9f5;
+  --color-surface-dim: #d9d1c2;
   --color-surface-bright: #ffffff;
   --color-surface-container-lowest: #ffffff;
-  --color-surface-container-low: #f2f2f2;
-  --color-surface-container: #ececec;
-  --color-surface-container-high: #e6e6e6;
-  --color-surface-container-highest: #d8d8d8;
-  --color-on-surface: #1c1c1c;
-  --color-on-surface-variant: #444444;
-  --color-surface-variant: #e0dcd6;
-  --color-surface-tint: #9b7807;
+  --color-surface-container-low: #f3eee5;
+  --color-surface-container: #ede7db;
+  --color-surface-container-high: #e6dfd1;
+  --color-surface-container-highest: #ddd4c3;
+  --color-on-surface: #1e2229;
+  --color-on-surface-variant: #5a5f69;
+  --color-surface-variant: #e8e1d3;
+  --color-surface-tint: #82641a;
 
   /* Inverse Colors */
-  --color-inverse-surface: #313131;
-  --color-inverse-on-surface: #f4f4f4;
-  --color-inverse-primary: #46acc5;
+  --color-inverse-surface: #2b2f36;
+  --color-inverse-on-surface: #f3efe8;
+  --color-inverse-primary: #e6c76b;
 
-  /* Outline & Border (đậm hơn để rõ ràng) */
-  --color-outline: #4e4c4c;
-  --color-outline-variant: #949191;
+  /* Outline & Border (viền mềm, không gắt) */
+  --color-outline: #8a8478;
+  --color-outline-variant: #d8d0c1;
 
-  /* Error States (đậm & rõ ràng) */
-  --color-error: #c62828;
-  --color-error-container: #ffcdd2;
+  /* Error States */
+  --color-error: #b3261e;
   --color-on-error: #ffffff;
-  --color-on-error-container: #370000;
-}
+  --color-error-container: #f9dedc;
+  --color-on-error-container: #410e0b;
 
-/* Light Mode Scrollbar */
-html.light *::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.25);
-}
-
-html.light *::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(0, 0, 0, 0.4);
-}
-
-html.light * {
-  scrollbar-color: rgba(0, 0, 0, 0.25) transparent;
 }
 
 /* ============================================
-   Scrollbar Styles - Dark Theme
+   Scrollbar Styles (theo màu chữ của từng chế độ)
    ============================================ */
 *::-webkit-scrollbar {
   width: 8px;
@@ -160,86 +168,95 @@ html.light * {
 }
 
 *::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: color-mix(in srgb, var(--color-on-surface) 18%, transparent);
   border-radius: 4px;
   transition: background-color 0.2s ease;
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: color-mix(in srgb, var(--color-on-surface) 32%, transparent);
 }
 
 /* Firefox Scrollbar */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+  scrollbar-color: color-mix(in srgb, var(--color-on-surface) 22%, transparent) transparent;
 }
 
 /* ============================================
    Tailwind v4 Theme Configuration
    ============================================ */
 @theme {
-  /* ========== COLOR SYSTEM - DARK MODE (DEFAULT) ========== */
-  /* Primary - Luxury Gold */
-  --color-primary: #d4af37;
-  --color-primary-fixed: #ffe088;
-  --color-primary-fixed-dim: #c9a84a;
-  --color-on-primary: #1a1410;
+  /* ========== COLOR SYSTEM - DARK MODE "Midnight & Champagne" (DEFAULT) ========== */
+  /* Primary - Champagne Gold */
+  --color-primary: #ddb968;
+  --color-primary-fixed: #ffe8a3;
+  --color-primary-fixed-dim: #c9a456;
+  --color-on-primary: #2b1f04;
   --color-on-primary-fixed: #241a00;
   --color-on-primary-fixed-variant: #574500;
-  --color-primary-container: #1f1a12;
-  --color-on-primary-container: #ffe8a8;
+  --color-primary-container: #2e2616;
+  --color-on-primary-container: #f3dda0;
 
-  /* Secondary - Teal Accent */
-  --color-secondary: #b1ccc8;
-  --color-secondary-container: #354e4b;
-  --color-on-secondary: #1c3532;
+  /* Secondary - Soft Teal */
+  --color-secondary: #8ec5be;
+  --color-secondary-container: #1c3a38;
+  --color-on-secondary: #0b2c29;
   --color-secondary-fixed: #cde8e4;
-  --color-secondary-fixed-dim: #b1ccc8;
+  --color-secondary-fixed-dim: #8ec5be;
   --color-on-secondary-fixed: #061f1d;
   --color-on-secondary-fixed-variant: #334b49;
-  --color-on-secondary-container: #a3beba;
+  --color-on-secondary-container: #bfe8e1;
 
-  /* Tertiary - Blue Accent */
-  --color-tertiary: #bfcef6;
-  --color-tertiary-container: #a4b2da;
-  --color-on-tertiary: #213050;
+  /* Tertiary - Soft Blue */
+  --color-tertiary: #a5beeb;
+  --color-tertiary-container: #223253;
+  --color-on-tertiary: #14264a;
   --color-tertiary-fixed: #d9e2ff;
-  --color-tertiary-fixed-dim: #b7c6ee;
+  --color-tertiary-fixed-dim: #a5beeb;
   --color-on-tertiary-fixed: #0a1a3a;
   --color-on-tertiary-fixed-variant: #384668;
-  --color-on-tertiary-container: #364466;
+  --color-on-tertiary-container: #d5e3ff;
 
-  /* Background & Surface - Dark */
-  --color-background: #0d1214;
-  --color-on-background: #e8e6e1;
-  --color-surface: #0d1214;
-  --color-surface-dim: #0a0e10;
-  --color-surface-bright: #2a2e31;
-  --color-surface-container-lowest: #050709;
-  --color-surface-container-low: #0f1416;
-  --color-surface-container: #14181a;
-  --color-surface-container-high: #1a1e20;
-  --color-surface-container-highest: #23272a;
-  --color-on-surface: #e8e6e1;
-  --color-on-surface-variant: #a8a298;
-  --color-surface-variant: #252822;
-  --color-surface-tint: #d4af37;
+  /* Background & Surface - Midnight (các lớp nổi dần theo độ sáng) */
+  --color-background: #0e1218;
+  --color-on-background: #ece8df;
+  --color-surface: #0e1218;
+  --color-surface-dim: #0a0d12;
+  --color-surface-bright: #2a313c;
+  --color-surface-container-lowest: #090c10;
+  --color-surface-container-low: #121720;
+  --color-surface-container: #171d27;
+  --color-surface-container-high: #1d2430;
+  --color-surface-container-highest: #262e3b;
+  --color-on-surface: #ece8df;
+  --color-on-surface-variant: #a9adb6;
+  --color-surface-variant: #252c37;
+  --color-surface-tint: #ddb968;
 
   /* Inverse Colors */
-  --color-inverse-surface: #dae5e3;
-  --color-inverse-on-surface: #283231;
-  --color-inverse-primary: #c9a84a;
+  --color-inverse-surface: #e4e1d9;
+  --color-inverse-on-surface: #2b2f36;
+  --color-inverse-primary: #82641a;
 
   /* Outline & Border */
-  --color-outline: #6b6456;
-  --color-outline-variant: #3d3931;
+  --color-outline: #7c8190;
+  --color-outline-variant: #2e3745;
 
   /* Error States */
   --color-error: #ffb4ab;
-  --color-error-container: #93000a;
-  --color-on-error: #690005;
+  --color-error-container: #7a1e19;
+  --color-on-error: #5f1512;
   --color-on-error-container: #ffdad6;
+
+  /* Thương hiệu: cặp màu gradient vàng đồng (chữ trắng đọc rõ ở cả 2 chế độ) */
+  --color-brand-light: #b8892b;
+  --color-brand-dark: #8a6a1d;
+
+  /* ========== SHADOWS (đổ sáng theo màu chủ đạo, tự đổi theo chế độ) ========== */
+  --shadow-glow: 0 0 15px color-mix(in srgb, var(--color-primary) 22%, transparent);
+  --shadow-glow-lg: 0 0 24px color-mix(in srgb, var(--color-primary) 35%, transparent);
+  --shadow-focus: 0 0 0 1px var(--color-primary), 0 0 16px color-mix(in srgb, var(--color-primary) 20%, transparent);
 
   /* ========== TYPOGRAPHY ========== */
   /* Font Families */
@@ -325,10 +342,10 @@ html.light * {
 
 /* Glass Morphism Effect */
 .glass-morphism {
-  background: rgba(20, 24, 26, 0.75);
+  background: color-mix(in srgb, var(--color-surface-container) 78%, transparent);
   backdrop-filter: blur(16px) saturate(180%);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid color-mix(in srgb, var(--color-on-surface) 8%, transparent);
 }
 
 /* Enhanced Backdrop Blur */
@@ -339,7 +356,7 @@ html.light * {
 
 /* Golden Gradient Text */
 .text-gradient-gold {
-  background: linear-gradient(135deg, #d4af37 0%, #f2ca50 50%, #c9a84a 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-fixed) 50%, var(--color-primary-fixed-dim) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -347,7 +364,7 @@ html.light * {
 
 /* Text Shadow for Readability */
 .text-shadow-luxury {
-  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+  text-shadow: 0 2px 12px rgb(0 0 0 / 0.6);
 }
 
 /* Smooth Transitions */
@@ -362,7 +379,7 @@ html.light * {
 
 .hover-lift:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--color-on-surface) 18%, transparent);
 }
 
 /* ============================================
@@ -372,7 +389,7 @@ html.light * {
 /* Input Focus with Golden Glow */
 input:focus {
   outline: none;
-  box-shadow: 0 0 0 1px var(--color-primary), 0 0 20px rgba(212, 175, 55, 0.15);
+  box-shadow: var(--shadow-focus);
 }
 
 /* Button Primary with Golden Glow */
@@ -381,7 +398,7 @@ button.btn-primary {
 }
 
 button.btn-primary:hover {
-  box-shadow: 0 0 32px rgba(212, 175, 55, 0.4), 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 32px color-mix(in srgb, var(--color-primary) 40%, transparent), 0 4px 12px rgb(0 0 0 / 0.25);
   transform: translateY(-1px);
 }
 
@@ -403,10 +420,10 @@ input[type="checkbox"]:checked {
   inset: 0;
   background: linear-gradient(
     to top,
-    rgba(13, 18, 20, 0.95) 0%,
-    rgba(13, 18, 20, 0.7) 30%,
-    rgba(13, 18, 20, 0.4) 60%,
-    rgba(13, 18, 20, 0.2) 100%
+    rgb(14 18 24 / 0.95) 0%,
+    rgb(14 18 24 / 0.7) 30%,
+    rgb(14 18 24 / 0.4) 60%,
+    rgb(14 18 24 / 0.2) 100%
   );
   z-index: 10;
   pointer-events: none;
@@ -577,7 +594,7 @@ input[type="checkbox"]:checked {
 /* High Contrast Mode */
 @media (prefers-contrast: high) {
   :root {
-    --color-primary: #ffd700;
+    --color-primary: #ffd24a;
     --color-outline: #ffffff;
   }
 }

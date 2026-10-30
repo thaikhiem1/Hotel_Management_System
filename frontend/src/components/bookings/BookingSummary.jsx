@@ -1,4 +1,4 @@
-import React from 'react';
+import { formatCurrency } from '@/utils/format';
 
 /**
  * BookingSummary - Tổng quan đặt phòng khi đang tạo phiếu thuê
@@ -28,13 +28,6 @@ const BookingSummary = ({
   soNguoi = 1,
   hinhThucThue = 'NGAY'
 }) => {
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    }).format(amount || 0);
-  };
-
   const formatDateTimeDisplay = (dateStr, timeStr) => {
     if (!dateStr) return '';
     const date = new Date(`${dateStr}T${timeStr || '00:00'}`);

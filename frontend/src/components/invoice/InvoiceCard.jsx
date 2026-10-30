@@ -1,5 +1,5 @@
-import React from 'react';
 import { cn } from '@/utils/lib/util';
+import { formatDate } from '@/utils/format';
 
 /**
  * InvoiceCard - Card hiển thị thông tin hóa đơn
@@ -34,12 +34,6 @@ const InvoiceCard = ({ invoice, onView, onPrint }) => {
   const status = statusConfig[invoice.payment_status] || statusConfig.UNPAID;
 
   // Format ngày
-  const formatDate = (dateStr) => {
-    if (!dateStr) return '';
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('vi-VN');
-  };
-
   return (
     <div className="group p-space-lg rounded-lg bg-surface-container-low border border-outline-variant hover:shadow-lg hover:border-primary/30 transition-all">
       {/* Header */}

@@ -1,4 +1,3 @@
-import React from "react";
 
 const GenericDeleteDialog = ({
   isOpen,
@@ -118,7 +117,7 @@ const GenericDeleteDialog = ({
             onClick={onConfirm}
             disabled={isLoading}
             className="flex items-center gap-space-xs px-space-lg py-space-sm rounded-lg
-                     font-label-lg text-label-lg text-white bg-error
+                     font-label-lg text-label-lg text-on-error bg-error
                      hover:bg-error/90 transition-colors shadow-sm
                      disabled:opacity-50 disabled:cursor-not-allowed"
           >

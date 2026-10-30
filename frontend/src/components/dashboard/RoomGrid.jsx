@@ -1,4 +1,3 @@
-import React from 'react';
 import RoomCard from './RoomCard';
 
 const RoomGrid = ({ rooms, onRoomAction, isLoading }) => {

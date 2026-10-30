@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { InvoiceCard, InvoiceDetailModal } from '@/components/invoice';
 import { cn } from '@/utils/lib/util';
 

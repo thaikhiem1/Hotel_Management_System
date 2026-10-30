@@ -78,8 +78,8 @@ export const showInfo = (title, message = '', duration) => {
  * @param {Error} error - Error object từ API
  */
 export const handleApiError = (error) => {
-  let title = 'Lỗi';
-  let message = 'Đã có lỗi xảy ra';
+  let title;
+  let message;
   
   if (error.response) {
     // Server trả về error response
@@ -95,7 +95,7 @@ export const handleApiError = (error) => {
         // Xử lý validation errors (fieldErrors)
         if (data.fieldErrors && Object.keys(data.fieldErrors).length > 0) {
           const fieldErrors = Object.entries(data.fieldErrors)
-            .map(([field, msg]) => `• ${msg}`)
+            .map(([, msg]) => `• ${msg}`)
             .join('\n');
           message = fieldErrors;
         } else {
@@ -150,7 +150,7 @@ export const handleApiError = (error) => {
  * @param {string} message - Nội dung loading
  * @returns {function} Function để dismiss loading
  */
-export const showLoading = (message = 'Đang xử lý...') => {
+export const showLoading = () => {
   // TODO: Implement loading spinner/overlay if needed
   
   // Return dismiss function

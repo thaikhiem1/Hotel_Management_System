@@ -1,5 +1,5 @@
-import React from 'react';
 import StatusBadge from './StatusBadge';
+import { formatDateTime, formatDate, formatCurrency, formatReceiptCode } from '@/utils/format';
 
 /**
  * BookingTable - Bảng danh sách phiếu thuê
@@ -23,48 +23,6 @@ const BookingTable = ({
   tinhTongTien,
   layTrangThaiPhieuThue
 }) => {
-  const [openMenuId, setOpenMenuId] = React.useState(null);
-
-  // Format ngày kèm giờ (HH:mm - DD/MM/YYYY)
-  const formatDateTime = (dateString) => {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return dateString;
-
-    const time = date.toLocaleTimeString('vi-VN', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    });
-
-    const dayMonthYear = date.toLocaleDateString('vi-VN', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
-
-    return `${time} ${dayMonthYear}`;
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return dateString;
-    return date.toLocaleDateString('vi-VN', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
-  };
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    }).format(amount || 0);
-  };
-
-  const getMaPT = (IdPT) => `PT${String(IdPT).padStart(3, '0')}`;
 
   // Lấy ngày CheckIn sớm nhất và CheckOut muộn nhất trong PhieuThue
   const getDateRange = (chiTiet = []) => {
@@ -166,7 +124,7 @@ const BookingTable = ({
                 {/* Mã phiếu */}
                 <td className="px-space-lg py-space-lg">
                   <span className="font-label-lg text-label-lg text-primary font-bold">
-                    {getMaPT(pt.IdPT)}
+                    {formatReceiptCode(pt.IdPT)}
                   </span>
                 </td>
 

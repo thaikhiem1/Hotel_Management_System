@@ -1,4 +1,3 @@
-import React from 'react';
 import { cn } from '@/utils/lib/util';
 
 const RoomFilterTabs = ({ activeFilter, onFilterChange, counts }) => {
@@ -35,7 +34,7 @@ const RoomFilterTabs = ({ activeFilter, onFilterChange, counts }) => {
       label: 'Đang dọn dẹp', 
       icon: 'cleaning_services',
       count: counts?.cleaning || 0,
-      color: 'text-amber-600'
+      color: 'text-amber-700 dark:text-amber-400'
     },
     { 
       id: 'maintenance', 
@@ -57,7 +56,7 @@ const RoomFilterTabs = ({ activeFilter, onFilterChange, counts }) => {
             'font-label-lg text-label-lg font-semibold transition-all whitespace-nowrap',
             'hover:bg-surface-container-high',
             activeFilter === filter.id
-              ? 'bg-primary-container text-on-primary-container shadow-[0_0_15px_rgba(212,175,55,0.2)]'
+              ? 'bg-primary-container text-on-primary-container shadow-glow'
               : 'bg-surface-container-low text-on-surface-variant'
           )}
         >

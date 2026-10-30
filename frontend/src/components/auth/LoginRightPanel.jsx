@@ -1,7 +1,5 @@
-import { useState } from "react";
-import LoginForm from "../hotel/LoginForm";
+import LoginForm from "./LoginForm";
 import LanguageToggle from "../ui/LanguageToggle";
-import { Link } from "react-router-dom";
 function LoginRightPanel({ language, setLanguage }) {
   return (
     <div className="relative lg:col-span-6 flex flex-col justify-between p-6 sm:p-12 lg:p-20 bg-surface-container-lowest/90 backdrop-blur-xl min-h-screen">

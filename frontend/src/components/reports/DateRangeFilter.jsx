@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { cn } from '@/utils/lib/util';
 
 /**
@@ -49,7 +49,7 @@ const DateRangeFilter = ({ onFilterChange, currentFilter }) => {
           className={cn(
             'flex-1 px-space-lg py-space-md rounded-lg font-label-md font-semibold transition-all',
             filterType === 'month'
-              ? 'bg-gradient-to-r from-[#D4AF37] to-[#B8941E] text-white shadow-md'
+              ? 'bg-gradient-to-r from-brand-light to-brand-dark text-white shadow-md'
               : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
           )}
         >
@@ -60,7 +60,7 @@ const DateRangeFilter = ({ onFilterChange, currentFilter }) => {
           className={cn(
             'flex-1 px-space-lg py-space-md rounded-lg font-label-md font-semibold transition-all',
             filterType === 'year'
-              ? 'bg-gradient-to-r from-[#D4AF37] to-[#B8941E] text-white shadow-md'
+              ? 'bg-gradient-to-r from-brand-light to-brand-dark text-white shadow-md'
               : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
           )}
         >

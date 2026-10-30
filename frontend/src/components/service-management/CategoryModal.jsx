@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { cn } from '@/utils/lib/util';
 
 const CategoryModal = ({ isOpen, onClose, onAddCategory, onEditCategory, categories, onDeleteCategory }) => {
@@ -106,7 +106,7 @@ const CategoryModal = ({ isOpen, onClose, onAddCategory, onEditCategory, categor
             />
             <button
               type="submit"
-              className="px-space-xl py-space-md rounded-lg bg-gradient-to-r from-[#D4AF37] to-[#B8941E] hover:from-[#B8941E] hover:to-[#D4AF37] text-white font-label-lg font-bold transition-all shadow-lg"
+              className="px-space-xl py-space-md rounded-lg bg-gradient-to-r from-brand-light to-brand-dark hover:from-brand-dark hover:to-brand-light text-white font-label-lg font-bold transition-all shadow-lg"
             >
               <span className="material-symbols-outlined">add</span>
             </button>
@@ -147,7 +147,7 @@ const CategoryModal = ({ isOpen, onClose, onAddCategory, onEditCategory, categor
                     <div className="flex gap-space-sm">
                       <button
                         type="submit"
-                        className="p-space-md rounded-lg bg-emerald-500/20 hover:bg-emerald-500 text-emerald-700 hover:text-white transition-all shadow-md"
+                        className="p-space-md rounded-lg bg-emerald-500/20 hover:bg-emerald-500 text-emerald-700 dark:text-emerald-300 hover:text-white transition-all shadow-md"
                         title="Lưu"
                       >
                         <span className="material-symbols-outlined text-[20px]">check</span>
@@ -181,7 +181,7 @@ const CategoryModal = ({ isOpen, onClose, onAddCategory, onEditCategory, categor
                     <div className="flex gap-space-sm">
                       <button
                         onClick={() => handleEditClick(category)}
-                        className="p-space-md rounded-lg bg-blue-500/20 hover:bg-blue-500 text-blue-700 hover:text-white transition-all shadow-md"
+                        className="p-space-md rounded-lg bg-blue-500/20 hover:bg-blue-500 text-blue-700 dark:text-blue-300 hover:text-white transition-all shadow-md"
                         title="Sửa loại dịch vụ"
                       >
                         <span className="material-symbols-outlined text-[20px]">edit</span>

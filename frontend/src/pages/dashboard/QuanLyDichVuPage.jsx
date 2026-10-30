@@ -355,7 +355,7 @@ const QuanLyDichVuPage = () => {
 
           {/* Stats */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-lg">
-            <div className="p-space-lg rounded-lg bg-gradient-to-br from-[#D4AF37] to-[#B8941E] shadow-lg">
+            <div className="p-space-lg rounded-lg bg-gradient-to-br from-brand-light to-brand-dark shadow-lg">
               <div className="flex items-center gap-space-md">
                 <span className="material-symbols-outlined text-white text-[32px]">
                   room_service
@@ -456,7 +456,7 @@ const QuanLyDichVuPage = () => {
               className={cn(
                 "flex items-center gap-space-sm px-space-lg py-space-md rounded-full whitespace-nowrap font-label-lg font-semibold transition-all shadow-md",
                 selectedCategory === "all"
-                  ? "bg-gradient-to-r from-[#D4AF37] to-[#B8941E] text-white"
+                  ? "bg-gradient-to-r from-brand-light to-brand-dark text-white"
                   : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high",
               )}
             >
@@ -495,7 +495,7 @@ const QuanLyDichVuPage = () => {
                   className={cn(
                     "flex items-center gap-space-sm px-space-lg py-space-md rounded-full whitespace-nowrap font-label-lg font-semibold transition-all shadow-md",
                     selectedCategory === String(category.serviceCategoryId)
-                      ? "bg-gradient-to-r from-[#D4AF37] to-[#B8941E] text-white"
+                      ? "bg-gradient-to-r from-brand-light to-brand-dark text-white"
                       : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high",
                   )}
                 >
@@ -576,7 +576,7 @@ const QuanLyDichVuPage = () => {
                       </td>
 
                       <td className="px-space-lg py-space-lg text-right">
-                        <p className="font-title-md font-bold text-[#D4AF37]">
+                        <p className="font-title-md font-bold text-primary">
                           {Number(service.unitPrice || 0).toLocaleString(
                             "vi-VN",
                           )}
@@ -597,9 +597,9 @@ const QuanLyDichVuPage = () => {
                             service.stockQuality === null
                               ? "bg-surface-container text-on-surface-variant"
                               : service.stockQuality > 50
-                                ? "bg-emerald-500/20 text-emerald-700"
+                                ? "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300"
                                 : service.stockQuality > 0
-                                  ? "bg-amber-500/20 text-amber-700"
+                                  ? "bg-amber-500/20 text-amber-700 dark:text-amber-300"
                                   : "bg-error/20 text-error",
                           )}
                         >
@@ -614,7 +614,7 @@ const QuanLyDichVuPage = () => {
                           <button
                             onClick={() => handleOpenEditService(service)}
                             disabled={isLoadingServiceDetails}
-                            className="p-space-md rounded-lg bg-blue-500/20 hover:bg-blue-500 text-blue-700 hover:text-white transition-all shadow-md"
+                            className="p-space-md rounded-lg bg-blue-500/20 hover:bg-blue-500 text-blue-700 dark:text-blue-300 hover:text-white transition-all shadow-md"
                           >
                             <span className="material-symbols-outlined text-[20px]">
                               edit
@@ -662,7 +662,7 @@ const QuanLyDichVuPage = () => {
                     className={cn(
                       "px-space-lg py-space-md rounded-lg font-label-md font-semibold transition-colors shadow-md",
                       currentPage === page
-                        ? "bg-gradient-to-r from-[#D4AF37] to-[#B8941E] text-white"
+                        ? "bg-gradient-to-r from-brand-light to-brand-dark text-white"
                         : "bg-surface-container-low hover:bg-surface-container-high text-on-surface",
                     )}
                   >

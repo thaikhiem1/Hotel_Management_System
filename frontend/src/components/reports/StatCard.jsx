@@ -1,4 +1,3 @@
-import React from 'react';
 import { cn } from '@/utils/lib/util';
 
 /**
@@ -9,7 +8,7 @@ const StatCard = ({
   title,
   value,
   icon,
-  gradient = 'from-[#D4AF37] to-[#B8941E]',
+  gradient = 'from-brand-light to-brand-dark',
   subtitle,
   trend,
   trendUp = true

@@ -1,5 +1,5 @@
-import React from "react";
 import GenericDeleteDialog from "@/components/shared/GenericDeleteDialog";
+import { formatCurrency } from "@/utils/format";
 
 const RoomTypeDeleteDialog = ({
   isOpen,
@@ -13,13 +13,6 @@ const RoomTypeDeleteDialog = ({
   /**
    * Format số tiền theo định dạng Việt Nam
    */
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    }).format(amount);
-  };
-
   // Map room type data to generic dialog format (camelCase fields)
   const itemDetails = [
     { label: "Tên loại phòng", value: roomTypeData.roomTypeName, highlight: true },

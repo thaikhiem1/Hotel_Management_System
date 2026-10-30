@@ -1,0 +1,113 @@
+{
+  "_ghi_chu": "Mỗi demo 5 test case, lấy từ bảng TC-RTY. {rand} sẽ được thay bằng chuỗi chữ cái ngẫu nhiên để tên luôn duy nhất.",
+
+  "ui": [
+    {
+      "id": "TC-RTY-001",
+      "title": "Dữ liệu hợp lệ -> gửi POST và hiện thông báo thành công",
+      "form": { "name": "Phong Deluxe", "beds": "2", "occ": "4", "daily": "800000", "hourly": "100000" },
+      "expect": "success",
+      "sentPayload": { "roomTypeName": "Phong Deluxe", "numberOfBeds": 2, "maximumOccupancy": 4 }
+    },
+    {
+      "id": "TC-RTY-010",
+      "title": "Tên chứa chữ số (Deluxe 2) -> báo lỗi tên",
+      "form": { "name": "Deluxe 2" },
+      "expect": "error",
+      "errorField": "roomTypeName"
+    },
+    {
+      "id": "TC-RTY-024",
+      "title": "Số giường = 11 -> báo lỗi số giường",
+      "form": { "beds": "11" },
+      "expect": "error",
+      "errorField": "numberOfBeds"
+    },
+    {
+      "id": "TC-RTY-033",
+      "title": "Sức chứa = 21 -> báo lỗi sức chứa",
+      "form": { "occ": "21" },
+      "expect": "error",
+      "errorField": "maximumOccupancy"
+    },
+    {
+      "id": "TC-RTY-037",
+      "title": "Giá theo ngày = -0.01 -> báo lỗi giá ngày",
+      "form": { "daily": "-0.01" },
+      "expect": "error",
+      "errorField": "dailyRate"
+    }
+  ],
+
+  "api": [
+    {
+      "id": "TC-RTY-001",
+      "title": "Dữ liệu hợp lệ -> 201 Created",
+      "body": {},
+      "expectStatus": 201
+    },
+    {
+      "id": "TC-RTY-005",
+      "title": "Giá có 2 chữ số thập phân -> 201, lưu chính xác",
+      "body": { "dailyRate": 1234567.89, "hourlyRate": 12345.67 },
+      "expectStatus": 201
+    },
+    {
+      "id": "TC-RTY-010",
+      "title": "Tên chứa chữ số -> 400 Bad Request",
+      "body": { "roomTypeName": "Deluxe 2" },
+      "expectStatus": 400
+    },
+    {
+      "id": "TC-RTY-016",
+      "title": "Tên đã tồn tại -> 409 Conflict",
+      "body": {},
+      "createFirst": true,
+      "expectStatus": 409
+    },
+    {
+      "id": "TC-RTY-024",
+      "title": "Số giường = 11 -> 400 Bad Request",
+      "body": { "numberOfBeds": 11 },
+      "expectStatus": 400
+    }
+  ],
+
+  "e2e": [
+    {
+      "id": "TC-RTY-001",
+      "title": "Tạo bằng UI -> hiện trong bảng -> API xác nhận đã lưu",
+      "form": { "name": "Flow {rand}", "beds": "3", "occ": "6", "daily": "1200000", "hourly": "150000" },
+      "expect": "saved",
+      "saved": { "numberOfBeds": 3, "maximumOccupancy": 6, "dailyRate": 1200000, "hourlyRate": 150000 }
+    },
+    {
+      "id": "TC-RTY-002",
+      "title": "Tên có khoảng trắng đầu/cuối -> DB lưu tên đã trim",
+      "form": { "name": "   Trim {rand}   " },
+      "expect": "saved",
+      "saved": {}
+    },
+    {
+      "id": "TC-RTY-005",
+      "title": "Giá 2 chữ số thập phân -> DB lưu chính xác",
+      "form": { "name": "Dec {rand}", "daily": "1234567.89", "hourly": "12345.67" },
+      "expect": "saved",
+      "saved": { "dailyRate": 1234567.89, "hourlyRate": 12345.67 }
+    },
+    {
+      "id": "TC-RTY-006",
+      "title": "Tên tiếng Việt có dấu -> hiển thị và lưu đúng",
+      "form": { "name": "Phòng Đặc Biệt {rand}" },
+      "expect": "saved",
+      "saved": {}
+    },
+    {
+      "id": "TC-RTY-024",
+      "title": "Số giường = 11 -> UI chặn, API xác nhận không tạo gì",
+      "form": { "name": "Bad {rand}", "beds": "11" },
+      "expect": "blocked",
+      "errorField": "numberOfBeds"
+    }
+  ]
+}

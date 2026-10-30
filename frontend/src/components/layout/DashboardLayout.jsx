@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Outlet } from "react-router-dom";
-import Sidebar from "../ui/Sidebar";
-import Header from "../ui/Header";
+import Sidebar from "./Sidebar";
+import Header from "./Header";
 
 const DashboardLayout = () => {
   const [sidebarWidth, setSidebarWidth] = useState(() => {

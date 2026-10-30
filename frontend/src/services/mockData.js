@@ -325,7 +325,40 @@ export const mockPhieuThue = [
         phong: mockPhong[2]
       }
     ]
+  },
+  {
+    // Đặt phòng tương lai: chọn bộ lọc ngày 20-22/12/2026 để thấy P106 "Đã đặt"
+    // và thử nhận phòng khi CHƯA đến giờ (ngoại lệ E2)
+    IdPT: 5,
+    NgPT: '2026-10-29',
+    IdKH: 5,
+    IdNV: 2,
+    khachHang: mockKhachHang[4],
+    chiTiet: [
+      {
+        IdCTDP: 6,
+        IdPT: 5,
+        IdPH: 6, // P106
+        SoNguoi: 2,
+        NgayCheckIn: '2026-12-20T14:00:00',
+        NgayCheckOut: '2026-12-22T12:00:00',
+        HinhThucThue: 'NGAY',
+        TrangThaiDatPhong: 0, // 0: Đã đặt
+        DonGia: 800000,
+        ThanhTien: 1600000,
+        phong: mockPhong[5]
+      }
+    ]
   }
+];
+
+// Table CTDP_DichVu { IdCTDP, IdDV, TenDV, DonVi, DonGia (giá đã chốt), SoLuong }
+export const mockDichVuSuDung = [
+  { IdCTDP: 1, IdDV: 1, TenDV: 'Ăn sáng buffet', DonVi: 'suất', DonGia: 150000, SoLuong: 2 },
+  { IdCTDP: 1, IdDV: 6, TenDV: 'Giặt thường', DonVi: 'kg', DonGia: 30000, SoLuong: 5 },
+  { IdCTDP: 2, IdDV: 9, TenDV: 'Massage body', DonVi: 'giờ', DonGia: 500000, SoLuong: 1 },
+  { IdCTDP: 2, IdDV: 5, TenDV: 'Room service đồ uống', DonVi: 'ly', DonGia: 50000, SoLuong: 4 }
+  // IdCTDP 3 (P107) không dùng dịch vụ -> thử trường hợp T_dịch vụ = 0
 ];
 
 // Table HoaDon { IdHD, NgHD, TriGia, IdNV, IdPT, TrangThaiThanhToan }
@@ -444,6 +477,7 @@ export const getRoomStatusAtTime = (phong, startDateTimeStr, endDateTimeStr, phi
               color: 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400',
               icon: 'person',
               guestName: pt.khachHang?.TenKH || 'Khách thuê',
+              bookingDetailId: ct.IdCTDP,
               checkOutTime: new Date(ct.NgayCheckOut).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) + ' - ' + new Date(ct.NgayCheckOut).toLocaleDateString('vi-VN')
             };
           }
@@ -462,6 +496,7 @@ export const getRoomStatusAtTime = (phong, startDateTimeStr, endDateTimeStr, phi
               color: 'bg-primary/20 text-primary',
               icon: 'event',
               guestName: pt.khachHang?.TenKH,
+              bookingDetailId: ct.IdCTDP,
               checkInTime: new Date(ct.NgayCheckIn).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) + ' - ' + new Date(ct.NgayCheckIn).toLocaleDateString('vi-VN')
             };
           }

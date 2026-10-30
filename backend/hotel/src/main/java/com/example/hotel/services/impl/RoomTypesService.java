@@ -37,7 +37,7 @@ public class RoomTypesService implements IRoomTypesService {
     @Transactional
     public RoomTypeResponse createRoomType(RoomTypeRequest request) {
         // Trim và chuẩn hóa tên
-        String roomTypeName = request.getRoomTypeName().trim().toLowerCase(Locale.ROOT);
+        String roomTypeName = request.getRoomTypeName().trim();
 
         // Giá ngày không được nhỏ hơn giá giờ (cho phép bằng nhau)
         if (request.getDailyRate().compareTo(request.getHourlyRate()) < 0) {
@@ -98,7 +98,7 @@ public class RoomTypesService implements IRoomTypesService {
                         "Không tìm thấy loại phòng với ID: " + id));
 
         // Trim và chuẩn hóa tên mới
-        String newRoomTypeName = request.getRoomTypeName().trim().toLowerCase(Locale.ROOT);
+        String newRoomTypeName = request.getRoomTypeName().trim();
 
         // Giá ngày không được nhỏ hơn giá giờ (cho phép bằng nhau)
         if (request.getDailyRate().compareTo(request.getHourlyRate()) < 0) {
