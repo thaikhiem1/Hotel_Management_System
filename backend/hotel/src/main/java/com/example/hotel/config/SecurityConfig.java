@@ -58,7 +58,7 @@ public class SecurityConfig {
 
                         // Lập phiếu thuê: lễ tân là actor chính; quản lý/admin cũng được dùng
                         .requestMatchers("/api/rental-receipts/**")
-                        .hasAnyRole("ADMIN", "MANAGER", "RECEPTIONIST")
+                        .hasAnyRole("RECEPTIONIST")
 
                         .requestMatchers(HttpMethod.GET,
                                 "/api/rooms/**", "/api/roomTypes/**",

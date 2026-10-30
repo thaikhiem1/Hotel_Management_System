@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.List;
 
 @Repository
 public interface BookingDetailRepository extends JpaRepository<booking_details, Integer> {
@@ -28,4 +29,23 @@ public interface BookingDetailRepository extends JpaRepository<booking_details, 
                           @Param("statuses") Collection<BookingStatus> statuses,
                           @Param("start") LocalDateTime start,
                           @Param("end") LocalDateTime end);
+
+    /**
+     * Dữ liệu cho sơ đồ phòng của các phòng trong trang: mọi lượt đang lưu trú (CHECKED_IN) và các lượt
+     * đã đặt (RESERVED) giao với khoảng [start, end). Lượt đã hủy/đã trả phòng không được lấy.
+     */
+    @Query("""
+            select b from booking_details b
+            join fetch b.room
+            join fetch b.rentalReceipt rr
+            join fetch rr.customer
+            where b.room.roomId in :roomIds
+              and (b.bookingStatus = com.example.hotel.Enums.BookingStatus.CHECKED_IN
+                   or (b.bookingStatus = com.example.hotel.Enums.BookingStatus.RESERVED
+                       and b.checkInAt < :end
+                       and b.checkOutAt > :start))
+            """)
+    List<booking_details> findForRoomMap(@Param("roomIds") Collection<Integer> roomIds,
+                                         @Param("start") LocalDateTime start,
+                                         @Param("end") LocalDateTime end);
 }

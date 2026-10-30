@@ -10,8 +10,6 @@ import com.example.hotel.services.IRentalReceiptService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -74,15 +72,14 @@ public class RentalReceiptController {
     }
 
     /**
-     * GET /api/rental-receipts?page=0&size=20 - phiếu thuê mới nhất trước
+     * GET /api/rental-receipts?page=0&size=16 - phiếu thuê mới nhất trước
      */
     @GetMapping
     public ResponseEntity<ApiResponse<Page<RentalReceiptResponse>>> getAll(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        Pageable pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 100));
+            @RequestParam(defaultValue = "16") int size) {
         return ResponseEntity.ok(ApiResponse.success(
-                rentalReceiptService.getAll(pageable), "Lấy danh sách phiếu thuê thành công"));
+                rentalReceiptService.getAll(page, size), "Lấy danh sách phiếu thuê thành công"));
     }
 
     /**

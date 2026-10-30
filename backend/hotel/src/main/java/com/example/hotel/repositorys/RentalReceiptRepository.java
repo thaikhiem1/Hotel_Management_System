@@ -10,6 +10,8 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface RentalReceiptRepository extends JpaRepository<rental_receipts, Integer> {
 
+    // Danh sách phân trang dùng findAll(Pageable) có sẵn; kèm khách hàng và nhân viên để tránh truy vấn lặp
+    @Override
     @EntityGraph(attributePaths = {"customer", "employee"})
-    Page<rental_receipts> findAllByOrderByRentalReceiptIdDesc(Pageable pageable);
+    Page<rental_receipts> findAll(Pageable pageable);
 }

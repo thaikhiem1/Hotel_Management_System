@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -14,7 +15,7 @@ import com.example.hotel.models.entities.rooms;
 import jakarta.persistence.LockModeType;
 
 @Repository
-public interface RoomRepository extends JpaRepository<rooms, Integer> {
+public interface RoomRepository extends JpaRepository<rooms, Integer>, JpaSpecificationExecutor<rooms> {
     boolean existsByRoomCode(String room_code);
     boolean existsByRoomTypesRoomTypeId(Integer room_type_id);
 

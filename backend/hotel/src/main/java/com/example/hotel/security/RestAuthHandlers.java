@@ -30,7 +30,7 @@ public class RestAuthHandlers implements AuthenticationEntryPoint, AccessDeniedH
     public void commence(HttpServletRequest request, HttpServletResponse response,
             AuthenticationException ex) throws IOException {
         write(request, response, HttpStatus.UNAUTHORIZED, "Unauthorized",
-                "Chưa đăng nhập hoặc phiên đăng nhập đã hết hạn");
+                "Phiên đăng nhập không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.");
     }
 
     @Override

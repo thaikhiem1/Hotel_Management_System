@@ -7,7 +7,6 @@ import com.example.hotel.models.dto.response.RentalEstimateResponse;
 import com.example.hotel.models.dto.response.RentalReceiptResponse;
 
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,5 +25,5 @@ public interface IRentalReceiptService {
     RentalReceiptResponse getById(Integer rentalReceiptId);
 
     /** Danh sách phiếu thuê mới nhất trước, có phân trang. */
-    Page<RentalReceiptResponse> getAll(Pageable pageable);
+    Page<RentalReceiptResponse> getAll(int page, int size);
 }

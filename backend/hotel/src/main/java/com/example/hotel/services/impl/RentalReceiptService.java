@@ -34,7 +34,9 @@ import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -194,8 +196,9 @@ public class RentalReceiptService implements IRentalReceiptService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<RentalReceiptResponse> getAll(Pageable pageable) {
-        return rentalReceiptRepository.findAllByOrderByRentalReceiptIdDesc(pageable).map(this::toResponse);
+    public Page<RentalReceiptResponse> getAll(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.Direction.DESC, "rentalReceiptId");
+        return rentalReceiptRepository.findAll(pageable).map(this::toResponse);
     }
 
     @Override
