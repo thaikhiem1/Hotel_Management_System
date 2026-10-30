@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/utils/lib/util";
+import { Pagination } from "@/components/shared";
 import { accountAPI } from "@/services/api";
 import { showSuccess, handleApiError } from "@/utils/notification";
 import AccountCard from "@/components/account-management/AccountCard";
@@ -278,107 +279,17 @@ const QuanLyTaiKhoanPage = () => {
       </div>
 
       {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex-shrink-0 flex items-center justify-between p-space-lg border-t border-outline-variant bg-surface-container-low">
-          <div className="font-body-md text-body-md text-on-surface-variant">
-            Trang {currentPage + 1} / {totalPages} • Tổng {totalElements} tài khoản
-          </div>
-
-          <div className="flex items-center gap-space-sm">
-            {/* First Page */}
-            <button
-              onClick={() => handlePageChange(0)}
-              disabled={currentPage === 0}
-              className={cn(
-                "p-space-sm rounded-lg transition-colors",
-                "hover:bg-surface-container-high",
-                "disabled:opacity-40 disabled:cursor-not-allowed",
-              )}
-            >
-              <span className="material-symbols-outlined text-on-surface">
-                first_page
-              </span>
-            </button>
-
-            {/* Previous Page */}
-            <button
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 0}
-              className={cn(
-                "p-space-sm rounded-lg transition-colors",
-                "hover:bg-surface-container-high",
-                "disabled:opacity-40 disabled:cursor-not-allowed",
-              )}
-            >
-              <span className="material-symbols-outlined text-on-surface">
-                chevron_left
-              </span>
-            </button>
-
-            {/* Page Numbers */}
-            <div className="flex items-center gap-space-xs">
-              {Array.from({ length: totalPages }, (_, i) => i)
-                .filter(
-                  (page) =>
-                    page === 0 ||
-                    page === totalPages - 1 ||
-                    Math.abs(page - currentPage) <= 1,
-                )
-                .map((page, index, array) => (
-                  <React.Fragment key={page}>
-                    {index > 0 && array[index - 1] !== page - 1 && (
-                      <span className="px-space-xs text-on-surface-variant">
-                        ...
-                      </span>
-                    )}
-                    <button
-                      onClick={() => handlePageChange(page)}
-                      className={cn(
-                        "min-w-[40px] px-space-sm py-space-xs rounded-lg",
-                        "font-label-md text-label-md transition-colors",
-                        page === currentPage
-                          ? "bg-primary text-on-primary"
-                          : "bg-surface-container-high text-on-surface hover:bg-surface-container-highest",
-                      )}
-                    >
-                      {page + 1}
-                    </button>
-                  </React.Fragment>
-                ))}
-            </div>
-
-            {/* Next Page */}
-            <button
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages - 1}
-              className={cn(
-                "p-space-sm rounded-lg transition-colors",
-                "hover:bg-surface-container-high",
-                "disabled:opacity-40 disabled:cursor-not-allowed",
-              )}
-            >
-              <span className="material-symbols-outlined text-on-surface">
-                chevron_right
-              </span>
-            </button>
-
-            {/* Last Page */}
-            <button
-              onClick={() => handlePageChange(totalPages - 1)}
-              disabled={currentPage === totalPages - 1}
-              className={cn(
-                "p-space-sm rounded-lg transition-colors",
-                "hover:bg-surface-container-high",
-                "disabled:opacity-40 disabled:cursor-not-allowed",
-              )}
-            >
-              <span className="material-symbols-outlined text-on-surface">
-                last_page
-              </span>
-            </button>
-          </div>
-        </div>
-      )}
+      <div className="flex-shrink-0">
+        <Pagination
+          page={currentPage}
+          totalPages={totalPages}
+          totalElements={totalElements}
+          pageSize={pageSize}
+          onPageChange={handlePageChange}
+          disabled={isLoading}
+          unit="tài khoản"
+        />
+      </div>
 
       {/* Dialog tạo tài khoản */}
       <AccountFormDialog

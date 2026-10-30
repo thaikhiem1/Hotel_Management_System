@@ -1,4 +1,3 @@
-export { default as DateTimeFilter } from './DateTimeFilter';
 export { default as QuickActions } from './QuickActions';
 export { default as StatCard } from './StatCard';
 export { default as RoomFilterTabs } from './RoomFilterTabs';
@@ -8,3 +7,4 @@ export { default as RoomDetailModal } from './RoomDetailModal';
 export { default as AddServiceModal } from './AddServiceModal';
 export { default as CheckInModal } from './CheckInModal';
 export { default as CheckOutModal } from './CheckOutModal';
+export { default as RoomMapFilters } from './RoomMapFilters';

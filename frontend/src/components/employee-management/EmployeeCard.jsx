@@ -1,5 +1,7 @@
 
 import { cn } from "@/utils/lib/util";
+import { resolveAvatarUrl } from "@/utils/avatar";
+import { positionLabel } from "@/utils/auth";
 
 const EmployeeCard = ({ employee, onClick }) => {
   const getStatusBadge = (isActive) => {
@@ -22,15 +24,15 @@ const EmployeeCard = ({ employee, onClick }) => {
 
   const getPositionColor = (position) => {
     const positions = {
-      Receptionist: "text-primary",
-      Manager: "text-secondary",
-      Admin: "text-tertiary",
+      RECEPTIONIST: "text-primary",
+      MANAGER: "text-secondary",
+      ADMIN: "text-tertiary",
     };
 
     return positions[position] || "text-on-surface-variant";
   };
 
-  const avatarSrc = employee.avatar
+  const avatarSrc = resolveAvatarUrl(employee.avatar);
   const status = getStatusBadge(employee.isActive);
   const positionColor = getPositionColor(employee.position);
 
@@ -115,7 +117,7 @@ const EmployeeCard = ({ employee, onClick }) => {
               positionColor,
             )}
           >
-            {employee.position}
+            {positionLabel(employee.position)}
           </p>
         </div>
 

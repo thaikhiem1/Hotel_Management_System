@@ -23,8 +23,7 @@ public class EmployeeUpdateRequest {
     @Pattern(regexp = "^[\\p{L}\\s]+$", message = "Họ và tên chỉ được chứa chữ cái và khoảng trắng")
     private String fullName;
 
-    @Size(max = 50, message = "Chức vụ không được vượt quá 50 ký tự")
-    @Pattern(regexp = "^[\\p{L}\\s]+$", message = "Chức vụ chỉ được chứa chữ cái và khoảng trắng")
+    @Pattern(regexp = "^(ADMIN|MANAGER|RECEPTIONIST)$", message = "Chức vụ phải là Quản trị viên, Quản lý hoặc Lễ tân")
     private String position;
 
     @DecimalMin(value = "0.0", inclusive = true, message = "Lương không được âm")

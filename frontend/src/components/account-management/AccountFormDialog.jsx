@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { cn } from "@/utils/lib/util";
+import { positionLabel } from "@/utils/auth";
 
 /**
  * AccountFormDialog - Dialog tạo tài khoản mới
@@ -179,7 +180,7 @@ const AccountFormDialog = ({
                 <option value="">-- Chọn nhân viên --</option>
                 {availableEmployees.map((employee) => (
                   <option key={employee.employeeId} value={employee.employeeId}>
-                    {employee.fullName} - {employee.position})
+                    {employee.fullName} - {positionLabel(employee.position)}
                   </option>
                 ))}
               </select>

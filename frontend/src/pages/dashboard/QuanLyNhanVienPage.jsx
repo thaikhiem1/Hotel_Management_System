@@ -1,11 +1,13 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 
+import { Pagination } from "@/components/shared";
 import {
   EmployeeCard,
   EmployeeProfileDialog,
 } from "@/components/employee-management";
 
 import { cn } from "@/utils/lib/util";
+import { POSITION_OPTIONS } from "@/utils/auth";
 import { employeeAPI } from "@/services/api";
 import { showSuccess, handleApiError } from "@/utils/notification";
 
@@ -129,7 +131,7 @@ const QuanLyNhanVienPage = () => {
     const managers = employees.filter(
       (employee) =>
         employee.isActive === true &&
-        (employee.position === "Manager" || employee.position === "Admin"),
+        (employee.position === "MANAGER" || employee.position === "ADMIN"),
     ).length;
 
     return {
@@ -387,11 +389,11 @@ const QuanLyNhanVienPage = () => {
         >
           <option value="all">Tất cả chức vụ</option>
 
-          <option value="Nhân Viên Lễ Tân">Nhân Viên Lễ Tân</option>
-          <option value="Nhân Viên Kỹ Thuật">Nhân Viên Kỹ Thuật</option>
-          <option value="Nhân Viên Buồng">Nhân Viên Buồng</option>
-          <option value="Nhân Viên Bếp">Nhân Viên Bếp</option>
-          <option value="Quản Lý Khách Sạn">Quản Lý Khách Sạn</option>
+          {POSITION_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
         </select>
       </div>
 
@@ -448,95 +450,15 @@ const QuanLyNhanVienPage = () => {
         </div>
       )}
 
-      {totalPages > 1 && !isLoading && employees.length > 0 && (
-        <div
-          className={cn(
-            "flex items-center justify-between",
-            "px-space-md py-space-sm",
-            "bg-surface-container-low rounded-lg",
-            "border border-outline-variant",
-          )}
-        >
-          <p className="font-body-sm text-body-sm text-on-surface-variant">
-            Trang {currentPage} / {totalPages} (Tổng {totalElements} nhân viên)
-          </p>
-
-          <div className="flex items-center gap-space-xs">
-            {/* Previous */}
-            <button
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-              className={cn(
-                "p-space-xs rounded-lg transition-colors",
-                "hover:bg-surface-container-high",
-                "disabled:opacity-50 disabled:cursor-not-allowed",
-              )}
-            >
-              <span className="material-symbols-outlined text-[20px] text-on-surface">
-                chevron_left
-              </span>
-            </button>
-
-            {/* Page Numbers */}
-            {Array.from({ length: totalPages }, (_, index) => index + 1).map(
-              (page) => {
-                const showPage =
-                  page === 1 ||
-                  page === totalPages ||
-                  (page >= currentPage - 1 && page <= currentPage + 1);
-
-                const showEllipsis =
-                  (page === currentPage - 2 && currentPage > 3) ||
-                  (page === currentPage + 2 && currentPage < totalPages - 2);
-
-                if (showEllipsis) {
-                  return (
-                    <span
-                      key={page}
-                      className="px-space-xs font-label-md text-label-md text-on-surface-variant"
-                    >
-                      ...
-                    </span>
-                  );
-                }
-                if (!showPage) {
-                  return null;
-                }
-                return (
-                  <button
-                    key={page}
-                    onClick={() => handlePageChange(page)}
-                    className={cn(
-                      "min-w-[32px] h-[32px] rounded-lg",
-                      "font-label-md text-label-md",
-                      "transition-colors",
-
-                      page === currentPage
-                        ? "bg-primary text-on-primary"
-                        : "hover:bg-surface-container-high text-on-surface",
-                    )}
-                  >
-                    {page}
-                  </button>
-                );
-              },
-            )}
-            {/* Next */}
-            <button
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-              className={cn(
-                "p-space-xs rounded-lg transition-colors",
-                "hover:bg-surface-container-high",
-                "disabled:opacity-50 disabled:cursor-not-allowed",
-              )}
-            >
-              <span className="material-symbols-outlined text-[20px] text-on-surface">
-                chevron_right
-              </span>
-            </button>
-          </div>
-        </div>
+      {!isLoading && employees.length > 0 && (
+        <Pagination
+          page={currentPage - 1}
+          totalPages={totalPages}
+          totalElements={totalElements}
+          pageSize={itemsPerPage}
+          onPageChange={(p) => handlePageChange(p + 1)}
+          unit="nhân viên"
+        />
       )}
 
       <EmployeeProfileDialog

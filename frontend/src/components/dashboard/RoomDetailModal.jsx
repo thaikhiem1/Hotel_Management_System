@@ -12,14 +12,9 @@
 const RoomDetailModal = ({ room, isOpen, onClose, onOpenAddService }) => {
   if (!isOpen || !room) return null;
 
-  // Mock danh sách dịch vụ đã sử dụng - TODO: Lấy từ API
-  // API: GET /api/rental-details/{IdCTDP}/services
-  // Authorization: Bearer token
-  const usedServices = [
-    { id: 1, name: 'Ăn sáng buffet', quantity: 2, price: 150000, unit: 'suất', addedAt: '2026-09-24 08:30', total: 300000 },
-    { id: 2, name: 'Giặt ủi', quantity: 5, price: 30000, unit: 'kg', addedAt: '2026-09-24 10:15', total: 150000 },
-    { id: 3, name: 'Massage body', quantity: 1, price: 500000, unit: 'giờ', addedAt: '2026-09-24 14:00', total: 500000 },
-  ];
+  // Dịch vụ đã sử dụng: chưa có API ghi nhận dịch vụ (UC-SVC-005) nên danh sách trống
+  // cho đến khi nối API: GET /api/rental-details/{bookingDetailId}/services
+  const usedServices = room.services ?? [];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
@@ -76,9 +71,23 @@ const RoomDetailModal = ({ room, isOpen, onClose, onOpenAddService }) => {
                 <div className="flex justify-between">
                   <span className="text-on-surface-variant">Giá/giờ:</span>
                   <span className="font-semibold text-secondary">
-                    {room.pricePerHour?.toLocaleString('vi-VN')}đ
+                    {room.pricePerHour != null ? `${room.pricePerHour.toLocaleString('vi-VN')}đ` : 'Chưa có giá'}
                   </span>
                 </div>
+                <div className="flex justify-between">
+                  <span className="text-on-surface-variant">Số giường:</span>
+                  <span className="font-semibold text-on-surface">{room.numberOfBeds}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-on-surface-variant">Sức chứa tối đa:</span>
+                  <span className="font-semibold text-on-surface">{room.maximumOccupancy} người</span>
+                </div>
+                {room.note && (
+                  <div className="flex justify-between gap-space-md">
+                    <span className="text-on-surface-variant">Ghi chú:</span>
+                    <span className="font-semibold text-on-surface text-right">{room.note}</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -101,22 +110,19 @@ const RoomDetailModal = ({ room, isOpen, onClose, onOpenAddService }) => {
                   <div className="flex justify-between">
                     <span className="text-on-tertiary-container/70">Số điện thoại:</span>
                     <span className="font-semibold text-on-tertiary-container">
-                      {/* TODO: Lấy từ API */}
-                      0901234567
+                      {room.guestPhone || '—'}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-on-tertiary-container/70">CCCD/Passport:</span>
+                    <span className="text-on-tertiary-container/70">Mã phiếu thuê:</span>
                     <span className="font-semibold text-on-tertiary-container">
-                      {/* TODO: Lấy từ API */}
-                      079123456789
+                      {room.receiptCode || '—'}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-on-tertiary-container/70">Số người:</span>
                     <span className="font-semibold text-on-tertiary-container">
-                      {/* TODO: Lấy từ API */}
-                      2 người
+                      {room.numberOfGuests != null ? `${room.numberOfGuests} người` : '—'}
                     </span>
                   </div>
                   {room.status === 'occupied' && room.checkInTime && (

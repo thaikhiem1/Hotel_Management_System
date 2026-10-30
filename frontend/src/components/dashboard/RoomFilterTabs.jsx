@@ -13,35 +13,35 @@ const RoomFilterTabs = ({ activeFilter, onFilterChange, counts }) => {
       label: 'Trống/Sẵn sàng', 
       icon: 'check_circle',
       count: counts?.available || 0,
-      color: 'text-primary'
+      color: 'text-emerald-600 dark:text-emerald-400'
     },
     { 
       id: 'reserved', 
       label: 'Đã đặt', 
       icon: 'event',
       count: counts?.reserved || 0,
-      color: 'text-secondary'
+      color: 'text-yellow-600 dark:text-yellow-400'
     },
     { 
       id: 'occupied', 
       label: 'Đang có khách', 
       icon: 'person',
       count: counts?.occupied || 0,
-      color: 'text-tertiary'
+      color: 'text-error'
     },
     { 
       id: 'cleaning', 
       label: 'Đang dọn dẹp', 
       icon: 'cleaning_services',
       count: counts?.cleaning || 0,
-      color: 'text-amber-700 dark:text-amber-400'
+      color: 'text-orange-600 dark:text-orange-400'
     },
     { 
       id: 'maintenance', 
       label: 'Đang bảo trì', 
       icon: 'engineering',
       count: counts?.maintenance || 0,
-      color: 'text-error'
+      color: 'text-on-surface-variant'
     }
   ];
 

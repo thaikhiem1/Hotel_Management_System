@@ -1,3 +1,5 @@
+import { formatDateTime } from "@/utils/format";
+
 // Chuyển dữ liệu từ API (camelCase) sang dạng mà các component đặt phòng hiện có đang dùng
 // (khóa kiểu Database.md: IdKH, TenKH, IdPH, MaPH, loaiPhong...). Khi các component được
 // viết lại theo API, chỉ cần bỏ file này.
@@ -60,3 +62,59 @@ export const toPhieuThue = (r) => ({
     },
   })),
 });
+
+// ------------------------------------------------------------------ Sơ đồ phòng (UC-ROM-005/006)
+
+const DISPLAY_STATUS_UI = {
+  AVAILABLE: "available",
+  RESERVED: "reserved",
+  OCCUPIED: "occupied",
+  CLEANING: "cleaning",
+  MAINTENANCE: "maintenance",
+};
+
+/** Mã trạng thái của tab lọc trên giao diện -> trạng thái hiển thị của API */
+export const UI_STATUS_TO_DISPLAY = Object.fromEntries(
+  Object.entries(DISPLAY_STATUS_UI).map(([api, ui]) => [ui, api]),
+);
+
+const toBookingInfo = (b) =>
+  b && {
+    bookingDetailId: b.bookingDetailId,
+    receiptCode: b.receiptCode,
+    customerName: b.customerName,
+    customerPhone: b.customerPhone,
+    numberOfGuests: b.numberOfGuests,
+    checkInTime: formatDateTime(b.checkIn),
+    checkOutTime: formatDateTime(b.checkOut),
+    bookingStatus: b.bookingStatus,
+  };
+
+/** RoomMapItemResponse -> thẻ phòng mà RoomCard / RoomDetailModal đang dùng */
+export const toRoomCard = (item) => {
+  const booking = toBookingInfo(item.booking);
+  return {
+    id: item.roomId,
+    name: item.roomCode,
+    roomType: item.roomTypeName,
+    pricePerDay: item.dailyRate,
+    // giá giờ chưa có (null/0) thì không tự suy ra từ giá ngày
+    pricePerHour: item.hourlyRate > 0 ? item.hourlyRate : null,
+    numberOfBeds: item.numberOfBeds,
+    maximumOccupancy: item.maximumOccupancy,
+    note: item.note,
+    status: DISPLAY_STATUS_UI[item.displayStatus],
+    guestName: booking?.customerName,
+    guestPhone: booking?.customerPhone,
+    numberOfGuests: booking?.numberOfGuests,
+    receiptCode: booking?.receiptCode,
+    checkInTime: booking?.checkInTime,
+    checkOutTime: booking?.checkOutTime,
+    bookingDetailId: booking?.bookingDetailId,
+    maintenanceReason: item.displayStatus === "MAINTENANCE" ? item.note : undefined,
+    reservationCount: item.reservationCount,
+    canCheckIn: item.canCheckIn,
+    matchedBooking: toBookingInfo(item.matchedBooking),
+    rawData: item,
+  };
+};

@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import RoomTypeTable from '@/components/room-type-management/RoomTypeTable';
+import { Pagination } from "@/components/shared";
 import RoomTypeFormDialog from '@/components/room-type-management/RoomTypeFormDialog';
 import RoomTypeDeleteDialog from '@/components/room-type-management/RoomTypeDeleteDialog';
 import { roomTypeAPI } from '@/services/api';
@@ -244,55 +245,15 @@ const QuanLyLoaiPhongPage = () => {
       />
 
       {/* Phân trang */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between px-space-md py-space-sm
-                      bg-surface-container-low rounded-lg border border-outline-variant">
-          <p className="font-body-sm text-body-sm text-on-surface-variant">
-            Trang {currentPage + 1} / {totalPages} (Tổng {totalElements} loại phòng)
-          </p>
-
-          <div className="flex items-center gap-space-xs">
-            <button
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 0 || isLoading}
-              className="p-space-xs rounded-lg hover:bg-surface-container-high
-                       disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <span className="material-symbols-outlined text-[20px] text-on-surface">
-                chevron_left
-              </span>
-            </button>
-
-            {/* Hiển thị các số trang */}
-            {totalPages > 0 && Array.from({ length: totalPages }, (_, i) => i).map(page => (
-              <button
-                key={`page-${page}`}
-                onClick={() => handlePageChange(page)}
-                disabled={isLoading}
-                className={`min-w-[32px] h-[32px] rounded-lg font-label-md text-label-md
-                          transition-colors ${
-                            page === currentPage
-                              ? 'bg-primary text-on-primary'
-                              : 'hover:bg-surface-container-high text-on-surface'
-                          } disabled:opacity-50 disabled:cursor-not-allowed`}
-              >
-                {page + 1}
-              </button>
-            ))}
-
-            <button
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages - 1 || isLoading}
-              className="p-space-xs rounded-lg hover:bg-surface-container-high
-                       disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <span className="material-symbols-outlined text-[20px] text-on-surface">
-                chevron_right
-              </span>
-            </button>
-          </div>
-        </div>
-      )}
+      <Pagination
+        page={currentPage}
+        totalPages={totalPages}
+        totalElements={totalElements}
+        pageSize={itemsPerPage}
+        onPageChange={handlePageChange}
+        disabled={isLoading}
+        unit="loại phòng"
+      />
 
       {/* Dialog thêm/sửa loại phòng */}
       <RoomTypeFormDialog

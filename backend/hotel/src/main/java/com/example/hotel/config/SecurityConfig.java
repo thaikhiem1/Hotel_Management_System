@@ -52,6 +52,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/error").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                        // Ảnh đại diện được tải bằng thẻ img nên không gửi kèm JWT
+                        .requestMatchers(HttpMethod.GET, "/uploads/avatars/**").permitAll()
 
                         .requestMatchers("/api/accounts/**", "/api/employees/**")
                         .hasAnyRole(MANAGEMENT_ROLES)

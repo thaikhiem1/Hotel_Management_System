@@ -56,6 +56,17 @@ export function AuthProvider({ children }) {
     setUser(null);
   }, []);
 
+  // Cập nhật thông tin nhân viên đang lưu (ví dụ ảnh đại diện mới) để Header/Sidebar hiển thị ngay
+  const updateEmployee = useCallback(
+    (patch) => {
+      if (!user) return;
+      const next = { ...user, employee: { ...user.employee, ...patch } };
+      setUser(next);
+      updateStoredUser(next);
+    },
+    [user],
+  );
+
   const hasRole = useCallback(
     (...roles) => Boolean(user) && roles.includes(user.role),
     [user],
@@ -63,7 +74,7 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, isAuthenticated: Boolean(user), login, logout, hasRole }}
+      value={{ user, loading, isAuthenticated: Boolean(user), login, logout, hasRole, updateEmployee }}
     >
       {children}
     </AuthContext.Provider>

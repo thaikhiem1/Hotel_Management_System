@@ -31,8 +31,7 @@ public class EmployeeCreateRequest {
     private String fullName;
 
     @NotBlank(message = "Chức vụ không được để trống")
-    @Size(max = 50, message = "Chức vụ không được vượt quá 50 ký tự")
-    @Pattern(regexp = "^[\\p{L}\\s]+$", message = "Chức vụ chỉ được chứa chữ cái và khoảng trắng")
+    @Pattern(regexp = "^(MANAGER|RECEPTIONIST)$", message = "Chức vụ phải là Quản lý hoặc Lễ tân")
     private String position;
 
     @NotNull(message = "Lương không được để trống")

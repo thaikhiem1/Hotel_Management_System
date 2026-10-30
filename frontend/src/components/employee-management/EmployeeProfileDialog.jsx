@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { cn } from "@/utils/lib/util";
+import { resolveAvatarUrl } from "@/utils/avatar";
+import { POSITION_OPTIONS, ROLE_LABELS, ROLES } from "@/utils/auth";
 
 const EmployeeProfileDialog = ({
   isOpen,
@@ -17,7 +19,7 @@ const EmployeeProfileDialog = ({
 
   const [formData, setFormData] = useState({
     fullName: "",
-    position: "Nhân Viên Lễ Tân",
+    position: ROLES.RECEPTIONIST,
     salary: "",
     phone: "",
     citizenId: "",
@@ -36,7 +38,10 @@ const EmployeeProfileDialog = ({
     if (employeeData) {
       setFormData({
         fullName: employeeData.fullName || "",
-        position: employeeData.position || "Nhân Viên Lễ Tân",
+        // Chức vụ cũ chưa chuẩn hóa thì để trống để người dùng chọn lại
+        position: [...POSITION_OPTIONS.map((o) => o.value), ROLES.ADMIN].includes(employeeData.position)
+          ? employeeData.position
+          : "",
         salary: employeeData.salary ?? "",
         phone: employeeData.phone || "",
         citizenId: employeeData.citizenId || "",
@@ -51,7 +56,7 @@ const EmployeeProfileDialog = ({
     } else {
       setFormData({
         fullName: "",
-        position: "Nhân Viên Lễ Tân",
+        position: ROLES.RECEPTIONIST,
         salary: "",
         phone: "",
         citizenId: "",
@@ -99,12 +104,8 @@ const EmployeeProfileDialog = ({
     }
 
     // Chức vụ
-    if (!formData.position.trim()) {
-      newErrors.position = "Chức vụ không được để trống";
-    } else if (formData.position.trim().length > 50) {
-      newErrors.position = "Chức vụ không được vượt quá 50 ký tự";
-    } else if (!/^[\p{L}\s]+$/u.test(formData.position.trim())) {
-      newErrors.position = "Chức vụ chỉ được chứa chữ cái và khoảng trắng";
+    if (!formData.position) {
+      newErrors.position = "Vui lòng chọn chức vụ";
     }
 
     // Lương
@@ -307,12 +308,12 @@ const EmployeeProfileDialog = ({
             <div className="flex flex-col items-center gap-space-md pb-space-lg border-b border-outline-variant">
               <div className="relative">
                 <img
-                  src={formData.avatar || "/avatars/default-male.png"}
+                  src={resolveAvatarUrl(formData.avatar)}
                   alt={`Ảnh đại diện ${formData.fullName || "nhân viên"}`}
                   className="w-32 h-32 rounded-full object-cover ring-4 ring-primary/20"
                   onError={(e) => {
                     e.currentTarget.onerror = null;
-                    e.currentTarget.src = "/avatars/default-male.png";
+                    e.currentTarget.src = "/avatars/profileNam.jpg";
                   }}
                 />
               </div>
@@ -366,7 +367,7 @@ const EmployeeProfileDialog = ({
                 name="position"
                 value={formData.position}
                 onChange={handleInputChange}
-                disabled={!isEditMode}
+                disabled={!isEditMode || formData.position === ROLES.ADMIN}
                 className={cn(
                   "w-full px-space-md py-space-sm rounded-lg",
                   "bg-surface-container-highest border border-outline",
@@ -377,12 +378,22 @@ const EmployeeProfileDialog = ({
                   errors.position && "border-error",
                 )}
               >
-                <option value="Nhân Viên Lễ Tân">Nhân Viên Lễ Tân</option>
-                <option value="Nhân Viên Kỹ Thuật">Nhân Viên Kỹ Thuật</option>
-                <option value="Nhân Viên Buồng">Nhân Viên Buồng</option>
-                <option value="Nhân Viên Bếp">Nhân Viên Bếp</option>
-                <option value="Quản Lý Khách Sạn">Quản Lý Khách Sạn</option>
+                <option value="" disabled>
+                  -- Chọn chức vụ --
+                </option>
+                {/* Quản trị viên là chức vụ cố định, không chọn và không đổi được */}
+                {formData.position === ROLES.ADMIN && (
+                  <option value={ROLES.ADMIN}>{ROLE_LABELS[ROLES.ADMIN]}</option>
+                )}
+                {POSITION_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
+              <p className="text-on-surface-variant text-sm">
+                Chức vụ cũng là vai trò đăng nhập của tài khoản nhân viên này.
+              </p>
 
               {errors.position && (
                 <p className="text-error text-sm">{errors.position}</p>

@@ -4,6 +4,7 @@ import { cn } from "@/utils/lib/util";
 import ResizeHandle from "./ResizeHandle";
 import logo from "@/assets/ronaldo_02.jpg";
 import avatar from "@/assets/ronaldo_10.webp";
+import { resolveAvatarUrl } from "@/utils/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { MANAGEMENT_ROLES, ROLE_LABELS } from "@/utils/auth";
 const Sidebar = ({ onWidthChange }) => {
@@ -226,7 +227,7 @@ const Sidebar = ({ onWidthChange }) => {
               <img
                 alt="User Avatar"
                 className="w-10 h-10 rounded-full object-cover"
-                src={employee?.avatar || avatar}
+                src={employee?.avatar ? resolveAvatarUrl(employee.avatar) : avatar}
               />
               <div className="flex-1 min-w-0">
                 <p className="font-label-lg text-label-lg text-on-surface font-semibold truncate">

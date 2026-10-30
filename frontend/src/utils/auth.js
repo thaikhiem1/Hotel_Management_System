@@ -62,5 +62,14 @@ export const ROLE_LABELS = {
   RECEPTIONIST: "Lễ tân",
 };
 
+// Chức vụ của nhân viên chính là vai trò tài khoản. ADMIN chỉ có ở tài khoản khởi tạo nên không chọn được.
+export const POSITION_OPTIONS = [ROLES.MANAGER, ROLES.RECEPTIONIST].map((value) => ({
+  value,
+  label: ROLE_LABELS[value],
+}));
+
+/** Nhãn hiển thị của chức vụ; giá trị cũ chưa chuẩn hóa được giữ nguyên */
+export const positionLabel = (position) => ROLE_LABELS[position] || position;
+
 // Các route chỉ dành cho quản lý (khớp rule /api/accounts, /api/employees ở backend)
 export const MANAGEMENT_ROLES = [ROLES.ADMIN, ROLES.MANAGER];

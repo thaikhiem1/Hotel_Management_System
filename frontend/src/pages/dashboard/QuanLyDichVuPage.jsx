@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { cn } from "@/utils/lib/util";
 import ServiceModal from "@/components/service-management/ServiceModal";
 import CategoryModal from "@/components/service-management/CategoryModal";
-import DeleteConfirmModal from "@/components/shared/DeleteConfirmModal";
+import { GenericDeleteDialog, Pagination } from "@/components/shared";
 import { serviceAPI, serviceCategoryAPI } from "@/services/api";
 
 const toServiceViewModel = (service) => ({
@@ -642,46 +642,14 @@ const QuanLyDichVuPage = () => {
           </div>
 
           {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-space-md">
-              <button
-                onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-                disabled={currentPage === 1}
-                className="px-space-lg py-space-md rounded-lg bg-surface-container-low hover:bg-surface-container-high disabled:opacity-50 disabled:cursor-not-allowed font-label-md font-semibold text-on-surface transition-colors shadow-md"
-              >
-                <span className="material-symbols-outlined">chevron_left</span>
-              </button>
-
-              {[...Array(totalPages)].map((_, index) => {
-                const page = index + 1;
-
-                return (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    className={cn(
-                      "px-space-lg py-space-md rounded-lg font-label-md font-semibold transition-colors shadow-md",
-                      currentPage === page
-                        ? "bg-gradient-to-r from-brand-light to-brand-dark text-white"
-                        : "bg-surface-container-low hover:bg-surface-container-high text-on-surface",
-                    )}
-                  >
-                    {page}
-                  </button>
-                );
-              })}
-
-              <button
-                onClick={() =>
-                  setCurrentPage((page) => Math.min(totalPages, page + 1))
-                }
-                disabled={currentPage === totalPages}
-                className="px-space-lg py-space-md rounded-lg bg-surface-container-low hover:bg-surface-container-high disabled:opacity-50 disabled:cursor-not-allowed font-label-md font-semibold text-on-surface transition-colors shadow-md"
-              >
-                <span className="material-symbols-outlined">chevron_right</span>
-              </button>
-            </div>
-          )}
+          <Pagination
+            page={currentPage - 1}
+            totalPages={totalPages}
+            totalElements={filteredServices.length}
+            pageSize={itemsPerPage}
+            onPageChange={(p) => setCurrentPage(p + 1)}
+            unit="dịch vụ"
+          />
 
           {/* Service Modals */}
           <ServiceModal
@@ -706,7 +674,7 @@ const QuanLyDichVuPage = () => {
             isSubmitting={isSubmitting}
           />
 
-          <DeleteConfirmModal
+          <GenericDeleteDialog
             isOpen={isDeleteModalOpen}
             onClose={() => {
               setIsDeleteModalOpen(false);
@@ -714,7 +682,8 @@ const QuanLyDichVuPage = () => {
             }}
             onConfirm={handleDeleteService}
             title="Xóa dịch vụ"
-            message={`Bạn có chắc muốn xóa dịch vụ "${selectedService?.serviceName}"?`}
+            itemName="dịch vụ"
+            itemDetails={[{ label: "Tên dịch vụ", value: selectedService?.serviceName, highlight: true }]}
           />
 
           {/* Category Modal */}
@@ -730,7 +699,7 @@ const QuanLyDichVuPage = () => {
             }}
           />
 
-          <DeleteConfirmModal
+          <GenericDeleteDialog
             isOpen={isDeleteCategoryModalOpen}
             onClose={() => {
               setIsDeleteCategoryModalOpen(false);
@@ -738,7 +707,8 @@ const QuanLyDichVuPage = () => {
             }}
             onConfirm={handleDeleteCategory}
             title="Xóa loại dịch vụ"
-            message={`Bạn có chắc muốn xóa loại "${selectedCategoryToDelete?.serviceCategoryName}"?`}
+            itemName="loại dịch vụ"
+            itemDetails={[{ label: "Tên loại", value: selectedCategoryToDelete?.serviceCategoryName, highlight: true }]}
           />
         </>
       )}

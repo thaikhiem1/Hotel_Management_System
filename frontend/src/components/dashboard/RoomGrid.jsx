@@ -1,6 +1,6 @@
 import RoomCard from './RoomCard';
 
-const RoomGrid = ({ rooms, onRoomAction, isLoading }) => {
+const RoomGrid = ({ rooms, onRoomAction, isLoading, emptyMessage }) => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-margin-lg">
@@ -23,7 +23,7 @@ const RoomGrid = ({ rooms, onRoomAction, isLoading }) => {
           </span>
           <div>
             <p className="font-headline-md text-headline-md text-on-surface mb-space-xs">
-              Không tìm thấy phòng
+              {emptyMessage || 'Không tìm thấy phòng'}
             </p>
             <p className="font-body-md text-body-md text-on-surface-variant">
               Thử thay đổi bộ lọc hoặc thời gian để xem phòng khác

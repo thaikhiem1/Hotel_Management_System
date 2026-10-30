@@ -85,7 +85,8 @@ public class AccountService implements IAccountService {
         accounts account = new accounts();
         account.setUsername(username);
         account.setPasswordHash(passwordHash);
-        account.setRole(Role.RECEPTIONIST);
+        // Vai trò theo chức vụ của nhân viên; chức vụ cũ chưa chuẩn hóa thì mặc định là lễ tân
+        account.setRole(Role.MANAGER.name().equals(employee.getPosition()) ? Role.MANAGER : Role.RECEPTIONIST);
         account.setEmployee(employee);
         account.setIsActive(true);
 
@@ -180,6 +181,8 @@ public class AccountService implements IAccountService {
 
             if (account.getRole() != newRole) {
                 account.setRole(newRole);
+                // Chức vụ chính là vai trò nên hai thông tin luôn khớp nhau
+                account.getEmployee().setPosition(newRole.name());
                 isUpdated = true;
             }
         }

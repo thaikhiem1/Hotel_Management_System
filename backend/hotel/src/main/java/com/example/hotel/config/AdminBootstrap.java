@@ -55,7 +55,7 @@ public class AdminBootstrap implements ApplicationRunner {
 
         employees employee = new employees();
         employee.setFullName("Quản trị viên");
-        employee.setPosition("Quản trị hệ thống");
+        employee.setPosition(Role.ADMIN.name());
         employee.setSalary(BigDecimal.ZERO);
         employee.setPhone("0000000000");
         employee.setCitizenId("000000000000");

@@ -11,6 +11,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.hotel.Enums.Role;
 import com.example.hotel.exception.DuplicateResourceException;
 import com.example.hotel.exception.ResourceNotFoundException;
 import com.example.hotel.mapper.EmployeeMapper;
@@ -169,12 +170,19 @@ public class EmployeeService implements IEmployeeService {
             throw new DuplicateResourceException("Email", email);
         }
 
+        // Chức vụ chính là vai trò của tài khoản: không gán và không đổi chức vụ quản trị viên
+        boolean positionChanged = position != null && !position.equals(employee.getPosition());
+        if (positionChanged
+                && (Role.ADMIN.name().equals(position) || Role.ADMIN.name().equals(employee.getPosition()))) {
+            throw new IllegalArgumentException("Không thể gán hoặc thay đổi chức vụ quản trị viên");
+        }
+
         boolean isUpdated = false;
         if (fullName != null && !fullName.equals(employee.getFullName())) {
             employee.setFullName(fullName);
             isUpdated = true;
         }
-        if (position != null && !position.equals(employee.getPosition())) {
+        if (positionChanged) {
             employee.setPosition(position);
             isUpdated = true;
         }
@@ -217,22 +225,34 @@ public class EmployeeService implements IEmployeeService {
             isUpdated = true;
         }
 
-        // Chỉ tìm tài khoản liên kết khi yêu cầu có trạng thái hoạt động
-        Optional<accounts> linkedAccount = isActive == null
+        // Chỉ tìm tài khoản liên kết khi đổi trạng thái hoạt động hoặc đổi chức vụ
+        Optional<accounts> linkedAccount = (isActive == null && !positionChanged)
                 ? Optional.empty()
                 : accountRepository.findByEmployee_EmployeeId(employeeId);
-        boolean linkedAccountStatusChanged = linkedAccount
+        boolean linkedAccountStatusChanged = isActive != null && linkedAccount
                 .map(account -> !isActive.equals(account.getIsActive()))
                 .orElse(false);
+        // Đổi chức vụ thì vai trò của tài khoản liên kết đổi theo
+        boolean linkedAccountRoleChanged = positionChanged && linkedAccount
+                .map(account -> account.getRole() != Role.valueOf(position))
+                .orElse(false);
+        if (linkedAccountRoleChanged && linkedAccount.orElseThrow().getRole() == Role.ADMIN) {
+            throw new IllegalArgumentException("Không thể gán hoặc thay đổi chức vụ quản trị viên");
+        }
 
-        if (!isUpdated && !linkedAccountStatusChanged) {
+        if (!isUpdated && !linkedAccountStatusChanged && !linkedAccountRoleChanged) {
             return employeeMapper.toEmployeeResponse(employee);
         }
 
         employees savedEmployee = isUpdated ? employeeRepository.save(employee) : employee;
-        if (linkedAccountStatusChanged) {
+        if (linkedAccountStatusChanged || linkedAccountRoleChanged) {
             accounts account = linkedAccount.orElseThrow();
-            account.setIsActive(isActive);
+            if (linkedAccountStatusChanged) {
+                account.setIsActive(isActive);
+            }
+            if (linkedAccountRoleChanged) {
+                account.setRole(Role.valueOf(position));
+            }
             accountRepository.save(account);
         }
 

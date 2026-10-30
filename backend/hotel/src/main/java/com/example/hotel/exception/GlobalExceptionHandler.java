@@ -18,6 +18,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
 /**
  * Global exception handler for the application
@@ -212,6 +214,18 @@ public class GlobalExceptionHandler {
             WebRequest request) {
         return buildError(HttpStatus.BAD_REQUEST, "Bad Request",
                 "Dữ liệu gửi lên không hợp lệ. Vui lòng kiểm tra lại định dạng ngày giờ và các giá trị đã chọn.",
+                request);
+    }
+
+    /**
+     * Tệp tải lên quá lớn hoặc không đính kèm tệp -> 400
+     */
+    @ExceptionHandler({MaxUploadSizeExceededException.class, MissingServletRequestPartException.class})
+    public ResponseEntity<ErrorResponse> handleUploadProblem(
+            Exception ex,
+            WebRequest request) {
+        return buildError(HttpStatus.BAD_REQUEST, "Bad Request",
+                "Ảnh đại diện không hợp lệ. Chỉ chấp nhận tệp JPG, JPEG, PNG hoặc WEBP, dung lượng tối đa 5 MB.",
                 request);
     }
 

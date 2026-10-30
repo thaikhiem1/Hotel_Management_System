@@ -1,35 +1,44 @@
 import { cn } from '@/utils/lib/util';
+import { useAuth } from '@/contexts/AuthContext';
+import { formatPrice } from '@/utils/format';
 
+// Vai trò đăng nhập -> mã vai trò dùng trong cấu hình nút bên dưới (0: Admin, 1: Lễ tân, 2: Quản lý)
+const ROLE_CODE = { ADMIN: 0, RECEPTIONIST: 1, MANAGER: 2 };
+
+/**
+ * RoomCard - Thẻ phòng trên sơ đồ phòng (UC-ROM-005)
+ * Màu theo trạng thái hiển thị: xanh lá (sẵn sàng), vàng (đã đặt), đỏ (đang có khách),
+ * cam (đang dọn dẹp), xám (đang bảo trì).
+ */
 const RoomCard = ({ room, onAction }) => {
-  // TODO: Lấy role từ AuthContext hoặc Redux store
-  // Ví dụ: const { user } = useAuth(); const userRole = user?.role;
-  // Role: 0 = Admin, 1 = Nhân viên lễ tân, 2 = Quản lý
-  const userRole = 0; // Mock data - tạm thời dùng Admin để test đầy đủ chức năng
+  const { user } = useAuth();
+  const userRole = ROLE_CODE[user?.role];
 
   const getStatusConfig = (status) => {
     const configs = {
       available: {
         label: 'Trống/Sẵn sàng',
-        color: 'bg-primary/20 text-primary',
+        color: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-400',
         icon: 'check_circle',
         actions: [
           { id: 'view', label: 'Xem chi tiết', icon: 'visibility', variant: 'secondary', roles: [0, 1, 2] },
-          { id: 'book', label: 'Đặt phòng', icon: 'add_circle', variant: 'primary', roles: [0, 1, 2] }
+          { id: 'book', label: 'Đặt phòng ngay', icon: 'add_circle', variant: 'primary', roles: [0, 1, 2] }
         ]
       },
       reserved: {
         label: 'Đã đặt',
-        color: 'bg-secondary/20 text-secondary',
+        color: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400',
         icon: 'event',
         actions: [
           { id: 'view', label: 'Xem chi tiết', icon: 'visibility', variant: 'secondary', roles: [0, 1, 2] },
-          { id: 'checkin', label: 'Nhận phòng', icon: 'login', variant: 'primary', roles: [0, 1] },
+          // Chỉ hiện khi lượt đặt tóm tắt đã đến giờ nhận phòng
+          { id: 'checkin', label: 'Nhận phòng', icon: 'login', variant: 'primary', roles: [0, 1], when: (r) => r.canCheckIn !== false },
           { id: 'cancel', label: 'Hủy đặt', icon: 'cancel', variant: 'error', roles: [0, 2] }
         ]
       },
       occupied: {
         label: 'Đang có khách',
-        color: 'bg-tertiary/20 text-tertiary',
+        color: 'bg-error/20 text-error',
         icon: 'person',
         actions: [
           { id: 'view', label: 'Xem chi tiết', icon: 'visibility', variant: 'secondary', roles: [0, 1, 2] },
@@ -39,20 +48,20 @@ const RoomCard = ({ room, onAction }) => {
       },
       cleaning: {
         label: 'Đang dọn dẹp',
-        color: 'bg-amber-500/20 text-amber-700 dark:text-amber-400',
+        color: 'bg-orange-500/20 text-orange-700 dark:text-orange-400',
         icon: 'cleaning_services',
         actions: [
           { id: 'view', label: 'Xem chi tiết', icon: 'visibility', variant: 'secondary', roles: [0, 1, 2] },
-          { id: 'ready', label: 'Đánh dấu sẵn sàng', icon: 'done_all', variant: 'primary', roles: [0, 1] }
+          { id: 'ready', label: 'Đã vệ sinh xong', icon: 'done_all', variant: 'primary', roles: [0, 1] }
         ]
       },
       maintenance: {
         label: 'Đang bảo trì',
-        color: 'bg-error/20 text-error',
+        color: 'bg-outline/20 text-on-surface-variant',
         icon: 'engineering',
         actions: [
           { id: 'view', label: 'Xem chi tiết', icon: 'visibility', variant: 'secondary', roles: [0, 1, 2] },
-          { id: 'complete', label: 'Hoàn thành bảo trì', icon: 'done', variant: 'primary', roles: [0, 2] }
+          { id: 'complete', label: 'Đã sửa chữa xong', icon: 'done', variant: 'primary', roles: [0, 2] }
         ]
       }
     };
@@ -71,15 +80,17 @@ const RoomCard = ({ room, onAction }) => {
     return variants[variant] || variants.secondary;
   };
 
-  // Lọc actions theo quyền của user
+  // Lọc nút theo quyền của người dùng và điều kiện hiển thị của từng nút
   const getFilteredActions = (actions) => {
     return actions.filter(action => {
-      // Nếu action không có roles được định nghĩa, cho phép tất cả roles
+      if (action.when && !action.when(room)) return false;
       if (!action.roles || action.roles.length === 0) return true;
-      // Kiểm tra role hiện tại có trong danh sách roles được phép không
       return action.roles.includes(userRole);
     });
   };
+
+  const matched = room.matchedBooking;
+  const showMatched = matched && matched.bookingDetailId !== room.bookingDetailId;
 
   return (
     <div className="p-space-lg rounded-lg bg-surface-container-low hover:shadow-[0_4px_20px_rgba(0,0,0,0.1)] transition-all border border-surface-container-high">
@@ -113,7 +124,7 @@ const RoomCard = ({ room, onAction }) => {
             Giá/ngày
           </p>
           <p className="font-headline-sm text-headline-sm text-primary font-bold">
-            {room.pricePerDay?.toLocaleString('vi-VN')}đ
+            {formatPrice(room.pricePerDay)}
           </p>
         </div>
         <div>
@@ -121,7 +132,7 @@ const RoomCard = ({ room, onAction }) => {
             Giá/giờ
           </p>
           <p className="font-headline-sm text-headline-sm text-on-surface font-bold">
-            {room.pricePerHour?.toLocaleString('vi-VN')}đ
+            {room.pricePerHour != null ? formatPrice(room.pricePerHour) : 'Chưa có giá'}
           </p>
         </div>
       </div>
@@ -130,7 +141,7 @@ const RoomCard = ({ room, onAction }) => {
       {room.status === 'maintenance' && room.maintenanceReason && (
         <div className="mb-space-md p-space-md rounded-lg bg-error/10 border border-error/20">
           <p className="font-label-sm text-label-sm text-error uppercase tracking-wider mb-space-xs">
-            Lý do bảo trì
+            Ghi chú bảo trì
           </p>
           <p className="font-body-sm text-body-sm text-on-surface">
             {room.maintenanceReason}
@@ -140,16 +151,17 @@ const RoomCard = ({ room, onAction }) => {
 
       {/* Guest Info (if occupied or reserved) */}
       {(room.status === 'occupied' || room.status === 'reserved') && room.guestName && (
-        <div className="mb-space-md p-space-md rounded-lg bg-tertiary/10 border border-tertiary/20">
-          <p className="font-label-sm text-label-sm text-tertiary uppercase tracking-wider mb-space-xs">
+        <div className="mb-space-md p-space-md rounded-lg bg-surface-container-high border border-outline-variant">
+          <p className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-space-xs">
             {room.status === 'occupied' ? 'Khách hiện tại' : 'Khách đã đặt'}
+            {room.receiptCode ? ` • ${room.receiptCode}` : ''}
           </p>
           <p className="font-body-md text-body-md text-on-surface font-semibold">
             {room.guestName}
           </p>
           {room.status === 'occupied' && room.checkOutTime && (
             <p className="font-body-sm text-body-sm text-outline mt-space-xs">
-              Trả phòng: {room.checkOutTime}
+              Trả phòng dự kiến: {room.checkOutTime}
             </p>
           )}
           {room.status === 'reserved' && room.checkInTime && (
@@ -157,6 +169,24 @@ const RoomCard = ({ room, onAction }) => {
               Nhận phòng: {room.checkInTime}
             </p>
           )}
+          {room.reservationCount > (room.status === 'reserved' ? 1 : 0) && (
+            <p className="font-body-sm text-body-sm text-on-surface-variant mt-space-xs">
+              +{room.reservationCount - (room.status === 'reserved' ? 1 : 0)} lượt đặt khác trong khoảng thời gian đang xem
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Chi tiết khớp điều kiện lọc (khi khác với lượt đang hiển thị) */}
+      {showMatched && (
+        <div className="mb-space-md p-space-md rounded-lg bg-primary/10 border border-primary/20">
+          <p className="font-label-sm text-label-sm text-primary uppercase tracking-wider mb-space-xs">
+            Khớp bộ lọc • {matched.receiptCode}
+          </p>
+          <p className="font-body-md text-body-md text-on-surface font-semibold">{matched.customerName}</p>
+          <p className="font-body-sm text-body-sm text-outline mt-space-xs">
+            {matched.checkInTime} → {matched.checkOutTime}
+          </p>
         </div>
       )}
 

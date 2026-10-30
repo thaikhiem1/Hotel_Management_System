@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import ThemeToggle from "../ui/ThemeToggle";
 import UserProfileMenu from "./UserProfileMenu";
-import { EmployeeProfileDialog } from "@/components/employee-management";
-import avatar from "@/assets/ronaldo_01.jpg";
+import { resolveAvatarUrl } from "@/utils/avatar";
+import { positionLabel } from "@/utils/auth";
 import { useAuth } from "@/contexts/AuthContext";
 const Header = ({ sidebarWidth = 384 }) => {
   const [time, setTime] = useState(new Date());
-  const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -22,29 +22,13 @@ const Header = ({ sidebarWidth = 384 }) => {
   const currentEmployee = emp && {
     idNV: emp.employeeId,
     tenNV: emp.fullName,
-    chucVu: emp.position,
-    luong: emp.salary,
-    sdt: emp.phone,
-    cccd: emp.citizenId,
-    ngaySinh: emp.dateOfBirth,
-    gioiTinh: emp.gender,
-    diaChi: emp.address,
+    chucVu: positionLabel(emp.position),
     email: emp.email,
-    avatar: emp.avatar || avatar,
-    isWorking: emp.isActive,
+    avatar: resolveAvatarUrl(emp.avatar),
   };
 
-  const handleOpenProfile = (user) => {
-    setCurrentUser(user);
-    setIsProfileDialogOpen(true);
-  };
-
-  const handleUpdateProfile = async (formData) => {
-    // TODO: Call API to update profile
-    console.log("Update profile:", formData);
-    setIsProfileDialogOpen(false);
-    setCurrentUser(null);
-  };
+  // Hồ sơ cá nhân là một trang riêng, chỉ xem và đổi ảnh đại diện
+  const handleOpenProfile = () => navigate("/profile");
 
   return (
     <>
@@ -98,20 +82,6 @@ const Header = ({ sidebarWidth = 384 }) => {
           />
         </div>
       </header>
-
-      {/* Profile Dialog */}
-      <EmployeeProfileDialog
-        isOpen={isProfileDialogOpen}
-        onClose={() => {
-          setIsProfileDialogOpen(false);
-          setCurrentUser(null);
-        }}
-        onSubmit={handleUpdateProfile}
-        employeeData={currentUser}
-        mode="view"
-        canEdit={true}
-        isLoading={false}
-      />
     </>
   );
 };

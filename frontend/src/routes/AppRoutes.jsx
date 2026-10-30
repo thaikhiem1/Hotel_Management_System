@@ -19,6 +19,7 @@ import QuanLyDichVuPage from "@/pages/dashboard/QuanLyDichVuPage";
 import QuanLyNhanVienPage from "@/pages/dashboard/QuanLyNhanVienPage";
 import QuanLyTaiKhoanPage from "@/pages/dashboard/QuanLyTaiKhoanPage";
 import BaoCaoThongKePage from "@/pages/dashboard/BaoCaoThongKePage";
+import HoSoCaNhanPage from "@/pages/dashboard/HoSoCaNhanPage";
 
 function AppRoutes() {
   return (
@@ -40,6 +41,7 @@ function AppRoutes() {
           <Route path="/customers" element={<QuanLyKhachHangPage />} />
           <Route path="/payments" element={<QuanLyHoaDonPage />} />
           <Route path="/services" element={<QuanLyDichVuPage />} />
+          <Route path="/profile" element={<HoSoCaNhanPage />} />
 
           {/* Chỉ ADMIN / MANAGER */}
           <Route element={<ProtectedRoute roles={MANAGEMENT_ROLES} />}>

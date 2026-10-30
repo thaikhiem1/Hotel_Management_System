@@ -2,6 +2,8 @@ import axios from "axios";
 import { clearAuth, getToken } from "@/utils/auth";
 
 const BASE_URL = "http://localhost:8080/api";
+// Địa chỉ gốc của backend, dùng cho các tệp tĩnh như ảnh đại diện tải lên
+export const API_ORIGIN = BASE_URL.replace(/\/api$/, "");
 
 const apiClient = axios.create({
   baseURL: BASE_URL,
@@ -70,6 +72,24 @@ export const authAPI = {
   me: () => unwrap(apiClient.get("/auth/me")),
 };
 
+// HỒ SƠ CÁ NHÂN (người đang đăng nhập)
+export const profileAPI = {
+  /** GET /api/profile - hồ sơ của chính mình (không có lương) */
+  get: () => unwrap(apiClient.get("/profile")),
+
+  /** PUT /api/profile/avatar - multipart "file": JPG/JPEG/PNG/WEBP, tối đa 5 MB */
+  updateAvatar: (file) => {
+    const form = new FormData();
+    form.append("file", file);
+    return unwrap(
+      apiClient.put("/profile/avatar", form, {
+        headers: { "Content-Type": "multipart/form-data" },
+        timeout: 30000,
+      }),
+    );
+  },
+};
+
 // LOẠI PHÒNG (RoomType)
 const roomTypeCrud = createCrudApi("/roomTypes");
 export const roomTypeAPI = {
@@ -109,9 +129,6 @@ export const employeeAPI = {
     ),
 };
 
-// PHIẾU THUÊ (Booking)
-export const bookingAPI = createCrudApi("/booking");
-
 // PHIẾU THUÊ (Rental Receipt) - UC-REN-001, UC-REN-009, UC-REN-010
 export const rentalReceiptAPI = {
   /** GET /api/rental-receipts?page&size - mới nhất trước */
@@ -131,8 +148,15 @@ export const rentalReceiptAPI = {
   create: (data) => unwrap(apiClient.post("/rental-receipts", data)),
 };
 
-// HÓA ĐƠN (Invoice)
-export const invoiceAPI = createCrudApi("/invoice");
+// SƠ ĐỒ PHÒNG (Room Map) - UC-ROM-005, UC-ROM-006
+export const roomMapAPI = {
+  /**
+   * GET /api/room-map - sơ đồ phòng có phân trang (backend mặc định trang 0, 16 phòng/trang).
+   * Tham số rỗng bị bỏ qua. from/to dạng ISO yyyy-MM-ddTHH:mm:ss; mặc định là từ bây giờ đến hết ngày.
+   * @param {{page?, size?, from?, to?, displayStatus?, keyword?}} params
+   */
+  get: (params = {}) => unwrap(apiClient.get("/room-map", { params: compactParams(params) })),
+};
 
 // LOẠI DỊCH VỤ (Service Categories) - cập nhật bằng PATCH
 export const serviceCategoryAPI = createCrudApi("/service-categories", {

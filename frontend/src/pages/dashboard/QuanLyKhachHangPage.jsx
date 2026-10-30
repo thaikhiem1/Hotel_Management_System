@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { CustomerTable, CustomerFormDialog } from '@/components/customer-management';
-import { GenericDeleteDialog } from '@/components/shared';
+import { GenericDeleteDialog, Pagination } from '@/components/shared';
 import { showSuccess, handleApiError } from '@/utils/notification';
 import { customerAPI } from '@/services/api';
 import { cn } from '@/utils/lib/util';
@@ -422,83 +422,15 @@ const QuanLyKhachHangPage = () => {
       />
 
       {/* Phân trang */}
-      {totalPages > 1 && !isLoading && paginatedCustomers.length > 0 && (
-        <div className="flex items-center justify-between px-space-md py-space-sm
-                     bg-surface-container-low rounded-lg border border-outline-variant">
-          <p className="font-body-sm text-body-sm text-on-surface-variant">
-            Trang {currentPage + 1} / {totalPages} (Tổng {totalElements} khách hàng)
-          </p>
-
-          <div className="flex items-center gap-space-xs">
-            <button
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 0 || isLoading}
-              className={cn(
-                'p-space-xs rounded-lg hover:bg-surface-container-high',
-                'disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
-              )}
-            >
-              <span className="material-symbols-outlined text-[20px] text-on-surface">
-                chevron_left
-              </span>
-            </button>
-
-            {Array.from({ length: totalPages }, (_, i) => i).map(page => {
-              const showPage = 
-                page === 0 || 
-                page === totalPages - 1 || 
-                (page >= currentPage - 1 && page <= currentPage + 1);
-              
-              const showEllipsis = 
-                (page === currentPage - 2 && currentPage > 2) ||
-                (page === currentPage + 2 && currentPage < totalPages - 3);
-
-              if (showEllipsis) {
-                return (
-                  <span 
-                    key={page} 
-                    className="px-space-xs font-label-md text-label-md text-on-surface-variant"
-                  >
-                    ...
-                  </span>
-                );
-              }
-
-              if (!showPage) return null;
-
-              return (
-                <button
-                  key={page}
-                  onClick={() => handlePageChange(page)}
-                  disabled={isLoading}
-                  className={cn(
-                    'min-w-[32px] h-[32px] rounded-lg font-label-md text-label-md',
-                    'transition-colors',
-                    page === currentPage
-                      ? 'bg-primary text-on-primary'
-                      : 'hover:bg-surface-container-high text-on-surface',
-                    'disabled:opacity-50 disabled:cursor-not-allowed'
-                  )}
-                >
-                  {page + 1}
-                </button>
-              );
-            })}
-
-            <button
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages - 1 || isLoading}
-              className={cn(
-                'p-space-xs rounded-lg hover:bg-surface-container-high',
-                'disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
-              )}
-            >
-              <span className="material-symbols-outlined text-[20px] text-on-surface">
-                chevron_right
-              </span>
-            </button>
-          </div>
-        </div>
+      {!isLoading && paginatedCustomers.length > 0 && (
+        <Pagination
+          page={currentPage}
+          totalPages={totalPages}
+          totalElements={totalElements}
+          pageSize={itemsPerPage}
+          onPageChange={handlePageChange}
+          unit="khách hàng"
+        />
       )}
 
       {/* Dialog thêm/sửa khách hàng */}
