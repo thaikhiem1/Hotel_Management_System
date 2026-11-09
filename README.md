@@ -114,8 +114,8 @@ http://localhost:5173
 | Username    | Password | Role     |
 | ----------- | -------- | -------- |
 | `admin`     | `123456` | ADMIN    |
-| `manager`   | `123456` | QUANLY   |
-| `reception` | `123456` | NHANVIEN |
+| `manager`   | `123456` | MANAGER   |
+| `receptionist` | `123456` | RECEPTIONIST |
 
 > Nếu tài khoản test được tạo bằng migration/seed khác, sử dụng thông tin trong database của project.
 

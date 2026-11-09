@@ -12,7 +12,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import java.math.BigDecimal;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 
 @Entity
