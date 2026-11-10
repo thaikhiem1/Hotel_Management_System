@@ -63,6 +63,34 @@ export const toPhieuThue = (r) => ({
   })),
 });
 
+// ------------------------------------------------------------------ Nhận phòng (UC-REN-004)
+
+/** CheckInContextResponse -> dữ liệu mà CheckInModal hiển thị */
+export const toCheckInStay = (ctx) => ({
+  customer: {
+    id: ctx.customerId,
+    name: ctx.customerName,
+    phone: ctx.customerPhone,
+    citizenId: ctx.customerCitizenId,
+    nationality: ctx.customerNationality,
+  },
+  room: {
+    id: ctx.roomId,
+    code: ctx.roomCode,
+    typeName: ctx.roomTypeName,
+    beds: ctx.numberOfBeds,
+    maxOccupancy: ctx.maximumOccupancy,
+  },
+  detail: {
+    id: ctx.bookingDetailId,
+    expectedCheckIn: ctx.expectedCheckIn,
+    expectedCheckOut: ctx.expectedCheckOut,
+    rentalType: ctx.pricingMethod,
+    bookedGuests: ctx.expectedGuests,
+  },
+  receipt: { id: ctx.rentalReceiptId, code: ctx.receiptCode },
+});
+
 // ------------------------------------------------------------------ Sơ đồ phòng (UC-ROM-005/006)
 
 const DISPLAY_STATUS_UI = {

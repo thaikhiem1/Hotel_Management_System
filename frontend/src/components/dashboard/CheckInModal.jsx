@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ModalShell, InfoCard } from "@/components/shared";
-import { rentalService } from "@/services/mockRentalService";
+import { stayAPI } from "@/services/api";
+import { getErrorMessage } from "@/utils/notification";
 import { formatDateTime, formatReceiptCode, RENTAL_TYPE_LABELS } from "@/utils/format";
 import { cn } from "@/utils/lib/util";
 
@@ -11,11 +12,12 @@ import { cn } from "@/utils/lib/util";
  *
  * Props:
  * - isOpen
- * - stay: kết quả rentalService.getCheckInContext()
+ * - stay: dữ liệu biểu mẫu, lấy từ stayAPI.getCheckInContext() qua toCheckInStay()
  * - onClose
  * - onSuccess(result): gọi sau khi nhận phòng thành công (form tự đóng bằng onClose do cha xử lý)
+ * - onRefresh: tải lại sơ đồ phòng khi dữ liệu đã bị thao tác khác thay đổi (E5)
  */
-const CheckInForm = ({ stay, onClose, onSuccess }) => {
+const CheckInForm = ({ stay, onClose, onSuccess, onRefresh }) => {
   const { customer, room, detail, receipt } = stay;
   const [guests, setGuests] = useState(String(detail.bookedGuests ?? 1));
   const [touched, setTouched] = useState(false);
@@ -41,17 +43,16 @@ const CheckInForm = ({ stay, onClose, onSuccess }) => {
 
     setIsProcessing(true);
     try {
-      const result = await rentalService.checkIn({
-        detailId: detail.id,
-        actualGuests: guestsNumber,
-      });
-      onSuccess?.(result);
+      const response = await stayAPI.checkIn(detail.id, { actualGuests: guestsNumber });
+      onSuccess?.(response.data);
     } catch (error) {
+      const data = error.response?.data;
       setServerError({
-        code: error.code,
-        field: error.field,
-        message: error.message || "Nhận phòng thất bại. Vui lòng thử lại.",
+        field: data?.fieldErrors?.actualGuests ? "actualGuests" : undefined,
+        message: getErrorMessage(error, "Nhận phòng thất bại. Vui lòng thử lại."),
       });
+      // E5: dữ liệu vừa bị thao tác khác thay đổi, làm mới sơ đồ phòng phía sau biểu mẫu
+      if (error.response?.status === 409) onRefresh?.();
     } finally {
       setIsProcessing(false);
     }
@@ -70,7 +71,7 @@ const CheckInForm = ({ stay, onClose, onSuccess }) => {
     <ModalShell
       icon="login"
       title={`Nhận phòng ${room.code}`}
-      subtitle={`${room.typeName} • Phiếu thuê ${formatReceiptCode(receipt.id)}`}
+      subtitle={`${room.typeName} • Phiếu thuê ${receipt.code ?? formatReceiptCode(receipt.id)}`}
       onClose={onClose}
       closeDisabled={isProcessing}
       footer={
@@ -223,7 +224,7 @@ const CheckInForm = ({ stay, onClose, onSuccess }) => {
   );
 };
 
-const CheckInModal = ({ isOpen, stay, onClose, onSuccess }) => {
+const CheckInModal = ({ isOpen, stay, onClose, onSuccess, onRefresh }) => {
   if (!isOpen || !stay) return null;
   // key: mỗi lượt đặt phòng có state form riêng, không cần reset thủ công
   return (
@@ -232,6 +233,7 @@ const CheckInModal = ({ isOpen, stay, onClose, onSuccess }) => {
       stay={stay}
       onClose={onClose}
       onSuccess={onSuccess}
+      onRefresh={onRefresh}
     />
   );
 };

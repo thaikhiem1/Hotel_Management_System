@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
+  CheckInModal,
   QuickActions,
   StatCard,
   RoomFilterTabs,
@@ -10,10 +11,10 @@ import {
 } from '@/components/dashboard';
 import { CreateBookingDialog } from '@/components/bookings';
 import { Pagination } from '@/components/shared';
-import { employeeAPI, roomMapAPI, roomTypeAPI } from '@/services/api';
+import { employeeAPI, roomMapAPI, roomTypeAPI, stayAPI } from '@/services/api';
 import { formatDateTime } from '@/utils/format';
-import { showSuccess, showWarning } from '@/utils/notification';
-import { toRoomCard, UI_STATUS_TO_DISPLAY } from '@/utils/rentalMappers';
+import { handleApiError, showSuccess, showWarning } from '@/utils/notification';
+import { toCheckInStay, toRoomCard, UI_STATUS_TO_DISPLAY } from '@/utils/rentalMappers';
 import { mockHoaDon } from '@/services/mockData';
 
 /**
@@ -68,6 +69,8 @@ const DashboardPage = () => {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isAddServiceModalOpen, setIsAddServiceModalOpen] = useState(false);
   const [bookingRoom, setBookingRoom] = useState(null); // phòng đang đặt (UC-REN-001 từ sơ đồ phòng)
+  const [checkInStay, setCheckInStay] = useState(null); // dữ liệu biểu mẫu nhận phòng (UC-REN-004)
+  const [isOpeningCheckIn, setIsOpeningCheckIn] = useState(false);
 
   // Tải sơ đồ phòng mỗi khi điều kiện, tab, trang hoặc lệnh làm mới thay đổi
   useEffect(() => {
@@ -204,6 +207,27 @@ const DashboardPage = () => {
     };
   })();
 
+  // UC-REN-004 bước 2-4: kiểm tra sơ bộ ở máy chủ rồi mới mở biểu mẫu Check-in
+  const openCheckIn = async (room) => {
+    if (isOpeningCheckIn) return;
+    setIsOpeningCheckIn(true);
+    try {
+      const response = await stayAPI.getCheckInContext(room.bookingDetailId);
+      setCheckInStay(toCheckInStay(response.data));
+    } catch (error) {
+      handleApiError(error);
+      handleRefresh(); // dữ liệu trên sơ đồ có thể đã cũ
+    } finally {
+      setIsOpeningCheckIn(false);
+    }
+  };
+
+  const handleCheckInSuccess = (result) => {
+    setCheckInStay(null);
+    showSuccess('Nhận phòng thành công', `Phòng ${result.roomCode} - phiếu ${result.receiptCode}`);
+    handleRefresh();
+  };
+
   // ---- Thao tác trên thẻ phòng
   const handleRoomAction = (actionId, room) => {
     switch (actionId) {
@@ -223,11 +247,14 @@ const DashboardPage = () => {
         break;
 
       case 'checkin':
+        openCheckIn(room);
+        break;
+
       case 'checkout':
       case 'cancel':
       case 'ready':
       case 'complete':
-        // Các thao tác này cần API phía máy chủ (UC-REN-004, UC-REN-007, UC-ROM-005 A1/A2) chưa có
+        // Các thao tác này cần API phía máy chủ (UC-REN-007, UC-ROM-005 A1/A2) chưa có
         showWarning('Chưa hỗ trợ', 'Thao tác này sẽ được nối với máy chủ ở bước tiếp theo.');
         break;
 
@@ -419,6 +446,15 @@ const DashboardPage = () => {
           setIsAddServiceModalOpen(false);
         }}
         onSubmit={handleAddService}
+      />
+
+      {/* Nhận phòng - UC-REN-004 */}
+      <CheckInModal
+        isOpen={Boolean(checkInStay)}
+        stay={checkInStay}
+        onClose={() => setCheckInStay(null)}
+        onSuccess={handleCheckInSuccess}
+        onRefresh={handleRefresh}
       />
 
       {/* Đặt phòng - UC-REN-001: phòng chọn sẵn + khoảng thời gian đang xem */}

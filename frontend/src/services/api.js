@@ -148,6 +148,17 @@ export const rentalReceiptAPI = {
   create: (data) => unwrap(apiClient.post("/rental-receipts", data)),
 };
 
+// LƯU TRÚ THEO CHI TIẾT ĐẶT PHÒNG (chỉ lễ tân)
+export const stayAPI = {
+  /** UC-REN-004 bước 2-4: GET /api/booking-details/{id}/check-in - kiểm tra sơ bộ và lấy thông tin mở biểu mẫu */
+  getCheckInContext: (bookingDetailId) =>
+    unwrap(apiClient.get(`/booking-details/${bookingDetailId}/check-in`)),
+
+  /** UC-REN-004 bước 5-9: POST /api/booking-details/{id}/check-in - { actualGuests }; giờ nhận phòng do máy chủ ghi */
+  checkIn: (bookingDetailId, { actualGuests }) =>
+    unwrap(apiClient.post(`/booking-details/${bookingDetailId}/check-in`, { actualGuests })),
+};
+
 // SƠ ĐỒ PHÒNG (Room Map) - UC-ROM-005, UC-ROM-006
 export const roomMapAPI = {
   /**
