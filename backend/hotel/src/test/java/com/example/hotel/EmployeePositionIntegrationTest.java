@@ -49,8 +49,16 @@ class EmployeePositionIntegrationTest {
 
     String token;
 
+    /** Tài khoản admin có thể do migration seed tạo với mật khẩu khác cấu hình: đặt lại trong giao dịch test (được rollback) */
+    private void resetAdminPassword() {
+        accounts admin = accountRepository.findByUsername(adminUser).orElseThrow();
+        admin.setPasswordHash(passwordEncoder.encode(adminPass));
+        accountRepository.saveAndFlush(admin);
+    }
+
     @BeforeEach
     void loginAsAdmin() throws Exception {
+        resetAdminPassword();
         String body = json.writeValueAsString(Map.of("username", adminUser, "password", adminPass));
         String res = mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();

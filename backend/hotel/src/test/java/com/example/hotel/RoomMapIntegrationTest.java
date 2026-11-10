@@ -4,6 +4,7 @@ import com.example.hotel.Enums.BookingStatus;
 import com.example.hotel.Enums.PricingMethod;
 import com.example.hotel.Enums.RoomStatus;
 import com.example.hotel.models.entities.booking_details;
+import com.example.hotel.models.entities.accounts;
 import com.example.hotel.models.entities.customers;
 import com.example.hotel.models.entities.employees;
 import com.example.hotel.models.entities.rental_receipts;
@@ -70,10 +71,19 @@ class RoomMapIntegrationTest {
 
     @PersistenceContext EntityManager em;
 
+    @Autowired com.example.hotel.repositorys.AccountRepository accountRepository;
+    @Autowired org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
     @Value("${app.bootstrap-admin.username}") String adminUser;
     @Value("${app.bootstrap-admin.password}") String adminPass;
 
     String token;
+
+    /** Tài khoản admin có thể do migration seed tạo với mật khẩu khác cấu hình: đặt lại trong giao dịch test (được rollback) */
+    private void resetAdminPassword() {
+        accounts admin = accountRepository.findByUsername(adminUser).orElseThrow();
+        admin.setPasswordHash(passwordEncoder.encode(adminPass));
+        accountRepository.saveAndFlush(admin);
+    }
     employees employee;
     room_types type;
     customers alice;
@@ -81,6 +91,7 @@ class RoomMapIntegrationTest {
 
     @BeforeEach
     void setUp() throws Exception {
+        resetAdminPassword();
         MvcResult login = mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
                         .content(json.writeValueAsString(Map.of("username", adminUser, "password", adminPass))))
                 .andExpect(status().isOk()).andReturn();

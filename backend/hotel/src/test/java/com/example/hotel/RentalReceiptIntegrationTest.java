@@ -1,6 +1,12 @@
 package com.example.hotel;
 
+import com.example.hotel.Enums.Role;
 import com.example.hotel.Enums.RoomStatus;
+import com.example.hotel.models.entities.accounts;
+import com.example.hotel.models.entities.employees;
+import com.example.hotel.repositorys.AccountRepository;
+import com.example.hotel.repositorys.EmployeeRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import com.example.hotel.models.entities.customers;
 import com.example.hotel.models.entities.room_types;
 import com.example.hotel.models.entities.rooms;
@@ -46,23 +52,43 @@ class RentalReceiptIntegrationTest {
     @Autowired RoomTypeRepository roomTypeRepository;
     @Autowired RoomRepository roomRepository;
     @Autowired CustomerRepository customerRepository;
-
-    @Value("${app.bootstrap-admin.username}") String adminUser;
-    @Value("${app.bootstrap-admin.password}") String adminPass;
+    @Autowired AccountRepository accountRepository;
+    @Autowired EmployeeRepository employeeRepository;
+    @Autowired PasswordEncoder passwordEncoder;
 
     String token;
-    int adminEmployeeId;
+    int staffEmployeeId;
     int customerId;
     rooms standard, suite, maintenance, cleaning;
 
     @BeforeEach
     void setUp() throws Exception {
+        // Phiếu thuê chỉ dành cho lễ tân: đăng nhập bằng tài khoản lễ tân tự tạo (được rollback sau test)
+        employees staff = new employees();
+        staff.setFullName("Le Tan Phieu Thue");
+        staff.setPosition(Role.RECEPTIONIST.name());
+        staff.setSalary(BigDecimal.ZERO);
+        staff.setPhone("0966000001");
+        staff.setCitizenId("079600000001");
+        staff.setDateOfBirth(java.time.LocalDate.of(2000, 1, 1));
+        staff.setGender("Nam");
+        staff.setEmail("rr_staff@x.vn");
+        staff.setIsActive(true);
+        staff = employeeRepository.save(staff);
+        accounts account = new accounts();
+        account.setUsername("rr_staff");
+        account.setPasswordHash(passwordEncoder.encode("Pass@1234"));
+        account.setRole(Role.RECEPTIONIST);
+        account.setEmployee(staff);
+        account.setIsActive(true);
+        accountRepository.save(account);
+
         MvcResult login = mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
-                        .content(json.writeValueAsString(Map.of("username", adminUser, "password", adminPass))))
+                        .content(json.writeValueAsString(Map.of("username", "rr_staff", "password", "Pass@1234"))))
                 .andExpect(status().isOk()).andReturn();
         JsonNode data = json.readTree(login.getResponse().getContentAsString()).get("data");
         token = data.get("accessToken").asText();
-        adminEmployeeId = data.get("user").get("employee").get("employeeId").asInt();
+        staffEmployeeId = data.get("user").get("employee").get("employeeId").asInt();
 
         room_types std = roomType("RT-Standard", 2, new BigDecimal("800000"), new BigDecimal("100000"));
         room_types ste = roomType("RT-Suite", 4, new BigDecimal("2500000"), new BigDecimal("250000"));
@@ -198,7 +224,7 @@ class RentalReceiptIntegrationTest {
 
         assertTrue(created.get("receiptCode").asText().matches("PT\\d{3,}"), "mã phiếu do hệ thống sinh");
         assertEquals("DA_XAC_NHAN", created.get("receiptStatus").asText());
-        assertEquals(adminEmployeeId, created.get("employeeId").asInt());
+        assertEquals(staffEmployeeId, created.get("employeeId").asInt());
         assertEquals(customerId, created.get("customer").get("customerId").asInt());
         assertEquals(0, new BigDecimal("2600000").compareTo(created.get("estimatedTotalAmount").decimalValue()));
         assertEquals(2, created.get("details").size());

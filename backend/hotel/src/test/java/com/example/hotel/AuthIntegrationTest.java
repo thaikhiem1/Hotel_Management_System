@@ -44,6 +44,18 @@ class AuthIntegrationTest {
     @Value("${app.bootstrap-admin.username}") String adminUser;
     @Value("${app.bootstrap-admin.password}") String adminPass;
 
+    @org.junit.jupiter.api.BeforeEach
+    void prepareAdmin() {
+        resetAdminPassword();
+    }
+
+    /** Tài khoản admin có thể do migration seed tạo với mật khẩu khác cấu hình: đặt lại trong giao dịch test (được rollback) */
+    private void resetAdminPassword() {
+        accounts admin = accountRepository.findByUsername(adminUser).orElseThrow();
+        admin.setPasswordHash(passwordEncoder.encode(adminPass));
+        accountRepository.saveAndFlush(admin);
+    }
+
     private String login(String username, String password) throws Exception {
         String body = json.writeValueAsString(java.util.Map.of("username", username, "password", password));
         String res = mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content(body))
