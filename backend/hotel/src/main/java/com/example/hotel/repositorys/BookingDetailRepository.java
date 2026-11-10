@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface BookingDetailRepository extends JpaRepository<booking_details, Integer> {
@@ -29,6 +30,28 @@ public interface BookingDetailRepository extends JpaRepository<booking_details, 
                           @Param("statuses") Collection<BookingStatus> statuses,
                           @Param("start") LocalDateTime start,
                           @Param("end") LocalDateTime end);
+
+    /** Có lượt lưu trú (trạng thái cho trước) của phòng này không? Dùng để chặn hai lượt đang lưu trú cùng phòng */
+    boolean existsByRoomRoomIdAndBookingStatus(Integer roomId, BookingStatus status);
+
+    /** Mã phòng của chi tiết, để khóa phòng trước khi đọc lại trạng thái chi tiết */
+    @Query("select b.room.roomId from booking_details b where b.bookingDetailId = :id")
+    Optional<Integer> findRoomIdById(@Param("id") Integer id);
+
+    /** Mã phiếu thuê của chi tiết, để khóa phiếu trước khi cập nhật trạng thái */
+    @Query("select b.rentalReceipt.rentalReceiptId from booking_details b where b.bookingDetailId = :id")
+    Optional<Integer> findReceiptIdById(@Param("id") Integer id);
+
+    /** Chi tiết kèm phòng, loại phòng, phiếu thuê và khách hàng cho nghiệp vụ nhận phòng/trả phòng */
+    @Query("""
+            select b from booking_details b
+            join fetch b.room r
+            join fetch r.roomTypes
+            join fetch b.rentalReceipt rr
+            join fetch rr.customer
+            where b.bookingDetailId = :id
+            """)
+    Optional<booking_details> findWithStayInfo(@Param("id") Integer id);
 
     /**
      * Dữ liệu cho sơ đồ phòng của các phòng trong trang: mọi lượt đang lưu trú (CHECKED_IN) và các lượt

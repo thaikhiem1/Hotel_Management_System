@@ -62,6 +62,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/rental-receipts/**")
                         .hasAnyRole("RECEPTIONIST")
 
+                        // Nhận phòng, trả phòng theo chi tiết đặt phòng: lễ tân là actor chính
+                        .requestMatchers("/api/booking-details/**")
+                        .hasAnyRole("RECEPTIONIST")
+
                         .requestMatchers(HttpMethod.GET,
                                 "/api/rooms/**", "/api/roomTypes/**",
                                 "/api/services/**", "/api/service-categories/**")

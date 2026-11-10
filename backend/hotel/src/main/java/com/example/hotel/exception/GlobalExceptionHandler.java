@@ -17,6 +17,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
@@ -227,6 +228,19 @@ public class GlobalExceptionHandler {
         return buildError(HttpStatus.BAD_REQUEST, "Bad Request",
                 "Ảnh đại diện không hợp lệ. Chỉ chấp nhận tệp JPG, JPEG, PNG hoặc WEBP, dung lượng tối đa 5 MB.",
                 request);
+    }
+
+    /**
+     * Dữ liệu vừa bị thao tác khác thay đổi (nhận phòng, trả phòng, hủy... đồng thời) -> 409, cần tải lại
+     */
+    @ExceptionHandler({ConcurrentUpdateException.class, ObjectOptimisticLockingFailureException.class})
+    public ResponseEntity<ErrorResponse> handleConcurrentUpdate(
+            Exception ex,
+            WebRequest request) {
+        String message = ex instanceof ConcurrentUpdateException
+                ? ex.getMessage()
+                : "Dữ liệu vừa được thao tác khác thay đổi. Vui lòng tải lại và thực hiện lại.";
+        return buildError(HttpStatus.CONFLICT, "Conflict", message, request);
     }
 
     private ResponseEntity<ErrorResponse> buildError(
