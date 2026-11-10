@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "@/pages/LoginPage";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
@@ -8,21 +9,28 @@ import { MANAGEMENT_ROLES } from "@/utils/auth";
 // Dashboard Layout
 import DashboardLayout from "@/components/layout/DashboardLayout";
 
-// Dashboard Pages
-import DashboardPage from "@/pages/dashboard/DashboardPage";
-import LapPhieuThuePage from "@/pages/dashboard/LapPhieuThuePage";
-import QuanLyPhongPage from "@/pages/dashboard/QuanLyPhongPage";
-import QuanLyLoaiPhongPage from "@/pages/dashboard/QuanLyLoaiPhongPage";
-import QuanLyKhachHangPage from "@/pages/dashboard/QuanLyKhachHangPage";
-import QuanLyHoaDonPage from "@/pages/dashboard/QuanLyHoaDonPage";
-import QuanLyDichVuPage from "@/pages/dashboard/QuanLyDichVuPage";
-import QuanLyNhanVienPage from "@/pages/dashboard/QuanLyNhanVienPage";
-import QuanLyTaiKhoanPage from "@/pages/dashboard/QuanLyTaiKhoanPage";
-import BaoCaoThongKePage from "@/pages/dashboard/BaoCaoThongKePage";
-import HoSoCaNhanPage from "@/pages/dashboard/HoSoCaNhanPage";
+// Dashboard Pages: mỗi trang là một gói riêng, chỉ tải khi mở trang đó
+const DashboardPage = lazy(() => import("@/pages/dashboard/DashboardPage"));
+const LapPhieuThuePage = lazy(() => import("@/pages/dashboard/LapPhieuThuePage"));
+const QuanLyPhongPage = lazy(() => import("@/pages/dashboard/QuanLyPhongPage"));
+const QuanLyLoaiPhongPage = lazy(() => import("@/pages/dashboard/QuanLyLoaiPhongPage"));
+const QuanLyKhachHangPage = lazy(() => import("@/pages/dashboard/QuanLyKhachHangPage"));
+const QuanLyHoaDonPage = lazy(() => import("@/pages/dashboard/QuanLyHoaDonPage"));
+const QuanLyDichVuPage = lazy(() => import("@/pages/dashboard/QuanLyDichVuPage"));
+const QuanLyNhanVienPage = lazy(() => import("@/pages/dashboard/QuanLyNhanVienPage"));
+const QuanLyTaiKhoanPage = lazy(() => import("@/pages/dashboard/QuanLyTaiKhoanPage"));
+const BaoCaoThongKePage = lazy(() => import("@/pages/dashboard/BaoCaoThongKePage"));
+const HoSoCaNhanPage = lazy(() => import("@/pages/dashboard/HoSoCaNhanPage"));
 
 function AppRoutes() {
   return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center py-space-xl">
+          <span className="material-symbols-outlined animate-spin text-primary text-[40px]">progress_activity</span>
+        </div>
+      }
+    >
     <Routes>
       {/* Trang mặc định */}
       <Route path="/" element={<Navigate to="/login" replace />} />
@@ -52,6 +60,7 @@ function AppRoutes() {
         </Route>
       </Route>
     </Routes>
+    </Suspense>
   );
 }
 export default AppRoutes;

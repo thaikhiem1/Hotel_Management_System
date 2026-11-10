@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/utils/lib/util';
 import { useAuth } from '@/contexts/AuthContext';
+import { DEFAULT_AVATAR } from '@/utils/avatar';
 
 /**
  * UserProfileMenu - Component hiển thị menu dropdown profile user
@@ -19,7 +20,7 @@ const UserProfileMenu = ({ currentUser, onOpenProfile }) => {
     tenNV: 'Alexandre de Montes',
     chucVu: 'Tổng Giám Đốc',
     email: 'alexandre@grandpalace.com',
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA84QaAnq1uM-ytFYqrkEE55SPKO5rKzTBOJZvgi2cFcmWk3b2i-fBEunEYOcrQjjHJBlEXXJvxGmr9E6-niSdqmwcg6CASYunMSo8vd23_Wcv83qg9CeGvj8CoqXWzji9wDOW4keonHDlwJ2aRlCkEYa9r16PUY_SnMHCt3XkVLiCMA171dx0NNIHrhW55GgTxbgvOd5B4_IVBtSmQ7ViWwar6ezjYkmmuWT-4gjdoq7VY8jfzsVDkpA'
+    avatar: DEFAULT_AVATAR
   };
 
   // Close dropdown when clicking outside
@@ -86,11 +87,12 @@ const UserProfileMenu = ({ currentUser, onOpenProfile }) => {
         {/* Avatar */}
         <div className="relative">
           <img
-            src={user.avatar || 'https://via.placeholder.com/40'}
+            src={user.avatar || DEFAULT_AVATAR}
             alt={user.tenNV}
             className="w-10 h-10 rounded-full object-cover ring-2 ring-primary/20"
             onError={(e) => {
-              e.target.src = 'https://via.placeholder.com/40?text=' + user.tenNV.charAt(0);
+              e.currentTarget.onerror = null;
+              e.currentTarget.src = DEFAULT_AVATAR;
             }}
           />
           {/* Online indicator */}
@@ -133,12 +135,13 @@ const UserProfileMenu = ({ currentUser, onOpenProfile }) => {
           <div className="p-space-md bg-surface-container-high">
             <div className="flex items-start gap-space-sm">
               <img
-                src={user.avatar || 'https://via.placeholder.com/48'}
+                src={user.avatar || DEFAULT_AVATAR}
                 alt={user.tenNV}
                 className="w-12 h-12 rounded-full object-cover ring-2 ring-primary/20"
                 onError={(e) => {
-                  e.target.src = 'https://via.placeholder.com/48?text=' + user.tenNV.charAt(0);
-                }}
+              e.currentTarget.onerror = null;
+              e.currentTarget.src = DEFAULT_AVATAR;
+            }}
               />
               <div className="flex-1 min-w-0">
                 <p className="font-label-lg text-label-lg text-on-surface font-semibold truncate">

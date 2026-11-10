@@ -89,8 +89,10 @@ const EmployeeCard = ({ employee, onClick }) => {
           <img
             src={avatarSrc}
             alt={employee.fullName}
+            loading="lazy"
+            decoding="async"
             className={cn(
-              "relative w-24 h-24 rounded-full object-cover",
+              "relative w-24 h-24 rounded-full object-cover bg-surface-container-high",
               "ring-4 ring-surface-container-highest",
               "group-hover:ring-primary/20 transition-all duration-300",
             )}

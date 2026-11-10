@@ -2,6 +2,8 @@
  * ResetPasswordLeftPanel - Hotel Imagery & Brand Heritage
  * Left panel with luxury hotel visuals and branding for password reset page
  */
+import lobby from "@/assets/hotelbackground.jpg";
+
 function ResetPasswordLeftPanel() {
   return (
     <div className="relative hidden lg:flex lg:col-span-6 flex-col justify-between p-10 xl:p-14 overflow-hidden min-h-[680px]">
@@ -10,7 +12,8 @@ function ResetPasswordLeftPanel() {
         <img
           alt="Grand Astoria Hotel Lobby"
           className="w-full h-full object-cover object-center scale-105 transform duration-1000 ease-out"
-          src="https://lh3.googleusercontent.com/aida/AEtjO1UMF_nqe7-rlYntr42r7qTibtI-pFAzOXAtZRrQHKmOxDGt8gKpNGomc1yIF-U4vA8LAFEvhP-ZaVCCAAkaaDiwBIQm_5yvRS_akQxUy3m6ydzAfiIOoATgsS5qXh1dWWtZmAOx7i8dzOA6UtYwlaWl_GlRbPeuDJ-Ahi5wGuO3j2QLv-xNS0lPHkX_rNr9y8ZEiAwihdpyYsGBIBHmJtt6MpDiL2zorPMBDG24q_HLXYLSPpzMmvMTVHE"
+          src={lobby}
+          decoding="async"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-surface-container-lowest/70 to-surface-container-lowest/30 mix-blend-multiply" />
         <div className="absolute inset-0 bg-radial-at-c from-transparent via-surface/40 to-surface-dim/95" />
