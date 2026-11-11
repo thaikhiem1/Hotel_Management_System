@@ -1,0 +1,2 @@
+# Cấu hình riêng của máy, không commit (dùng .env.example làm mẫu)
+.env
