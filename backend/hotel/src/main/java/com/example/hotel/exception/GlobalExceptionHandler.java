@@ -243,6 +243,34 @@ public class GlobalExceptionHandler {
         return buildError(HttpStatus.CONFLICT, "Conflict", message, request);
     }
 
+    /**
+     * Tài nguyên đang được dữ liệu khác sử dụng nên không thao tác được (ví dụ xóa dịch vụ đã có lịch sử) -> 409
+     */
+    @ExceptionHandler(ResourceInUseException.class)
+    public ResponseEntity<ErrorResponse> handleResourceInUse(
+            ResourceInUseException ex,
+            WebRequest request) {
+        return buildError(HttpStatus.CONFLICT, "Conflict", ex.getMessage(), request);
+    }
+
+    /**
+     * Giá dịch vụ đã đổi so với số tiền người dùng xác nhận -> 409 kèm chi phí mới để xác nhận lại
+     */
+    @ExceptionHandler(ServiceUsagePriceChangedException.class)
+    public ResponseEntity<ErrorResponse> handleServiceUsagePriceChanged(
+            ServiceUsagePriceChangedException ex,
+            WebRequest request) {
+        ErrorResponse body = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.CONFLICT.value())
+                .error("Conflict")
+                .message(ex.getMessage())
+                .path(request.getDescription(false).replace("uri=", ""))
+                .data(ex.getNewEstimate())
+                .build();
+        return new ResponseEntity<>(body, HttpStatus.CONFLICT);
+    }
+
     private ResponseEntity<ErrorResponse> buildError(
             HttpStatus status, String error, String message, WebRequest request) {
         ErrorResponse errorResponse = ErrorResponse.builder()
