@@ -33,4 +33,12 @@ public class RoomResponse {
 
     @JsonProperty("note")
     private String note;
+
+    /** Phòng đang có khách lưu trú: không thể cập nhật */
+    @JsonProperty("has_active_stay")
+    private boolean hasActiveStay;
+
+    /** Phòng có lượt đã đặt chưa nhận: không đổi loại phòng hoặc chuyển sang sửa chữa/dọn dẹp được */
+    @JsonProperty("has_upcoming_booking")
+    private boolean hasUpcomingBooking;
 }

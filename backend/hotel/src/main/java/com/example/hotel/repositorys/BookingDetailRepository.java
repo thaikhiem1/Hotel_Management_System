@@ -34,6 +34,13 @@ public interface BookingDetailRepository extends JpaRepository<booking_details, 
     /** Có lượt lưu trú (trạng thái cho trước) của phòng này không? Dùng để chặn hai lượt đang lưu trú cùng phòng */
     boolean existsByRoomRoomIdAndBookingStatus(Integer roomId, BookingStatus status);
 
+    /** Phòng đã từng có lượt đặt/lưu trú (kể cả đã hủy hoặc đã trả) chưa? Phòng có lịch sử thì không xóa được */
+    boolean existsByRoomRoomId(Integer roomId);
+
+    /** Mã các phòng có ít nhất một lượt ở trạng thái cho trước (dùng gắn cờ cho danh sách quản lý phòng) */
+    @Query("select distinct b.room.roomId from booking_details b where b.bookingStatus = :status")
+    List<Integer> findRoomIdsByStatus(@Param("status") BookingStatus status);
+
     /** Mã phòng của chi tiết, để khóa phòng trước khi đọc lại trạng thái chi tiết */
     @Query("select b.room.roomId from booking_details b where b.bookingDetailId = :id")
     Optional<Integer> findRoomIdById(@Param("id") Integer id);

@@ -18,6 +18,10 @@ public class RoomMapper {
 
     // 2. Nhận vào entities trả về response
     public RoomResponse toRoomResponse(rooms room) {
+        return toRoomResponse(room, false, false);
+    }
+
+    public RoomResponse toRoomResponse(rooms room, boolean hasActiveStay, boolean hasUpcomingBooking) {
         if (room == null) {
             throw new IllegalArgumentException("Phong entity is null");
         }
@@ -30,6 +34,8 @@ public class RoomMapper {
                 room.getRoomTypes() != null ? room.getRoomTypes().getDailyRate() : null,
                 room.getRoomTypes() != null ? room.getRoomTypes().getHourlyRate() : null,
                 room.getRoomStatus(),
-                room.getNote());
+                room.getNote(),
+                hasActiveStay,
+                hasUpcomingBooking);
     }
 }
