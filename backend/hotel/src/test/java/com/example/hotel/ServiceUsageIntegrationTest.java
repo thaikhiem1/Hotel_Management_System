@@ -72,6 +72,7 @@ class ServiceUsageIntegrationTest {
 
     String token;
     int customerId;
+    long seededUsages;   // dịch vụ mẫu từ migration seed, các test chỉ so sánh phần tăng thêm
     int stayId;          // lượt lưu trú đã nhận phòng
     int reservedId;      // lượt chỉ mới đặt, chưa nhận phòng
     services water;      // có quản lý tồn kho: 10 chai, 20000
@@ -81,6 +82,7 @@ class ServiceUsageIntegrationTest {
 
     @BeforeEach
     void setUp() throws Exception {
+        seededUsages = serviceUsageRepository.count();
         accounts admin = accountRepository.findByUsername(adminUser).orElseThrow();
         admin.setPasswordHash(passwordEncoder.encode(adminPass));
         accountRepository.saveAndFlush(admin);
@@ -233,7 +235,7 @@ class ServiceUsageIntegrationTest {
                 .andExpect(jsonPath("$.data.totalAmount").value(120000));
 
         assertEquals(10, servicesRepository.findById(water.getServiceId()).orElseThrow().getStockQuantity());
-        assertEquals(0, serviceUsageRepository.count());
+        assertEquals(seededUsages, serviceUsageRepository.count());
     }
 
     @Test
@@ -283,7 +285,7 @@ class ServiceUsageIntegrationTest {
         record(stayId, stale).andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message").value("Chi phí đã thay đổi. Vui lòng kiểm tra và xác nhận lại chi phí mới."))
                 .andExpect(jsonPath("$.data.totalAmount").value(60000));
-        assertEquals(0, serviceUsageRepository.count());
+        assertEquals(seededUsages, serviceUsageRepository.count());
 
         Map<String, Object> ok = Map.of("lines", List.of(line(laundry, 2)), "expectedTotalAmount", 60000);
         record(stayId, ok).andExpect(status().isCreated());
@@ -299,7 +301,7 @@ class ServiceUsageIntegrationTest {
         estimate(reservedId, request(line(laundry, 1))).andExpect(status().isBadRequest());
         // lượt không tồn tại
         record(999999, request(line(laundry, 1))).andExpect(status().isNotFound());
-        assertEquals(0, serviceUsageRepository.count());
+        assertEquals(seededUsages, serviceUsageRepository.count());
     }
 
     @Test
@@ -312,7 +314,7 @@ class ServiceUsageIntegrationTest {
         // một dòng sai thì cả yêu cầu không được lưu
         record(stayId, request(line(water, 1), line(stopped, 1))).andExpect(status().isBadRequest());
         assertEquals(10, servicesRepository.findById(water.getServiceId()).orElseThrow().getStockQuantity());
-        assertEquals(0, serviceUsageRepository.count());
+        assertEquals(seededUsages, serviceUsageRepository.count());
     }
 
     @Test
@@ -323,7 +325,7 @@ class ServiceUsageIntegrationTest {
         record(stayId, request(Map.of("serviceId", laundry.getServiceId()))).andExpect(status().isBadRequest());
         record(stayId, Map.of("lines", List.of())).andExpect(status().isBadRequest());
         record(stayId, Map.of()).andExpect(status().isBadRequest());
-        assertEquals(0, serviceUsageRepository.count());
+        assertEquals(seededUsages, serviceUsageRepository.count());
     }
 
     @Test
@@ -338,7 +340,7 @@ class ServiceUsageIntegrationTest {
         assertEquals(0, servicesRepository.findById(water.getServiceId()).orElseThrow().getStockQuantity());
         // hết hàng
         record(stayId, request(line(water, 1))).andExpect(status().isBadRequest());
-        assertEquals(1, serviceUsageRepository.count());
+        assertEquals(seededUsages + 1, serviceUsageRepository.count());
     }
 
     // ------------------------------------------------------------------ module dịch vụ
