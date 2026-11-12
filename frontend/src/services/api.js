@@ -158,6 +158,14 @@ export const stayAPI = {
   checkIn: (bookingDetailId, { actualGuests }) =>
     unwrap(apiClient.post(`/booking-details/${bookingDetailId}/check-in`, { actualGuests })),
 
+  /** UC-REN-007 bước 2-6: GET /api/booking-details/{id}/check-out - kiểm tra lượt lưu trú và lấy chi phí tạm tính */
+  getCheckOutContext: (bookingDetailId) =>
+    unwrap(apiClient.get(`/booking-details/${bookingDetailId}/check-out`)),
+
+  /** UC-REN-007 bước 7-12: POST /api/booking-details/{id}/check-out - expectedTotalAmount là tổng tiền đã xem; giờ trả do máy chủ ghi */
+  checkOut: (bookingDetailId, { expectedTotalAmount } = {}) =>
+    unwrap(apiClient.post(`/booking-details/${bookingDetailId}/check-out`, { expectedTotalAmount })),
+
   /** UC-SVC-005: GET /api/booking-details/{id}/services - dịch vụ khách đã sử dụng kèm tổng tiền */
   getServiceUsages: (bookingDetailId) => unwrap(apiClient.get(`/booking-details/${bookingDetailId}/services`)),
 

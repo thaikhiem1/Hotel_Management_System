@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   CheckInModal,
+  CheckOutModal,
   QuickActions,
   StatCard,
   RoomFilterTabs,
@@ -72,6 +73,8 @@ const DashboardPage = () => {
   const [bookingRoom, setBookingRoom] = useState(null); // phòng đang đặt (UC-REN-001 từ sơ đồ phòng)
   const [checkInStay, setCheckInStay] = useState(null); // dữ liệu biểu mẫu nhận phòng (UC-REN-004)
   const [isOpeningCheckIn, setIsOpeningCheckIn] = useState(false);
+  const [checkOutStay, setCheckOutStay] = useState(null); // chi phí tạm tính để trả phòng (UC-REN-007)
+  const [isOpeningCheckOut, setIsOpeningCheckOut] = useState(false);
 
   // Tải sơ đồ phòng mỗi khi điều kiện, tab, trang hoặc lệnh làm mới thay đổi
   useEffect(() => {
@@ -229,6 +232,27 @@ const DashboardPage = () => {
     handleRefresh();
   };
 
+  // UC-REN-007 bước 2-6: kiểm tra lượt lưu trú và lấy chi phí tạm tính ở máy chủ rồi mới mở biểu mẫu Check-out
+  const openCheckOut = async (room) => {
+    if (isOpeningCheckOut) return;
+    setIsOpeningCheckOut(true);
+    try {
+      const response = await stayAPI.getCheckOutContext(room.bookingDetailId);
+      setCheckOutStay(response.data);
+    } catch (error) {
+      handleApiError(error);
+      handleRefresh(); // dữ liệu trên sơ đồ có thể đã cũ
+    } finally {
+      setIsOpeningCheckOut(false);
+    }
+  };
+
+  // Trả phòng xong: làm mới sơ đồ phòng ngay (phòng chuyển sang dọn dẹp), form vẫn mở để xem hóa đơn
+  const handleCheckOutCompleted = (result) => {
+    showSuccess('Trả phòng thành công', `Phòng ${result.roomCode} - hóa đơn ${result.invoiceCode}`);
+    handleRefresh();
+  };
+
   // ---- Thao tác trên thẻ phòng
   const handleRoomAction = (actionId, room) => {
     switch (actionId) {
@@ -256,10 +280,13 @@ const DashboardPage = () => {
         break;
 
       case 'checkout':
+        openCheckOut(room);
+        break;
+
       case 'cancel':
       case 'ready':
       case 'complete':
-        // Các thao tác này cần API phía máy chủ (UC-REN-007, UC-ROM-005 A1/A2) chưa có
+        // Các thao tác này cần API phía máy chủ (UC-ROM-005 A1/A2) chưa có
         showWarning('Chưa hỗ trợ', 'Thao tác này sẽ được nối với máy chủ ở bước tiếp theo.');
         break;
 
@@ -457,6 +484,15 @@ const DashboardPage = () => {
           setIsAddServiceModalOpen(false);
         }}
         onRecorded={handleServicesRecorded}
+      />
+
+      {/* Trả phòng - UC-REN-007 */}
+      <CheckOutModal
+        isOpen={Boolean(checkOutStay)}
+        stay={checkOutStay}
+        onClose={() => setCheckOutStay(null)}
+        onCompleted={handleCheckOutCompleted}
+        onRefresh={handleRefresh}
       />
 
       {/* Nhận phòng - UC-REN-004 */}

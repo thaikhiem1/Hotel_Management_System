@@ -1,94 +1,88 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { ModalShell, InfoCard } from "@/components/shared";
-import { rentalService, RentalError } from "@/services/mockRentalService";
-import { BILLING_RULES, BillingError, calculateStay } from "@/utils/billing";
+import { stayAPI } from "@/services/api";
+import { getErrorMessage } from "@/utils/notification";
 import {
   formatPrice,
   formatDateTime,
-  formatReceiptCode,
   RECEIPT_STATUS_LABELS,
   RENTAL_TYPE_LABELS,
 } from "@/utils/format";
 
 /**
  * CheckOutModal - Form trả phòng (UC-REN-007)
- * Hiển thị thông tin lưu trú, bảng chi phí và tổng tiền DỰ KIẾN (tính theo thời điểm hiện tại).
- * Khi Xác nhận, hệ thống kiểm tra lại, tính lại theo giờ trả thực tế và tạo hóa đơn UNPAID;
- * sau đó form chuyển sang màn hình thông tin hóa đơn.
+ * Hiển thị thông tin lưu trú, bảng chi phí và tổng tiền TẠM TÍNH do máy chủ tính theo thời điểm hiện tại
+ * (tự làm mới mỗi 30 giây). Khi Xác nhận, máy chủ kiểm tra lại, tính lại theo giờ trả thực tế rồi tạo hóa đơn
+ * chưa thanh toán; sau đó form chuyển sang màn hình thông tin hóa đơn.
  *
  * Props:
  * - isOpen
- * - stay: kết quả rentalService.getCheckOutContext() (kèm danh sách dịch vụ đã dùng)
- * - employeeId: nhân viên đang đăng nhập (người lập hóa đơn)
+ * - stay: kết quả stayAPI.getCheckOutContext() (data)
  * - onClose
  * - onCompleted(result): gọi ngay khi trả phòng thành công (cha làm mới sơ đồ phòng, hiện thông báo)
- * - onRefresh: tải lại dữ liệu khi gặp lỗi trạng thái thay đổi đồng thời (E4)
+ * - onRefresh: tải lại sơ đồ phòng khi lượt lưu trú đã bị thao tác khác thay đổi
  */
-const REFRESH_ERROR_CODES = ["E3", "E4"];
+const UNIT_LABELS = { NGAY: "đêm", GIO: "giờ" };
+const BILLING_RULES = {
+  GIO: "Theo giờ: làm tròn lên theo tổng thời lượng, tối thiểu 1 giờ",
+  NGAY: "Theo ngày: tính theo số đêm giữa ngày nhận và ngày trả, tối thiểu 1 đêm",
+};
+const REFRESH_INTERVAL_MS = 30000;
 
-const SummaryRow = ({ label, value, strong }) => (
+const SummaryRow = ({ label, value }) => (
   <div className="flex justify-between items-center">
     <span className="font-title-md text-title-md text-on-surface">{label}</span>
-    <span
-      className={`font-title-lg text-title-lg ${strong ? "font-bold text-primary" : "font-semibold text-on-surface"}`}
-    >
-      {value}
-    </span>
+    <span className="font-title-lg text-title-lg font-semibold text-on-surface">{value}</span>
   </div>
 );
 
-const CheckOutForm = ({ stay, employeeId, onClose, onCompleted, onRefresh }) => {
-  const { customer, room, detail, receipt, services } = stay;
-  const [now, setNow] = useState(() => new Date());
+const CheckOutForm = ({ stay, onClose, onCompleted, onRefresh }) => {
+  const [bill, setBill] = useState(stay);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState(null);
+  const [banner, setBanner] = useState(null); // { type: 'error' | 'warning', message, stale? }
   const [result, setResult] = useState(null);
 
-  // Tổng tiền dự kiến dùng thời điểm hiện tại làm giờ trả phòng, cập nhật mỗi 30 giây
+  // Chi phí tạm tính phụ thuộc thời điểm hiện tại nên lấy lại từ máy chủ định kỳ
   useEffect(() => {
     if (result) return undefined;
-    const timer = setInterval(() => setNow(new Date()), 30000);
-    return () => clearInterval(timer);
-  }, [result]);
-
-  const actualCheckIn = detail.actualCheckIn ?? detail.expectedCheckIn;
-
-  const estimate = useMemo(() => {
-    try {
-      return {
-        bill: calculateStay({
-          rentalType: detail.rentalType,
-          unitPrice: detail.unitPrice,
-          checkInAt: actualCheckIn,
-          checkOutAt: now,
-          services,
-        }),
-      };
-    } catch (e) {
-      if (e instanceof BillingError) return { error: e.message };
-      throw e;
-    }
-  }, [detail, actualCheckIn, now, services]);
+    let cancelled = false;
+    const timer = setInterval(async () => {
+      try {
+        const response = await stayAPI.getCheckOutContext(stay.bookingDetailId);
+        if (!cancelled) setBill(response.data);
+      } catch {
+        // Bỏ qua: chi phí cuối cùng vẫn do máy chủ tính lại khi xác nhận
+      }
+    }, REFRESH_INTERVAL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [stay.bookingDetailId, result]);
 
   const handleConfirm = async () => {
-    setError(null);
+    setBanner(null);
     setIsProcessing(true);
     try {
-      const data = await rentalService.checkOut({
-        detailId: detail.id,
-        employeeId,
+      const response = await stayAPI.checkOut(bill.bookingDetailId, {
+        expectedTotalAmount: bill.totalAmount,
       });
-      setResult(data);
-      onCompleted?.(data);
-    } catch (e) {
-      setError({
-        code: e instanceof RentalError ? e.code : "E7",
-        // E7: lỗi ngoài dự kiến, không tiết lộ thông tin nội bộ
-        message:
-          e instanceof RentalError
-            ? e.message
-            : "Trả phòng thất bại do lỗi hệ thống. Vui lòng thử lại sau.",
-      });
+      setResult(response.data);
+      onCompleted?.(response.data);
+    } catch (error) {
+      const data = error.response?.data;
+      if (error.response?.status === 409 && data?.data?.totalAmount !== undefined) {
+        // Chi phí đã đổi (thời gian trôi qua hoặc có dịch vụ mới): hiện chi phí mới để xác nhận lại
+        setBill(data.data);
+        setBanner({ type: "warning", message: data.message });
+      } else {
+        setBanner({
+          type: "error",
+          // Lượt lưu trú không còn hợp lệ hoặc xung đột đồng thời: cần tải lại dữ liệu
+          stale: [400, 404, 409].includes(error.response?.status),
+          message: getErrorMessage(error, "Trả phòng thất bại. Vui lòng thử lại sau."),
+        });
+      }
     } finally {
       setIsProcessing(false);
     }
@@ -96,12 +90,11 @@ const CheckOutForm = ({ stay, employeeId, onClose, onCompleted, onRefresh }) => 
 
   // ---------------------------------------------------- Màn hình hóa đơn sau khi trả phòng
   if (result) {
-    const { invoice } = result;
     return (
       <ModalShell
         icon="receipt_long"
         title="Trả phòng thành công"
-        subtitle={`Phòng ${room.code} • Hóa đơn #${String(invoice.invoiceId).padStart(6, "0")}`}
+        subtitle={`Phòng ${result.roomCode} • Hóa đơn ${result.invoiceCode}`}
         onClose={onClose}
         footer={
           <button
@@ -115,9 +108,8 @@ const CheckOutForm = ({ stay, employeeId, onClose, onCompleted, onRefresh }) => 
         <div className="flex items-center gap-space-sm p-space-md rounded-lg bg-tertiary-container text-on-tertiary-container">
           <span className="material-symbols-outlined">check_circle</span>
           <p className="font-body-md">
-            Hóa đơn đã được tạo với trạng thái{" "}
-            <span className="font-bold">Chưa thanh toán (UNPAID)</span>. Trả phòng
-            không đồng nghĩa với thanh toán.
+            Hóa đơn đã được tạo với trạng thái <span className="font-bold">Chưa thanh toán</span>. Trả
+            phòng không đồng nghĩa với thanh toán.
           </p>
         </div>
 
@@ -126,34 +118,27 @@ const CheckOutForm = ({ stay, employeeId, onClose, onCompleted, onRefresh }) => 
             icon="receipt_long"
             title="Thông tin hóa đơn"
             rows={[
-              {
-                label: "Mã hóa đơn",
-                value: `#${String(invoice.invoiceId).padStart(6, "0")}`,
-              },
-              { label: "Khách hàng", value: invoice.customerName },
-              { label: "Nhận phòng thực tế", value: formatDateTime(invoice.checkInAt) },
-              { label: "Trả phòng thực tế", value: formatDateTime(invoice.checkOutAt) },
+              { label: "Mã hóa đơn", value: result.invoiceCode },
+              { label: "Khách hàng", value: bill.customerName },
+              { label: "Nhận phòng thực tế", value: formatDateTime(result.actualCheckIn) },
+              { label: "Trả phòng thực tế", value: formatDateTime(result.actualCheckOut) },
             ]}
           />
           <InfoCard
             icon="payments"
             title="Chi phí cuối cùng"
             rows={[
-              { label: "Tiền phòng", value: formatPrice(invoice.roomTotal) },
-              { label: "Tiền dịch vụ", value: formatPrice(invoice.servicesTotal) },
-              {
-                label: "Tổng tiền",
-                value: formatPrice(invoice.total),
-                highlight: true,
-              },
+              { label: "Tiền phòng", value: formatPrice(result.roomAmount) },
+              { label: "Tiền dịch vụ", value: formatPrice(result.serviceAmount) },
+              { label: "Tổng tiền", value: formatPrice(result.totalAmount), highlight: true },
             ]}
           />
         </section>
 
         <ul className="space-y-space-xs text-on-surface-variant font-body-sm list-disc list-inside">
-          <li>Phòng {room.code} đã chuyển sang trạng thái "Đang dọn dẹp".</li>
+          <li>Phòng {result.roomCode} đã chuyển sang trạng thái "Đang dọn dẹp".</li>
           <li>
-            Phiếu thuê hiện ở trạng thái:{" "}
+            Phiếu thuê {result.receiptCode} hiện ở trạng thái:{" "}
             {RECEIPT_STATUS_LABELS[result.receiptStatus] ?? result.receiptStatus}.
           </li>
         </ul>
@@ -162,14 +147,14 @@ const CheckOutForm = ({ stay, employeeId, onClose, onCompleted, onRefresh }) => 
   }
 
   // --------------------------------------------------------------- Form xác nhận trả phòng
-  const needsRefresh = error && REFRESH_ERROR_CODES.includes(error.code);
-  const { bill } = estimate;
+  const unitLabel = UNIT_LABELS[bill.pricingMethod];
+  const services = bill.services ?? [];
 
   return (
     <ModalShell
       icon="logout"
-      title={`Trả phòng ${room.code}`}
-      subtitle={`${room.typeName} • Phiếu thuê ${formatReceiptCode(receipt.id)}`}
+      title={`Trả phòng ${bill.roomCode}`}
+      subtitle={`${bill.roomTypeName} • Phiếu thuê ${bill.receiptCode}`}
       maxWidth="max-w-4xl"
       onClose={onClose}
       closeDisabled={isProcessing}
@@ -182,7 +167,7 @@ const CheckOutForm = ({ stay, employeeId, onClose, onCompleted, onRefresh }) => 
           >
             Hủy
           </button>
-          {needsRefresh ? (
+          {banner?.stale ? (
             <button
               onClick={() => {
                 onRefresh?.();
@@ -196,7 +181,7 @@ const CheckOutForm = ({ stay, employeeId, onClose, onCompleted, onRefresh }) => 
           ) : (
             <button
               onClick={handleConfirm}
-              disabled={isProcessing || !bill}
+              disabled={isProcessing}
               className="px-space-xl py-space-md rounded-lg bg-primary hover:bg-primary/90 text-on-primary font-label-lg text-label-lg font-bold transition-colors flex items-center gap-space-sm shadow-lg disabled:opacity-50"
             >
               {isProcessing ? (
@@ -215,10 +200,16 @@ const CheckOutForm = ({ stay, employeeId, onClose, onCompleted, onRefresh }) => 
         </>
       }
     >
-      {(error || estimate.error) && (
-        <div className="flex items-start gap-space-sm p-space-md rounded-lg bg-error-container text-on-error-container border border-error/30">
-          <span className="material-symbols-outlined">error</span>
-          <p className="font-body-md">{error?.message ?? estimate.error}</p>
+      {banner && (
+        <div
+          className={`flex items-start gap-space-sm p-space-md rounded-lg border ${
+            banner.type === "warning"
+              ? "bg-tertiary-container text-on-tertiary-container border-tertiary/30"
+              : "bg-error-container text-on-error-container border-error/30"
+          }`}
+        >
+          <span className="material-symbols-outlined">{banner.type === "warning" ? "warning" : "error"}</span>
+          <p className="font-body-md whitespace-pre-line">{banner.message}</p>
         </div>
       )}
 
@@ -227,42 +218,27 @@ const CheckOutForm = ({ stay, employeeId, onClose, onCompleted, onRefresh }) => 
           icon="person"
           title="Thông tin khách hàng"
           rows={[
-            { label: "Họ và tên", value: customer.name },
-            { label: "Số điện thoại", value: customer.phone },
-            { label: "CCCD/Passport", value: customer.citizenId },
+            { label: "Họ và tên", value: bill.customerName },
+            { label: "Số điện thoại", value: bill.customerPhone },
           ]}
         />
         <InfoCard
           icon="hotel"
           title="Thông tin lưu trú"
           rows={[
-            { label: "Phòng", value: `${room.code} - ${room.typeName}` },
-            {
-              label: "Hình thức thuê",
-              value: RENTAL_TYPE_LABELS[detail.rentalType],
-            },
-            {
-              label: "Số khách",
-              value: `${detail.actualGuests ?? detail.bookedGuests} người`,
-            },
-            { label: "Nhận phòng thực tế", value: formatDateTime(actualCheckIn) },
-            {
-              label: "Trả phòng (dự kiến)",
-              value: formatDateTime(now),
-              highlight: true,
-            },
+            { label: "Phòng", value: `${bill.roomCode} - ${bill.roomTypeName}` },
+            { label: "Hình thức thuê", value: RENTAL_TYPE_LABELS[bill.pricingMethod] },
+            { label: "Số khách", value: `${bill.actualGuests} người` },
+            { label: "Nhận phòng thực tế", value: formatDateTime(bill.actualCheckIn) },
+            { label: "Trả phòng (tạm tính)", value: formatDateTime(bill.checkOutAt), highlight: true },
           ]}
         />
       </section>
 
       <section className="space-y-space-md">
         <div className="flex items-center gap-space-sm">
-          <span className="material-symbols-outlined text-primary text-[28px]">
-            receipt
-          </span>
-          <h3 className="font-title-lg text-title-lg font-bold text-on-surface">
-            Bảng chi tiết chi phí
-          </h3>
+          <span className="material-symbols-outlined text-primary text-[28px]">receipt</span>
+          <h3 className="font-title-lg text-title-lg font-bold text-on-surface">Bảng chi tiết chi phí</h3>
         </div>
 
         <div className="overflow-x-auto rounded-lg border border-outline-variant">
@@ -278,25 +254,25 @@ const CheckOutForm = ({ stay, employeeId, onClose, onCompleted, onRefresh }) => 
             <tbody className="divide-y divide-outline-variant">
               <tr>
                 <td className="px-space-md py-space-md font-semibold text-on-surface">
-                  Tiền phòng {room.code} ({RENTAL_TYPE_LABELS[detail.rentalType].toLowerCase()})
+                  Tiền phòng {bill.roomCode} ({RENTAL_TYPE_LABELS[bill.pricingMethod].toLowerCase()})
                 </td>
                 <td className="px-space-md py-space-md text-right text-on-surface">
-                  {formatPrice(detail.unitPrice)}/{bill?.unitLabel}
+                  {formatPrice(bill.unitPrice)}/{unitLabel}
                 </td>
                 <td className="px-space-md py-space-md text-center text-on-surface">
-                  {bill ? `${bill.units} ${bill.unitLabel}` : "—"}
+                  {bill.billedUnits} {unitLabel}
                 </td>
                 <td className="px-space-md py-space-md text-right font-semibold text-primary">
-                  {bill ? formatPrice(bill.roomTotal) : "—"}
+                  {formatPrice(bill.roomAmount)}
                 </td>
               </tr>
-              {(bill?.serviceLines ?? []).map((s) => (
-                <tr key={s.id}>
+              {services.map((s) => (
+                <tr key={s.serviceUsageId}>
                   <td className="px-space-md py-space-md text-on-surface">
                     <span className="material-symbols-outlined text-primary text-[18px] align-middle mr-space-xs">
                       room_service
                     </span>
-                    {s.name}
+                    {s.serviceName}
                   </td>
                   <td className="px-space-md py-space-md text-right text-on-surface">
                     {formatPrice(s.unitPrice)}/{s.unit}
@@ -305,16 +281,13 @@ const CheckOutForm = ({ stay, employeeId, onClose, onCompleted, onRefresh }) => 
                     {s.quantity} {s.unit}
                   </td>
                   <td className="px-space-md py-space-md text-right font-semibold text-primary">
-                    {formatPrice(s.total)}
+                    {formatPrice(s.amount)}
                   </td>
                 </tr>
               ))}
               {services.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={4}
-                    className="px-space-md py-space-md text-center text-on-surface-variant"
-                  >
+                  <td colSpan={4} className="px-space-md py-space-md text-center text-on-surface-variant">
                     Khách không sử dụng dịch vụ nào (tiền dịch vụ = 0đ)
                   </td>
                 </tr>
@@ -326,15 +299,15 @@ const CheckOutForm = ({ stay, employeeId, onClose, onCompleted, onRefresh }) => 
 
       <section className="space-y-space-md">
         <div className="p-space-lg rounded-lg bg-surface-container-low border border-outline-variant space-y-space-sm">
-          <SummaryRow label="Tiền phòng:" value={bill ? formatPrice(bill.roomTotal) : "—"} />
-          <SummaryRow label="Tiền dịch vụ:" value={bill ? formatPrice(bill.servicesTotal) : "—"} />
+          <SummaryRow label="Tiền phòng:" value={formatPrice(bill.roomAmount)} />
+          <SummaryRow label="Tiền dịch vụ:" value={formatPrice(bill.serviceAmount)} />
         </div>
         <div className="p-space-xl rounded-lg bg-primary-container border-2 border-primary flex items-center justify-between">
           <span className="font-headline-sm text-headline-sm font-bold text-on-primary-container">
-            TỔNG TIỀN DỰ KIẾN:
+            TỔNG TIỀN TẠM TÍNH:
           </span>
           <span className="font-headline-lg text-headline-lg font-bold text-primary">
-            {bill ? formatPrice(bill.total) : "—"}
+            {formatPrice(bill.totalAmount)}
           </span>
         </div>
       </section>
@@ -342,12 +315,12 @@ const CheckOutForm = ({ stay, employeeId, onClose, onCompleted, onRefresh }) => 
       <section className="p-space-lg rounded-lg bg-surface-container-low border border-outline-variant">
         <ul className="space-y-space-xs text-on-surface-variant font-body-sm list-disc list-inside">
           <li>
-            Khi xác nhận, hệ thống kiểm tra lại và tính lại tiền phòng theo thời gian trả
-            phòng thực tế; số tiền cuối cùng có thể khác số dự kiến.
+            Khi xác nhận, hệ thống kiểm tra lại và tính lại tiền phòng theo thời gian trả phòng thực tế; nếu số tiền
+            thay đổi, bạn sẽ được xem số mới trước khi trả phòng.
           </li>
-          <li>Hóa đơn được tạo với trạng thái Chưa thanh toán (UNPAID); phòng chuyển sang "Đang dọn dẹp".</li>
+          <li>Hóa đơn được tạo với trạng thái Chưa thanh toán; phòng chuyển sang "Đang dọn dẹp".</li>
           <li>Trả phòng này không tự động trả các phòng khác trong cùng phiếu thuê.</li>
-          <li>Cách tính thời lượng — {BILLING_RULES[detail.rentalType]}.</li>
+          <li>Cách tính thời lượng — {BILLING_RULES[bill.pricingMethod]}.</li>
         </ul>
       </section>
     </ModalShell>
@@ -356,7 +329,7 @@ const CheckOutForm = ({ stay, employeeId, onClose, onCompleted, onRefresh }) => 
 
 const CheckOutModal = ({ isOpen, stay, ...props }) => {
   if (!isOpen || !stay) return null;
-  return <CheckOutForm key={stay.detail.id} stay={stay} {...props} />;
+  return <CheckOutForm key={stay.bookingDetailId} stay={stay} {...props} />;
 };
 
 export default CheckOutModal;
