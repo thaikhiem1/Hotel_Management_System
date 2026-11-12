@@ -54,3 +54,9 @@ export const RECEIPT_STATUS_LABELS = {
   DANG_LUU_TRU: "Đang lưu trú",
   DA_TRA_PHONG: "Đã trả phòng",
 };
+
+export const PAYMENT_METHOD_LABELS = {
+  CASH: "Tiền mặt",
+  CARD: "Thẻ",
+  TRANSFER: "Chuyển khoản",
+};

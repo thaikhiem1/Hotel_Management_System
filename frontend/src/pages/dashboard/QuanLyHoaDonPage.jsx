@@ -1,431 +1,205 @@
-import { useState, useMemo } from 'react';
-import { usePermission } from '@/utils/usePermission';
+import { useEffect, useState } from 'react';
 import { InvoiceCard, InvoiceDetailModal } from '@/components/invoice';
+import { Pagination } from '@/components/shared';
+import { invoiceAPI } from '@/services/api';
 import { cn } from '@/utils/lib/util';
+import { formatPrice } from '@/utils/format';
+import { getErrorMessage } from '@/utils/notification';
+
+const PAGE_SIZE = 12;
+const SEARCH_DELAY_MS = 400;
+
+/** Date -> "yyyy-MM-dd" theo ngày địa phương */
+const toIsoDate = (date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+
+/** Khoảng ngày lập theo lựa chọn nhanh; toDate bao gồm cả ngày đó */
+const dateRange = (preset) => {
+  const today = new Date();
+  const back = (days) => {
+    const d = new Date(today);
+    d.setDate(d.getDate() - days);
+    return toIsoDate(d);
+  };
+  if (preset === 'today') return { fromDate: toIsoDate(today), toDate: toIsoDate(today) };
+  if (preset === 'week') return { fromDate: back(6), toDate: toIsoDate(today) };
+  if (preset === 'month') return { fromDate: back(29), toDate: toIsoDate(today) };
+  return {};
+};
+
+const StatCard = ({ icon, label, value, sub, tone }) => (
+  <div className={cn('p-space-lg rounded-lg bg-gradient-to-br border', tone.box)}>
+    <div className="flex items-center gap-space-md">
+      <span className={cn('material-symbols-outlined text-[32px]', tone.icon)}>{icon}</span>
+      <div className="min-w-0">
+        <p className="font-body-sm text-body-sm text-on-surface-variant">{label}</p>
+        <p className="font-headline-md text-headline-md font-bold text-on-surface truncate">{value}</p>
+        {sub && <p className="font-body-sm text-body-sm text-on-surface-variant truncate">{sub}</p>}
+      </div>
+    </div>
+  </div>
+);
+
+const TONES = {
+  primary: { box: 'from-primary/10 to-primary/5 border-primary/20', icon: 'text-primary' },
+  tertiary: { box: 'from-tertiary/10 to-tertiary/5 border-tertiary/20', icon: 'text-tertiary' },
+  error: { box: 'from-error/10 to-error/5 border-error/20', icon: 'text-error' },
+  secondary: { box: 'from-secondary/10 to-secondary/5 border-secondary/20', icon: 'text-secondary' },
+};
 
 /**
- * QuanLyHoaDonPage - Trang quản lý hóa đơn
- * Hiển thị danh sách hóa đơn, lọc theo trạng thái, tìm kiếm
- * Chuẩn hóa 100% theo Database.md - bảng invoices
- * 
- * Features:
- * - Danh sách hóa đơn với thông tin chi tiết
- * - Lọc theo trạng thái thanh toán (PAID/UNPAID)
- * - Tìm kiếm theo mã hóa đơn, tên khách hàng
- * - Xem chi tiết hóa đơn
- * - In hóa đơn
+ * QuanLyHoaDonPage - Quản lý hóa đơn trả phòng
+ * Danh sách phân trang từ máy chủ, lọc theo trạng thái/thời gian, tìm kiếm; xem chi tiết, thanh toán, in/tải ảnh/PDF.
+ * API: GET /api/invoices, GET /api/invoices/stats, GET/POST /api/invoices/{id}[/pay]
  */
 const QuanLyHoaDonPage = () => {
-  const { check: checkWrite } = usePermission('stays');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all'); // 'all', 'PAID', 'UNPAID'
-  const [dateFilter, setDateFilter] = useState('all'); // 'all', 'today', 'week', 'month'
-  const [selectedInvoice, setSelectedInvoice] = useState(null);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [keywordInput, setKeywordInput] = useState('');
+  const [keyword, setKeyword] = useState('');
+  const [status, setStatus] = useState('all'); // all | PAID | UNPAID
+  const [datePreset, setDatePreset] = useState('all'); // all | today | week | month
+  const [page, setPage] = useState(0);
+  const [reloadToken, setReloadToken] = useState(0);
+  const [result, setResult] = useState({ key: null, data: null, error: null });
+  const [stats, setStats] = useState(null);
+  const [selectedInvoiceId, setSelectedInvoiceId] = useState(null);
 
-  // TODO: Lấy dữ liệu từ API
-  // API: GET /api/invoices
-  // Query params: ?status={PAID|UNPAID}&fromDate={date}&toDate={date}&search={query}
-  // Authorization: Bearer token (quyền lễ tân/quản lý)
-  // Response: Array of invoices with relations: employee, rental_receipt (with customer, booking_details)
-  
-  // Mock data - Chuẩn hóa theo Database.md
-  const  [invoices, setInvoices] = useState([
-  // giữ nguyên toàn bộ mockInvoices của bạn ở đây
-  {
-      invoice_id: 1,
-      invoice_date: '2026-09-25',
-      total_amount: 5450000,
-      employee_id: 1,
-      rental_receipt_id: 1,
-      payment_status: 'PAID',
-      employee: {
-        employee_id: 1,
-        full_name: 'Nguyễn Văn A',
-        position: 'Lễ tân'
-      },
-      rental_receipt: {
-        rental_receipt_id: 1,
-        rental_date: '2026-09-23',
-        customer_id: 1,
-        customer: {
-          customer_id: 1,
-          full_name: 'Trần Thị B',
-          phone: '0901234567',
-          citizen_id_passport: '079123456789',
-          nationality: 'Việt Nam',
-          gender: 'Nữ'
-        },
-        booking_details: [
-          {
-            booking_detail_id: 1,
-            room_id: 101,
-            number_of_guests: 2,
-            check_in_date: '2026-09-23',
-            check_out_date: '2026-09-25',
-            unit_price: 2500000,
-            total_amount: 5000000,
-            room: {
-              room_id: 101,
-              room_code: 'P101',
-              room_type: {
-                room_type_name: 'Deluxe'
-              }
-            }
-          }
-        ]
-      }
-    },
-    {
-      invoice_id: 2,
-      invoice_date: '2026-09-25',
-      total_amount: 3200000,
-      employee_id: 2,
-      rental_receipt_id: 2,
-      payment_status: 'UNPAID',
-      employee: {
-        employee_id: 2,
-        full_name: 'Lê Văn C',
-        position: 'Lễ tân'
-      },
-      rental_receipt: {
-        rental_receipt_id: 2,
-        rental_date: '2026-09-24',
-        customer_id: 2,
-        customer: {
-          customer_id: 2,
-          full_name: 'Phạm Văn D',
-          phone: '0912345678',
-          citizen_id_passport: '001234567890',
-          nationality: 'Việt Nam',
-          gender: 'Nam'
-        },
-        booking_details: [
-          {
-            booking_detail_id: 2,
-            room_id: 102,
-            number_of_guests: 1,
-            check_in_date: '2026-09-24',
-            check_out_date: '2026-09-25',
-            unit_price: 1800000,
-            total_amount: 1800000,
-            room: {
-              room_id: 102,
-              room_code: 'P102',
-              room_type: {
-                room_type_name: 'Standard'
-              }
-            }
-          }
-        ]
-      }
-    },
-    {
-      invoice_id: 3,
-      invoice_date: '2026-09-24',
-      total_amount: 7800000,
-      employee_id: 1,
-      rental_receipt_id: 3,
-      payment_status: 'PAID',
-      employee: {
-        employee_id: 1,
-        full_name: 'Nguyễn Văn A',
-        position: 'Lễ tân'
-      },
-      rental_receipt: {
-        rental_receipt_id: 3,
-        rental_date: '2026-09-20',
-        customer_id: 3,
-        customer: {
-          customer_id: 3,
-          full_name: 'Hoàng Thị E',
-          phone: '0923456789',
-          citizen_id_passport: 'A12345678',
-          nationality: 'Hàn Quốc',
-          gender: 'Nữ'
-        },
-        booking_details: [
-          {
-            booking_detail_id: 3,
-            room_id: 201,
-            number_of_guests: 3,
-            check_in_date: '2026-09-20',
-            check_out_date: '2026-09-24',
-            unit_price: 1800000,
-            total_amount: 7200000,
-            room: {
-              room_id: 201,
-              room_code: 'P201',
-              room_type: {
-                room_type_name: 'Suite'
-              }
-            }
-          }
-        ]
-      }
-    }
-]);
-    
-  // Lọc theo ngày
-  const dateFilteredInvoices = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+  // Tìm kiếm áp dụng sau khi ngừng gõ một lúc, và đưa về trang đầu
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setKeyword(keywordInput.trim());
+      setPage(0);
+    }, SEARCH_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [keywordInput]);
 
-    switch (dateFilter) {
-      case 'today':
-        return invoices.filter(inv => {
-          const invDate = new Date(inv.invoice_date);
-          invDate.setHours(0, 0, 0, 0);
-          return invDate.getTime() === today.getTime();
+  const queryKey = JSON.stringify({ page, keyword, status, datePreset, reloadToken });
+  const loading = result.key !== queryKey;
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const response = await invoiceAPI.getAll({
+          page,
+          size: PAGE_SIZE,
+          keyword,
+          status: status === 'all' ? undefined : status,
+          ...dateRange(datePreset),
         });
-      
-      case 'week':
-        const weekAgo = new Date(today);
-        weekAgo.setDate(weekAgo.getDate() - 7);
-        return invoices.filter(inv => {
-          const invDate = new Date(inv.invoice_date);
-          return invDate >= weekAgo && invDate <= today;
-        });
-      
-      case 'month':
-        const monthAgo = new Date(today);
-        monthAgo.setMonth(monthAgo.getMonth() - 1);
-        return invoices.filter(inv => {
-          const invDate = new Date(inv.invoice_date);
-          return invDate >= monthAgo && invDate <= today;
-        });
-      
-      default:
-        return invoices;
-    }
-  }, [dateFilter]);
-
-  // Lọc theo trạng thái và tìm kiếm
-  const filteredInvoices = useMemo(() => {
-    let result = dateFilteredInvoices;
-
-    // Lọc theo trạng thái
-    if (statusFilter !== 'all') {
-      result = result.filter(inv => inv.payment_status === statusFilter);
-    }
-
-    // Tìm kiếm
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase().trim();
-      result = result.filter(inv => {
-        const invoiceId = String(inv.invoice_id).padStart(6, '0');
-        const customerName = inv.rental_receipt?.customer?.full_name?.toLowerCase() || '';
-        const rentalReceiptId = String(inv.rental_receipt_id).padStart(6, '0');
-        
-        return (
-          invoiceId.includes(query) ||
-          customerName.includes(query) ||
-          rentalReceiptId.includes(query)
-        );
-      });
-    }
-
-    return result;
-  }, [dateFilteredInvoices, statusFilter, searchQuery]);
-
-  // Thống kê
-  const statistics = useMemo(() => {
-    const total = invoices.length;
-    const paid = invoices.filter(inv => inv.payment_status === 'PAID').length;
-    const unpaid = invoices.filter(inv => inv.payment_status === 'UNPAID').length;
-    const totalRevenue = invoices
-      .filter(inv => inv.payment_status === 'PAID')
-      .reduce((sum, inv) => sum + inv.total_amount, 0);
-
-    return { total, paid, unpaid, totalRevenue };
-  }, [invoices]);
-
-  const handleViewDetail = (invoice) => {
-    setSelectedInvoice(invoice);
-    setIsDetailModalOpen(true);
-  };
-
-  const handlePrintInvoice = (invoice) => {
-    // TODO: Implement print functionality
-    // Có thể sử dụng window.print() hoặc tạo PDF
-    console.log('Print invoice:', invoice);
-    alert(`In hóa đơn #${String(invoice.invoice_id).padStart(6, '0')}`);
-  };
-
-  const handleRefresh = () => {
-    setIsLoading(true);
-    // TODO: Gọi API để refresh dữ liệu
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 600);
-  };
-const handlePayment = (invoice) => {
-  if (!checkWrite()) return;
-  setIsLoading(true);
-
-  setTimeout(() => {
-    const updatedInvoice = {
-      ...invoice,
-      payment_status: 'PAID',
-      payment_at: new Date().toISOString(),
+        if (!cancelled) setResult({ key: queryKey, data: response.data, error: null });
+      } catch (error) {
+        if (!cancelled) {
+          setResult({ key: queryKey, data: null, error: getErrorMessage(error, 'Không thể tải danh sách hóa đơn.') });
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
     };
+  }, [queryKey, page, keyword, status, datePreset]);
 
-    setInvoices(prevInvoices =>
-      prevInvoices.map(inv =>
-        inv.invoice_id === invoice.invoice_id
-          ? updatedInvoice
-          : inv
-      )
-    );
+  // Thẻ thống kê: toàn hệ thống, tải lại khi làm mới hoặc có thanh toán
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const response = await invoiceAPI.getStats();
+        if (!cancelled) setStats(response.data);
+      } catch {
+        if (!cancelled) setStats(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [reloadToken]);
 
-    setSelectedInvoice(updatedInvoice);
+  const refresh = () => setReloadToken((t) => t + 1);
+  const data = result.data;
+  const invoices = data?.content ?? [];
+  const hasFilter = keyword || status !== 'all' || datePreset !== 'all';
 
-    setIsLoading(false);
+  const selectClass =
+    'w-full px-space-md py-space-md rounded-lg bg-surface border border-outline-variant focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 text-on-surface transition-colors';
 
-    alert(
-      `Thanh toán hóa đơn #${String(invoice.invoice_id).padStart(6, '0')} thành công`
-    );
-  }, 600);
-};
   return (
     <div className="w-full space-y-space-lg">
-      {/* Page Header */}
       <div className="flex flex-wrap items-center justify-between gap-space-md">
         <div>
-          <h1 className="font-headline-lg text-headline-lg font-bold text-on-surface mb-space-xs">
-            Quản lý Hóa đơn
-          </h1>
-          <p className="font-body-lg text-body-lg text-on-surface-variant">
-            Quản lý và theo dõi các hóa đơn thanh toán
-          </p>
+          <h1 className="font-headline-lg text-headline-lg font-bold text-on-surface mb-space-xs">Quản lý Hóa đơn</h1>
+          <p className="font-body-lg text-body-lg text-on-surface-variant">Quản lý, thanh toán và in các hóa đơn trả phòng</p>
         </div>
         <button
-          onClick={handleRefresh}
-          disabled={isLoading}
+          onClick={refresh}
+          disabled={loading}
           className="flex items-center gap-space-sm px-space-lg py-space-md rounded-lg bg-primary hover:bg-primary/90 text-on-primary font-label-lg text-label-lg font-semibold transition-colors disabled:opacity-50"
         >
-          <span className={cn('material-symbols-outlined', isLoading && 'animate-spin')}>
-            refresh
-          </span>
+          <span className={cn('material-symbols-outlined', loading && 'animate-spin')}>refresh</span>
           <span>Làm mới</span>
         </button>
       </div>
 
-      {/* Statistics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-lg">
-        <div className="p-space-lg rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
-          <div className="flex items-center gap-space-md mb-space-sm">
-            <span className="material-symbols-outlined text-primary text-[32px]">
-              receipt_long
-            </span>
-            <div>
-              <p className="font-body-sm text-body-sm text-on-surface-variant">
-                Tổng hóa đơn
-              </p>
-              <p className="font-headline-md text-headline-md font-bold text-on-surface">
-                {statistics.total}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-space-lg rounded-lg bg-gradient-to-br from-tertiary/10 to-tertiary/5 border border-tertiary/20">
-          <div className="flex items-center gap-space-md mb-space-sm">
-            <span className="material-symbols-outlined text-tertiary text-[32px]">
-              check_circle
-            </span>
-            <div>
-              <p className="font-body-sm text-body-sm text-on-surface-variant">
-                Đã thanh toán
-              </p>
-              <p className="font-headline-md text-headline-md font-bold text-on-surface">
-                {statistics.paid}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-space-lg rounded-lg bg-gradient-to-br from-error/10 to-error/5 border border-error/20">
-          <div className="flex items-center gap-space-md mb-space-sm">
-            <span className="material-symbols-outlined text-error text-[32px]">
-              pending
-            </span>
-            <div>
-              <p className="font-body-sm text-body-sm text-on-surface-variant">
-                Chưa thanh toán
-              </p>
-              <p className="font-headline-md text-headline-md font-bold text-on-surface">
-                {statistics.unpaid}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-space-lg rounded-lg bg-gradient-to-br from-secondary/10 to-secondary/5 border border-secondary/20">
-          <div className="flex items-center gap-space-md mb-space-sm">
-            <span className="material-symbols-outlined text-secondary text-[32px]">
-              payments
-            </span>
-            <div>
-              <p className="font-body-sm text-body-sm text-on-surface-variant">
-                Doanh thu
-              </p>
-              <p className="font-headline-md text-headline-md font-bold text-on-surface">
-                {(statistics.totalRevenue / 1000000).toFixed(1)}tr
-              </p>
-            </div>
-          </div>
-        </div>
+        <StatCard icon="receipt_long" label="Tổng hóa đơn" value={stats ? stats.totalInvoices : '—'} tone={TONES.primary} />
+        <StatCard icon="check_circle" label="Đã thanh toán" value={stats ? stats.paidInvoices : '—'} tone={TONES.tertiary} />
+        <StatCard
+          icon="pending"
+          label="Chưa thanh toán"
+          value={stats ? stats.unpaidInvoices : '—'}
+          sub={stats ? `Còn phải thu ${formatPrice(stats.unpaidAmount)}` : undefined}
+          tone={TONES.error}
+        />
+        <StatCard
+          icon="payments"
+          label="Đã thu"
+          value={stats ? formatPrice(stats.paidAmount) : '—'}
+          tone={TONES.secondary}
+        />
       </div>
 
-      {/* Filters */}
       <div className="p-space-lg rounded-lg bg-surface-container-low border border-outline-variant">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-space-lg">
-          {/* Search */}
-          <div className="lg:col-span-1">
-            <label className="block mb-space-sm font-label-md text-label-md text-on-surface font-semibold">
-              Tìm kiếm
-            </label>
+          <div>
+            <label className="block mb-space-sm font-label-md text-label-md text-on-surface font-semibold">Tìm kiếm</label>
             <div className="relative">
               <span className="absolute left-space-md top-1/2 -translate-y-1/2 material-symbols-outlined text-on-surface-variant">
                 search
               </span>
               <input
                 type="text"
-                placeholder="Mã hóa đơn, tên khách hàng..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Mã hóa đơn, phiếu thuê, khách hàng, phòng..."
+                value={keywordInput}
+                onChange={(e) => setKeywordInput(e.target.value)}
                 className="w-full pl-12 pr-space-md py-space-md rounded-lg bg-surface border border-outline-variant focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 text-on-surface placeholder:text-on-surface-variant transition-colors"
               />
             </div>
           </div>
-
-          {/* Status Filter */}
           <div>
             <label className="block mb-space-sm font-label-md text-label-md text-on-surface font-semibold">
               Trạng thái thanh toán
             </label>
             <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-space-md py-space-md rounded-lg bg-surface border border-outline-variant focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 text-on-surface transition-colors"
+              value={status}
+              onChange={(e) => {
+                setStatus(e.target.value);
+                setPage(0);
+              }}
+              className={selectClass}
             >
               <option value="all">Tất cả</option>
               <option value="PAID">Đã thanh toán</option>
               <option value="UNPAID">Chưa thanh toán</option>
             </select>
           </div>
-
-          {/* Date Filter */}
           <div>
-            <label className="block mb-space-sm font-label-md text-label-md text-on-surface font-semibold">
-              Thời gian
-            </label>
+            <label className="block mb-space-sm font-label-md text-label-md text-on-surface font-semibold">Ngày lập</label>
             <select
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
-              className="w-full px-space-md py-space-md rounded-lg bg-surface border border-outline-variant focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 text-on-surface transition-colors"
+              value={datePreset}
+              onChange={(e) => {
+                setDatePreset(e.target.value);
+                setPage(0);
+              }}
+              className={selectClass}
             >
               <option value="all">Tất cả</option>
               <option value="today">Hôm nay</option>
@@ -436,63 +210,53 @@ const handlePayment = (invoice) => {
         </div>
       </div>
 
-      {/* Results Info */}
-      <div className="flex flex-wrap items-center justify-between gap-space-md">
-        <p className="font-body-md text-body-md text-on-surface-variant">
-          Hiển thị <span className="font-semibold text-primary">{filteredInvoices.length}</span> hóa đơn
-        </p>
-      </div>
+      <p className="font-body-md text-body-md text-on-surface-variant">
+        Tìm thấy <span className="font-semibold text-primary">{data ? data.totalElements : 0}</span> hóa đơn
+      </p>
 
-      {/* Invoice List */}
-      {isLoading ? (
-        <div className="flex items-center justify-center py-space-2xl">
+      {loading ? (
+        <div className="flex items-center justify-center py-space-xl">
           <div className="flex flex-col items-center gap-space-md">
-            <span className="material-symbols-outlined text-[48px] text-primary animate-spin">
-              refresh
-            </span>
-            <p className="font-body-lg text-on-surface-variant">
-              Đang tải dữ liệu...
-            </p>
+            <span className="material-symbols-outlined text-[48px] text-primary animate-spin">refresh</span>
+            <p className="font-body-lg text-on-surface-variant">Đang tải dữ liệu...</p>
           </div>
         </div>
-      ) : filteredInvoices.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-space-2xl">
-          <span className="material-symbols-outlined text-[72px] text-on-surface-variant/30 mb-space-md">
-            receipt_long
-          </span>
-          <h3 className="font-title-lg text-title-lg font-semibold text-on-surface mb-space-sm">
-            Không tìm thấy hóa đơn
-          </h3>
+      ) : result.error ? (
+        <div className="p-space-lg rounded-lg bg-error-container text-on-error-container border border-error/30">
+          {result.error}
+        </div>
+      ) : invoices.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-space-xl">
+          <span className="material-symbols-outlined text-[72px] text-on-surface-variant/30 mb-space-md">receipt_long</span>
+          <h3 className="font-title-lg text-title-lg font-semibold text-on-surface mb-space-sm">Không tìm thấy hóa đơn</h3>
           <p className="font-body-md text-body-md text-on-surface-variant text-center max-w-md">
-            {searchQuery || statusFilter !== 'all' || dateFilter !== 'all'
-              ? 'Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm'
-              : 'Chưa có hóa đơn nào được tạo'}
+            {hasFilter ? 'Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm' : 'Hóa đơn được tạo khi khách trả phòng'}
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-space-lg">
-          {filteredInvoices.map((invoice) => (
-            <InvoiceCard
-              key={invoice.invoice_id}
-              invoice={invoice}
-              onView={handleViewDetail}
-              onPrint={handlePrintInvoice}
-            />
+          {invoices.map((invoice) => (
+            <InvoiceCard key={invoice.invoiceId} invoice={invoice} onView={(i) => setSelectedInvoiceId(i.invoiceId)} />
           ))}
         </div>
       )}
 
-      {/* Invoice Detail Modal */}
+      {data && (
+        <Pagination
+          page={data.number}
+          totalPages={data.totalPages}
+          totalElements={data.totalElements}
+          pageSize={data.size}
+          onPageChange={setPage}
+          disabled={loading}
+          unit="hóa đơn"
+        />
+      )}
+
       <InvoiceDetailModal
-        invoice={selectedInvoice}
-        isOpen={isDetailModalOpen}
-        onClose={() => {
-          setIsDetailModalOpen(false);
-          setSelectedInvoice(null);
-        }}
-        onPrint={handlePrintInvoice}
-        onPayment={handlePayment}
-        isLoading={isLoading}
+        invoiceId={selectedInvoiceId}
+        onClose={() => setSelectedInvoiceId(null)}
+        onPaid={refresh}
       />
     </div>
   );

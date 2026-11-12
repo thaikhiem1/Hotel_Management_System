@@ -178,6 +178,21 @@ export const stayAPI = {
     unwrap(apiClient.post(`/booking-details/${bookingDetailId}/services`, { lines, expectedTotalAmount })),
 };
 
+// HÓA ĐƠN: mọi vai trò xem; thanh toán chỉ lễ tân và quản lý
+export const invoiceAPI = {
+  /** GET /api/invoices - { page, size, keyword, status: PAID|UNPAID, fromDate, toDate (yyyy-MM-dd) }, mới nhất trước */
+  getAll: (params = {}) => unwrap(apiClient.get("/invoices", { params: compactParams(params) })),
+
+  /** GET /api/invoices/stats - số lượng và số tiền theo trạng thái */
+  getStats: () => unwrap(apiClient.get("/invoices/stats")),
+
+  /** GET /api/invoices/{id} - đầy đủ thông tin để xem chi tiết và in */
+  getById: (id) => unwrap(apiClient.get(`/invoices/${id}`)),
+
+  /** POST /api/invoices/{id}/pay - paymentMethod: CASH | CARD | TRANSFER; thời điểm và nhân viên thu tiền do máy chủ ghi */
+  pay: (id, paymentMethod) => unwrap(apiClient.post(`/invoices/${id}/pay`, { paymentMethod })),
+};
+
 // SƠ ĐỒ PHÒNG (Room Map) - UC-ROM-005, UC-ROM-006
 export const roomMapAPI = {
   /**

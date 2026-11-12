@@ -12,12 +12,11 @@ import {
 } from '@/components/dashboard';
 import { CreateBookingDialog } from '@/components/bookings';
 import { Pagination } from '@/components/shared';
-import { employeeAPI, roomMapAPI, roomTypeAPI, stayAPI } from '@/services/api';
+import { employeeAPI, invoiceAPI, roomMapAPI, roomTypeAPI, stayAPI } from '@/services/api';
 import { formatDateTime } from '@/utils/format';
 import { handleApiError, showSuccess, showWarning } from '@/utils/notification';
 import { toCheckInStay, toRoomCard, UI_STATUS_TO_DISPLAY } from '@/utils/rentalMappers';
 import { usePermission } from '@/utils/usePermission';
-import { mockHoaDon } from '@/services/mockData';
 
 /**
  * Trang chủ - Sơ đồ phòng trực quan (UC-ROM-005) và lọc danh sách phòng (UC-ROM-006)
@@ -69,7 +68,7 @@ const DashboardPage = () => {
   const [page, setPage] = useState(0);
   const [reloadToken, setReloadToken] = useState(0);
   const [mapState, setMapState] = useState({ loading: true, error: null, data: null });
-  const [extraStats, setExtraStats] = useState({ roomTypes: null, staff: null });
+  const [extraStats, setExtraStats] = useState({ roomTypes: null, staff: null, revenue: null });
 
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -125,20 +124,23 @@ const DashboardPage = () => {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [types, staff] = await Promise.allSettled([
+      const [types, staff, paidToday] = await Promise.allSettled([
         roomTypeAPI.getAll({ page: 0, size: 1 }),
-        canViewStaff ? employeeAPI.getAll({ page: 0, size: 1 }) : Promise.reject(new Error('no-access'))
+        canViewStaff ? employeeAPI.getAll({ page: 0, size: 1 }) : Promise.reject(new Error('no-access')),
+        // Doanh thu hôm nay: tổng tiền các hóa đơn được thanh toán trong ngày (máy chủ tính theo giờ khách sạn)
+        canViewRevenue ? invoiceAPI.getStats() : Promise.reject(new Error('no-access'))
       ]);
       if (cancelled) return;
       setExtraStats({
         roomTypes: types.status === 'fulfilled' ? types.value.data.totalElements : null,
-        staff: staff.status === 'fulfilled' ? staff.value.totalElements : null
+        staff: staff.status === 'fulfilled' ? staff.value.totalElements : null,
+        revenue: paidToday.status === 'fulfilled' ? Number(paidToday.value.data.paidTodayAmount || 0) : null
       });
     })();
     return () => {
       cancelled = true;
     };
-  }, [canViewStaff]);
+  }, [canViewStaff, canViewRevenue]);
 
   const data = mapState.data;
   const rooms = data ? data.rooms.content.map(toRoomCard) : [];
@@ -204,14 +206,10 @@ const DashboardPage = () => {
     const c = counts;
     const usable = c ? c.all - c.maintenance : 0;
     const occupancy = c && usable > 0 ? ((c.occupied / usable) * 100).toFixed(1) : '0.0';
-    const todayStr = new Date().toISOString().split('T')[0];
-    const todayRevenue = mockHoaDon
-      .filter((hd) => hd.NgHD === todayStr)
-      .reduce((sum, hd) => sum + (hd.TriGia || 0), 0);
     return {
       occupancy: `${occupancy}%`,
       roomTypes: extraStats.roomTypes != null ? String(extraStats.roomTypes) : '—',
-      revenue: `${(todayRevenue / 1000000).toFixed(1)} tr`,
+      revenue: extraStats.revenue != null ? `${(extraStats.revenue / 1000000).toFixed(1)} tr` : '—',
       staff: extraStats.staff != null ? String(extraStats.staff) : '—'
     };
   })();
@@ -397,7 +395,7 @@ const DashboardPage = () => {
           icon="payments"
           label="Doanh thu"
           value={stats.revenue}
-          subValue="VNĐ hôm nay (dữ liệu mẫu)"
+          subValue="VNĐ đã thu hôm nay"
           colorClass="text-tertiary"
         />
         )}
