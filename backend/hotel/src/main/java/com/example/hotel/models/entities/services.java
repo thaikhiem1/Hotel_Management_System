@@ -36,4 +36,8 @@ public class services {
     @ManyToOne
     @JoinColumn(name = "service_category_id", nullable = false)
     private service_categories category;
+
+    /** Đang được phép cung cấp; dịch vụ ngừng cung cấp không ghi nhận cho khách được nữa */
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
 }

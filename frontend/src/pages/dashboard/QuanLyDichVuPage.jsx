@@ -14,6 +14,7 @@ const toServiceViewModel = (service) => ({
   unitPrice: service.unitPrice,
   unit: service.unit,
   stockQuality: service.stockQuality ?? service.stockQuantity ?? null,
+  isActive: service.isActive ?? true,
 });
 
 const getApiErrorMessage = (error, fallbackMessage) => {
@@ -567,6 +568,11 @@ const QuanLyDichVuPage = () => {
                         <p className="font-title-md font-semibold text-on-surface">
                           {service.serviceName}
                         </p>
+                        {service.isActive === false && (
+                          <span className="inline-flex mt-space-xs px-space-sm py-space-xs rounded-full bg-outline/20 text-on-surface-variant font-label-sm font-semibold">
+                            Ngừng cung cấp
+                          </span>
+                        )}
                       </td>
 
                       <td className="px-space-lg py-space-lg">

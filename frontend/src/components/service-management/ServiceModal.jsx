@@ -15,7 +15,8 @@ const ServiceModal = ({
     serviceCategoryId: '',
     unitPrice: '',
     unit: '',
-    stockQuantity: ''
+    stockQuantity: '',
+    isActive: true
   });
 
   const [errors, setErrors] = useState({});
@@ -27,7 +28,8 @@ const ServiceModal = ({
         serviceCategoryId: initialData.serviceCateroriesId ?? '',
         unitPrice: initialData.unitPrice ?? '',
         unit: initialData.unit || '',
-        stockQuantity: initialData.stockQuality ?? ''
+        stockQuantity: initialData.stockQuality ?? '',
+        isActive: initialData.isActive ?? true
       });
     } else {
       setFormData({
@@ -35,7 +37,8 @@ const ServiceModal = ({
         serviceCategoryId: '',
         unitPrice: '',
         unit: '',
-        stockQuantity: ''
+        stockQuantity: '',
+        isActive: true
       });
     }
     setErrors({});
@@ -87,7 +90,8 @@ const ServiceModal = ({
         serviceCategoryId: Number(formData.serviceCategoryId),
         unitPrice: Number(formData.unitPrice),
         unit: formData.unit.trim(),
-        stockQuantity: formData.stockQuantity === '' ? null : Number(formData.stockQuantity)
+        stockQuantity: formData.stockQuantity === '' ? null : Number(formData.stockQuantity),
+        isActive: formData.isActive
       });
     }
   };
@@ -98,7 +102,8 @@ const ServiceModal = ({
       serviceCategoryId: initialData?.serviceCateroriesId ?? '',
       unitPrice: initialData?.unitPrice ?? '',
       unit: initialData?.unit || '',
-      stockQuantity: initialData?.stockQuality ?? ''
+      stockQuantity: initialData?.stockQuality ?? '',
+      isActive: initialData?.isActive ?? true
     };
     
     if (JSON.stringify(formData) !== JSON.stringify(initialValues)) {
@@ -260,6 +265,23 @@ const ServiceModal = ({
                 Dùng cho dịch vụ có hàng tồn kho (minibar, nước uống, v.v.)
               </p>
             </div>
+
+            {/* Đang được phép cung cấp */}
+            <label className="flex items-start gap-space-md cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.isActive}
+                onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                className="mt-1 w-5 h-5 rounded accent-primary cursor-pointer"
+              />
+              <span>
+                <span className="block font-label-lg text-on-surface">Đang cung cấp</span>
+                <span className="block text-on-surface-variant font-body-sm">
+                  Bỏ chọn để ngừng cung cấp: dịch vụ không còn xuất hiện khi ghi nhận cho khách, lịch sử cũ được giữ nguyên.
+                  Dịch vụ đã có lịch sử sử dụng không xóa được, hãy dùng cách này.
+                </span>
+              </span>
+            </label>
           </div>
         </form>
 

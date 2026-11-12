@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.hotel.models.dto.request.ServicesRequest;
@@ -27,8 +28,9 @@ public class ServicesController {
     final IServicesService _IServicesService;
 
     @GetMapping
-    public ResponseEntity<List<ServicesResponse>> getAll() {
-        return ResponseEntity.ok(_IServicesService.getAll());
+    public ResponseEntity<List<ServicesResponse>> getAll(
+            @RequestParam(defaultValue = "false") boolean activeOnly) {
+        return ResponseEntity.ok(_IServicesService.getAll(activeOnly));
     }
 
     @GetMapping("/{id}")

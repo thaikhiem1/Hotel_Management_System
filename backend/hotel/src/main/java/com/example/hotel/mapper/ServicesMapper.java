@@ -11,7 +11,7 @@ public class ServicesMapper {
     public ServicesResponse toServicesResponse(services service) {
         return new ServicesResponse(service.getServiceId(),service.getCategory().getServiceCategoriesId(), service.getServiceName(),
                 service.getCategory().getServiceCategoriesName(), service.getUnitPrice(),
-                service.getUnit(), service.getStockQuantity());
+                service.getUnit(), service.getStockQuantity(), service.getIsActive());
     }
 
     public services toEntities(ServicesRequest request) {

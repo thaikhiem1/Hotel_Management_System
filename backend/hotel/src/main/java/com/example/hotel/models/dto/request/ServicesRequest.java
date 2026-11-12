@@ -37,4 +37,7 @@ public class ServicesRequest {
     @NotBlank(message = "Đơn vị tính không được để trống")
     @Size(min = 1, max = 20, message = "Đơn vị tính phải có từ 1 đến 20 ký tự")
     private String unit;
+
+    /** Không gửi thì giữ nguyên (khi cập nhật) hoặc mặc định đang cung cấp (khi tạo mới) */
+    private Boolean isActive;
 }

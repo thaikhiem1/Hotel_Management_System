@@ -31,4 +31,7 @@ public class ServicesResponse {
 
     @JsonProperty("stockQuality")
     private Integer stockQuality;
+
+    @JsonProperty("isActive")
+    private Boolean isActive;
 }

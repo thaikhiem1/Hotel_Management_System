@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.hotel.exception.DuplicateResourceException;
+import com.example.hotel.exception.ResourceInUseException;
 import com.example.hotel.exception.ResourceNotFoundException;
 import com.example.hotel.mapper.ServicesMapper;
 import com.example.hotel.models.dto.request.ServicesRequest;
@@ -14,6 +15,7 @@ import com.example.hotel.models.dto.response.ServicesResponse;
 import com.example.hotel.models.entities.service_categories;
 import com.example.hotel.models.entities.services;
 import com.example.hotel.repositorys.ServiceCategoriesRepository;
+import com.example.hotel.repositorys.ServiceUsageRepository;
 import com.example.hotel.repositorys.ServicesRepository;
 import com.example.hotel.services.IServicesService;
 
@@ -25,10 +27,17 @@ public class ServicesService implements IServicesService {
     private final ServicesRepository servicesRepository;
     private final ServicesMapper servicesMapper;
     private final ServiceCategoriesRepository categoriesRepository;
+    private final ServiceUsageRepository serviceUsageRepository;
 
     @Override
     public List<ServicesResponse> getAll() {
-        return servicesRepository.findAll().stream()
+        return getAll(false);
+    }
+
+    @Override
+    public List<ServicesResponse> getAll(boolean activeOnly) {
+        List<services> found = activeOnly ? servicesRepository.findByIsActiveTrue() : servicesRepository.findAll();
+        return found.stream()
                 .map(servicesMapper::toServicesResponse)
                 .toList();
     }
@@ -75,6 +84,7 @@ public class ServicesService implements IServicesService {
         service.setStockQuantity(request.getStockQuantity());
         service.setUnit(unit);
         service.setCategory(categoryResult.get());
+        service.setIsActive(request.getIsActive() == null || request.getIsActive());
         services savedService = servicesRepository.save(service);
         return servicesMapper.toServicesResponse(savedService);
     }
@@ -115,6 +125,9 @@ public class ServicesService implements IServicesService {
         service.setStockQuantity(request.getStockQuantity());
         service.setUnit(unit);
         service.setCategory(categoryResult.get());
+        if (request.getIsActive() != null) {
+            service.setIsActive(request.getIsActive());
+        }
         services savedService = servicesRepository.save(service);
         return servicesMapper.toServicesResponse(savedService);
     }
@@ -131,8 +144,12 @@ public class ServicesService implements IServicesService {
             throw new ResourceNotFoundException("Không tìm thấy dịch vụ với ID: " + serviceId);
         }
 
-        // The current schema has no service-usage history relation, so this service
-        // can be physically deleted. A future history relation must prevent deletion.
+        // Dịch vụ đã có lịch sử sử dụng thì không xóa được, chuyển sang ngừng cung cấp để giữ lịch sử
+        if (serviceUsageRepository.existsByServiceServiceId(serviceId)) {
+            throw new ResourceInUseException(
+                    "Dịch vụ '" + serviceResult.get().getServiceName()
+                            + "' đã có lịch sử sử dụng nên không thể xóa. Hãy chuyển sang ngừng cung cấp.");
+        }
         servicesRepository.delete(serviceResult.get());
     }
 }
