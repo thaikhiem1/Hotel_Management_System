@@ -63,7 +63,7 @@ class RoomManagementIntegrationTest {
     @Value("${app.bootstrap-admin.username}") String adminUser;
     @Value("${app.bootstrap-admin.password}") String adminPass;
 
-    String adminToken;
+    String adminToken;   // token của tài khoản quản lý (manager)
     String receptionistToken;
     int customerId;
     room_types typeA, typeB;
@@ -73,7 +73,10 @@ class RoomManagementIntegrationTest {
         accounts admin = accountRepository.findByUsername(adminUser).orElseThrow();
         admin.setPasswordHash(passwordEncoder.encode(adminPass));
         accountRepository.saveAndFlush(admin);
-        adminToken = login(adminUser, adminPass);
+        accounts manager = accountRepository.findByUsername("manager").orElseThrow();
+        manager.setPasswordHash(passwordEncoder.encode("Mgr@12345"));
+        accountRepository.saveAndFlush(manager);
+        adminToken = login("manager", "Mgr@12345"); // chỉ quản lý được thêm/sửa/xóa phòng; tên biến giữ nguyên
 
         employees e = new employees();
         e.setFullName("Le Tan Quan Ly Phong");

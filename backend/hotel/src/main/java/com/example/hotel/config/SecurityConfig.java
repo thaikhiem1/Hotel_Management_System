@@ -20,8 +20,13 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
  * Phân quyền theo vai trò (ADMIN / MANAGER / RECEPTIONIST), xác thực bằng JWT stateless.
  *
  * - Công khai: POST /api/auth/login
- * - ADMIN, MANAGER: quản lý tài khoản, nhân viên; thêm/sửa/xóa phòng, loại phòng, dịch vụ
- * - Mọi tài khoản đã đăng nhập: các API còn lại (xem phòng/dịch vụ, khách hàng, ...)
+ * - Mọi tài khoản đã đăng nhập được XEM danh sách phòng, loại phòng, dịch vụ, nhóm dịch vụ, khách hàng, phiếu thuê,
+ *   sơ đồ phòng, hồ sơ cá nhân (lễ tân xem nhân viên/tài khoản bị chặn bên dưới).
+ * - ADMIN: chỉ quản lý tài khoản (xem, tạo, sửa); xem được mọi dữ liệu còn lại nhưng không thêm/sửa/xóa.
+ * - MANAGER: toàn quyền trừ tài khoản (không xem, không thao tác): nhân viên, phòng, loại phòng, dịch vụ, nhóm dịch vụ,
+ *   khách hàng, phiếu thuê, nhận phòng, trả phòng, ghi nhận dịch vụ.
+ * - RECEPTIONIST: lập phiếu thuê, nhận phòng, trả phòng, ghi nhận dịch vụ, quản lý khách hàng; chỉ xem phòng,
+ *   loại phòng, dịch vụ; không truy cập nhân viên và tài khoản.
  *
  * Cần phân quyền chi tiết hơn ở từng method: dùng @PreAuthorize("hasRole('ADMIN')").
  */
@@ -31,6 +36,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private static final String[] MANAGEMENT_ROLES = { "ADMIN", "MANAGER" };
+    /** Vai trò thực hiện nghiệp vụ lưu trú: lập phiếu, nhận/trả phòng, ghi nhận dịch vụ, khách hàng */
+    private static final String[] OPERATION_ROLES = { "RECEPTIONIST", "MANAGER" };
 
     @Bean
     public SecurityFilterChain securityFilterChain(
@@ -55,21 +62,14 @@ public class SecurityConfig {
                         // Ảnh đại diện được tải bằng thẻ img nên không gửi kèm JWT
                         .requestMatchers(HttpMethod.GET, "/uploads/avatars/**").permitAll()
 
-                        .requestMatchers("/api/accounts/**", "/api/employees/**")
-                        .hasAnyRole(MANAGEMENT_ROLES)
+                        // Tài khoản: chỉ ADMIN
+                        .requestMatchers("/api/accounts/**").hasRole("ADMIN")
 
-                        // Lập phiếu thuê: lễ tân là actor chính; quản lý/admin cũng được dùng
-                        .requestMatchers("/api/rental-receipts/**")
-                        .hasAnyRole("RECEPTIONIST")
+                        // Nhân viên: ADMIN và MANAGER xem, chỉ MANAGER thêm/sửa
+                        .requestMatchers(HttpMethod.GET, "/api/employees/**").hasAnyRole(MANAGEMENT_ROLES)
+                        .requestMatchers("/api/employees/**").hasRole("MANAGER")
 
-                        // Xem dịch vụ khách đã sử dụng của một lượt lưu trú: lễ tân và quản lý
-                        .requestMatchers(HttpMethod.GET, "/api/booking-details/*/services")
-                        .hasAnyRole("RECEPTIONIST", "MANAGER", "ADMIN")
-
-                        // Nhận phòng, trả phòng, ghi nhận dịch vụ theo chi tiết đặt phòng: lễ tân là actor chính
-                        .requestMatchers("/api/booking-details/**")
-                        .hasAnyRole("RECEPTIONIST")
-
+                        // Phòng, loại phòng, dịch vụ, nhóm dịch vụ: mọi vai trò xem, chỉ MANAGER thêm/sửa/xóa
                         .requestMatchers(HttpMethod.GET,
                                 "/api/rooms/**", "/api/roomTypes/**",
                                 "/api/services/**", "/api/service-categories/**")
@@ -77,7 +77,21 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/rooms/**", "/api/roomTypes/**",
                                 "/api/services/**", "/api/service-categories/**")
-                        .hasAnyRole(MANAGEMENT_ROLES)
+                        .hasRole("MANAGER")
+
+                        // Khách hàng và phiếu thuê: mọi vai trò xem, RECEPTIONIST và MANAGER thêm/sửa/xóa
+                        .requestMatchers(HttpMethod.GET, "/api/customers/**", "/api/rental-receipts/**")
+                        .authenticated()
+                        .requestMatchers("/api/customers/**", "/api/rental-receipts/**")
+                        .hasAnyRole(OPERATION_ROLES)
+
+                        // Xem dịch vụ khách đã sử dụng của một lượt lưu trú: mọi vai trò
+                        .requestMatchers(HttpMethod.GET, "/api/booking-details/*/services")
+                        .authenticated()
+
+                        // Nhận phòng, trả phòng, ghi nhận dịch vụ theo chi tiết đặt phòng
+                        .requestMatchers("/api/booking-details/**")
+                        .hasAnyRole(OPERATION_ROLES)
 
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);

@@ -362,7 +362,10 @@ class ServiceUsageIntegrationTest {
     @Test
     void deleteService_withUsageHistory_isRefused_butUnusedServiceCanBeDeleted() throws Exception {
         record(stayId, request(line(laundry, 1))).andExpect(status().isCreated());
-        String adminToken = login(adminUser, adminPass);
+        accounts manager = accountRepository.findByUsername("manager").orElseThrow();
+        manager.setPasswordHash(passwordEncoder.encode("Mgr@12345"));
+        accountRepository.saveAndFlush(manager);
+        String adminToken = login("manager", "Mgr@12345"); // chỉ quản lý xóa được dịch vụ
 
         send(delete("/api/services/" + laundry.getServiceId()), adminToken, null).andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message").value(

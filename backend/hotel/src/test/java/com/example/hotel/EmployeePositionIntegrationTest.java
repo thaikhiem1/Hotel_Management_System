@@ -49,17 +49,17 @@ class EmployeePositionIntegrationTest {
 
     String token;
 
-    /** Tài khoản admin có thể do migration seed tạo với mật khẩu khác cấu hình: đặt lại trong giao dịch test (được rollback) */
-    private void resetAdminPassword() {
-        accounts admin = accountRepository.findByUsername(adminUser).orElseThrow();
-        admin.setPasswordHash(passwordEncoder.encode(adminPass));
-        accountRepository.saveAndFlush(admin);
+    /** Tài khoản manager mẫu (seed) có mật khẩu khác: đặt lại trong giao dịch test (được rollback). Chỉ quản lý được sửa nhân viên */
+    private void resetManagerPassword() {
+        accounts manager = accountRepository.findByUsername("manager").orElseThrow();
+        manager.setPasswordHash(passwordEncoder.encode(adminPass));
+        accountRepository.saveAndFlush(manager);
     }
 
     @BeforeEach
     void loginAsAdmin() throws Exception {
-        resetAdminPassword();
-        String body = json.writeValueAsString(Map.of("username", adminUser, "password", adminPass));
+        resetManagerPassword();
+        String body = json.writeValueAsString(Map.of("username", "manager", "password", adminPass));
         String res = mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         token = json.readTree(res).get("data").get("accessToken").asText();
@@ -170,6 +170,15 @@ class EmployeePositionIntegrationTest {
     @Test
     void newAccount_takesRoleFromEmployeePosition_andRoleChangeUpdatesPosition() throws Exception {
         employees manager = employee("MANAGER", "0933000015", "079300000015", "p15@x.vn");
+
+        // Tài khoản chỉ do ADMIN quản lý: đổi sang token admin cho test này
+        accounts adminAccount = accountRepository.findByUsername(adminUser).orElseThrow();
+        adminAccount.setPasswordHash(passwordEncoder.encode(adminPass));
+        accountRepository.saveAndFlush(adminAccount);
+        String loginRes = mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(Map.of("username", adminUser, "password", adminPass))))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        token = json.readTree(loginRes).get("data").get("accessToken").asText();
 
         String res = send(post("/api/accounts"),
                 Map.of("username", "pos_new", "password", "Pass@1234", "employeeId", manager.getEmployeeId()))
