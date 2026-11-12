@@ -315,7 +315,7 @@ const AddServiceForm = ({ room, onClose, onRecorded }) => {
 
             <div className="flex-shrink-0 bg-surface-container-low px-space-xl py-space-lg border-t-2 border-outline-variant">
               {selectedIds.length > 0 ? (
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-space-md">
                   <div>
                     <p className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wide mb-space-xs">
                       Đã chọn {selectedIds.length} dịch vụ (tạm tính)

@@ -180,7 +180,7 @@ const RoomDetailModal = ({ room, isOpen, onClose, onOpenAddService, servicesVers
         </div>
 
         {/* Footer Actions */}
-        <div className="sticky bottom-0 bg-surface-container-low px-space-xl py-space-lg border-t border-outline-variant flex gap-space-md justify-end">
+        <div className="sticky bottom-0 bg-surface-container-low px-space-xl py-space-lg border-t border-outline-variant flex flex-wrap gap-space-md justify-end">
           <button
             onClick={onClose}
             className="px-space-lg py-space-md rounded-lg bg-surface-container-highest hover:bg-surface-container-high text-on-surface font-label-lg text-label-lg font-semibold transition-colors"

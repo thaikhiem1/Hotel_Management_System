@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { usePermission } from "@/utils/usePermission";
 import RoomTable from "@/components/room-management/RoomTable";
 import { Pagination } from "@/components/shared";
 import RoomFormDialog from "@/components/room-management/RoomFormDialog";
@@ -7,6 +8,7 @@ import { roomAPI, roomTypeAPI } from "@/services/api";
 import { showSuccess, handleApiError } from "@/utils/notification";
 
 const QuanLyPhongPage = () => {
+  const { check: checkWrite } = usePermission("rooms");
   // State quản lý dữ liệu phòng (sẽ được thay thế bằng API call)
   const [rooms, setRooms] = useState([]);
 
@@ -88,12 +90,14 @@ const QuanLyPhongPage = () => {
   const totalPages = Math.ceil(rooms.length / itemsPerPage);
 
   const handleAddNew = () => {
+    if (!checkWrite()) return;
     setEditMode("add");
     setSelectedRoom(null);
     setIsFormDialogOpen(true);
   };
 
   const handleEdit = (room) => {
+    if (!checkWrite()) return;
     setEditMode("edit");
     setSelectedRoom(room);
     setIsFormDialogOpen(true);
@@ -103,6 +107,7 @@ const QuanLyPhongPage = () => {
    * Mở dialog xác nhận xóa
    */
   const handleDelete = (room) => {
+    if (!checkWrite()) return;
     setSelectedRoom(room);
     setIsDeleteDialogOpen(true);
   };
@@ -169,7 +174,7 @@ const QuanLyPhongPage = () => {
   return (
     <div className="w-full space-y-space-lg">
       {/* Page Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-space-md">
         <div>
           <h1 className="text-lg font-headline-lg text-headline-lg text-on-surface">
             Quản lý phòng

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { cn } from "@/utils/lib/util";
-import { resolveAvatarUrl } from "@/utils/avatar";
+import { resolveAvatarUrl, DEFAULT_AVATAR } from "@/utils/avatar";
 import { POSITION_OPTIONS, ROLE_LABELS, ROLES } from "@/utils/auth";
 
 const EmployeeProfileDialog = ({
@@ -313,7 +313,7 @@ const EmployeeProfileDialog = ({
                   className="w-32 h-32 rounded-full object-cover ring-4 ring-primary/20"
                   onError={(e) => {
                     e.currentTarget.onerror = null;
-                    e.currentTarget.src = "/avatars/profileNam.jpg";
+                    e.currentTarget.src = DEFAULT_AVATAR;
                   }}
                 />
               </div>
@@ -643,7 +643,7 @@ const EmployeeProfileDialog = ({
 
           {/* Action Buttons */}
           {isEditMode && (
-            <div className="flex items-center justify-end gap-space-md pt-space-md border-t border-outline-variant">
+            <div className="flex flex-wrap items-center justify-end gap-space-md pt-space-md border-t border-outline-variant">
               <button
                 type="button"
                 onClick={mode === "view" ? handleToggleEdit : onClose}

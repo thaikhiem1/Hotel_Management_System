@@ -49,7 +49,7 @@ const CustomerTable = ({ customers, onEdit, onDelete, isLoading }) => {
 
   return (
     <div className="overflow-x-auto rounded-lg border border-outline-variant bg-surface-container-low">
-      <table className="w-full">
+      <table className="w-full min-w-[720px]">
         <thead className="bg-surface-container-high">
           <tr>
             <th className="px-space-md py-space-sm text-left font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">

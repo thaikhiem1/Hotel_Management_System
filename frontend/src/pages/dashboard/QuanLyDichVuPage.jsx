@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { cn } from "@/utils/lib/util";
+import { usePermission } from "@/utils/usePermission";
 import ServiceModal from "@/components/service-management/ServiceModal";
 import CategoryModal from "@/components/service-management/CategoryModal";
 import { GenericDeleteDialog, Pagination } from "@/components/shared";
@@ -26,6 +27,8 @@ const getApiErrorMessage = (error, fallbackMessage) => {
 };
 
 const QuanLyDichVuPage = () => {
+  const { check: checkWrite } = usePermission("services");
+  const { canView: canViewCategories } = usePermission("serviceCategories");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
 
@@ -197,6 +200,7 @@ const QuanLyDichVuPage = () => {
   };
 
   const handleOpenEditService = async (service) => {
+    if (!checkWrite()) return;
     try {
       setIsLoadingServiceDetails(true);
       const serviceDetails = await serviceAPI.getById(service.serviceId);
@@ -318,7 +322,7 @@ const QuanLyDichVuPage = () => {
       {!loading && !error && (
         <>
           {/* Header */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-space-md">
             <div>
               <h1 className="font-headline-xl text-headline-xl text-on-surface font-bold mb-space-xs">
                 Quản lý dịch vụ
@@ -329,9 +333,10 @@ const QuanLyDichVuPage = () => {
               </p>
             </div>
 
-            <div className="flex gap-space-md">
+            <div className="flex flex-wrap gap-space-md">
+              {canViewCategories && (
               <button
-                onClick={() => setIsCategoryModalOpen(true)}
+                onClick={() => checkWrite() && setIsCategoryModalOpen(true)}
                 className="flex items-center gap-space-sm px-space-lg py-space-md rounded-lg bg-secondary hover:bg-secondary/80 text-on-secondary font-label-lg font-semibold transition-colors shadow-md"
               >
                 <span className="material-symbols-outlined text-[24px]">
@@ -340,9 +345,10 @@ const QuanLyDichVuPage = () => {
 
                 <span>Quản lý loại dịch vụ</span>
               </button>
+              )}
 
               <button
-                onClick={() => setIsAddModalOpen(true)}
+                onClick={() => checkWrite() && setIsAddModalOpen(true)}
                 className="flex items-center gap-space-sm px-space-lg py-space-md rounded-lg bg-primary hover:bg-primary/80 text-on-primary font-label-lg font-semibold transition-colors shadow-md"
               >
                 <span className="material-symbols-outlined text-[24px]">
@@ -374,6 +380,7 @@ const QuanLyDichVuPage = () => {
               </div>
             </div>
 
+            {canViewCategories && (
             <div className="p-space-lg rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-700 shadow-lg">
               <div className="flex items-center gap-space-md">
                 <span className="material-symbols-outlined text-white text-[32px]">
@@ -391,6 +398,7 @@ const QuanLyDichVuPage = () => {
                 </div>
               </div>
             </div>
+            )}
 
             <div className="p-space-lg rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 shadow-lg">
               <div className="flex items-center gap-space-md">
@@ -448,6 +456,7 @@ const QuanLyDichVuPage = () => {
           </div>
 
           {/* Category Tabs */}
+          {canViewCategories && (
           <div className="flex gap-space-md overflow-x-auto pb-space-xs scrollbar-hide">
             <button
               onClick={() => {
@@ -516,10 +525,11 @@ const QuanLyDichVuPage = () => {
               );
             })}
           </div>
+          )}
 
           {/* Table */}
-          <div className="rounded-lg border-2 border-outline-variant overflow-hidden bg-surface shadow-lg">
-            <table className="w-full">
+          <div className="rounded-lg border-2 border-outline-variant overflow-x-auto bg-surface shadow-lg">
+            <table className="w-full min-w-[720px]">
               <thead className="bg-gradient-to-r from-surface-container-low to-surface-container">
                 <tr>
                   <th className="px-space-lg py-space-md text-left font-label-lg text-on-surface uppercase tracking-wide">
@@ -629,6 +639,7 @@ const QuanLyDichVuPage = () => {
 
                           <button
                             onClick={() => {
+                              if (!checkWrite()) return;
                               setSelectedService(service);
                               setIsDeleteModalOpen(true);
                             }}

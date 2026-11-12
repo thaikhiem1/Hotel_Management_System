@@ -50,7 +50,7 @@ const ModalShell = ({
       </div>
 
       {footer && (
-        <div className="bg-surface-container-low px-space-xl py-space-lg border-t border-outline-variant flex gap-space-md justify-end">
+        <div className="bg-surface-container-low px-space-xl py-space-lg border-t border-outline-variant flex flex-wrap gap-space-md justify-end">
           {footer}
         </div>
       )}

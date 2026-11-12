@@ -650,3 +650,83 @@ input[type="checkbox"]:checked {
 /* ============================================
    End of Global Styles
    ============================================ */
+
+/* ============================================
+   Responsive: mobile và tablet
+   Ghi đè không nằm trong @layer nên thắng các tiện ích cùng tên; chỉ áp dụng ở màn hình hẹp.
+   ============================================ */
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+img,
+video {
+  max-width: 100%;
+}
+
+@media (max-width: 767px) {
+  .text-headline-lg {
+    font-size: var(--font-size-headline-lg-mobile);
+    line-height: var(--line-height-headline-lg-mobile);
+  }
+  .text-headline-md {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+  }
+  .text-headline-sm {
+    font-size: 1.125rem;
+    line-height: 1.5rem;
+  }
+  .p-space-xl {
+    padding: var(--spacing-space-md);
+  }
+  .px-space-xl {
+    padding-left: var(--spacing-space-md);
+    padding-right: var(--spacing-space-md);
+  }
+  .py-space-xl {
+    padding-top: var(--spacing-space-md);
+    padding-bottom: var(--spacing-space-md);
+  }
+  .p-space-lg {
+    padding: var(--spacing-space-md);
+  }
+  .px-space-lg {
+    padding-left: var(--spacing-space-md);
+    padding-right: var(--spacing-space-md);
+  }
+  .gap-space-lg {
+    gap: var(--spacing-space-md);
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .p-space-xl {
+    padding: var(--spacing-space-lg);
+  }
+  .px-space-xl {
+    padding-left: var(--spacing-space-lg);
+    padding-right: var(--spacing-space-lg);
+  }
+}
+
+/* ============================================
+   Danh sách chọn (select/combobox): nền và chữ của từng mục luôn tương phản ở cả hai giao diện.
+   Phần danh sách xổ xuống do trình duyệt vẽ và không kế thừa nền trong suốt của ô chọn.
+   ============================================ */
+select option,
+select optgroup {
+  background-color: var(--color-surface-container-high);
+  color: var(--color-on-surface);
+}
+
+select option:checked {
+  background-color: var(--color-primary-container);
+  color: var(--color-on-primary-container);
+}
+
+select option:disabled {
+  color: var(--color-on-surface-variant);
+}

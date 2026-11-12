@@ -73,7 +73,7 @@ const BookingTable = ({
 
   return (
     <div className="overflow-x-auto rounded-lg bg-surface-container-low">
-      <table className="w-full">
+      <table className="w-full min-w-[720px]">
         <thead>
           <tr className="border-b border-surface-container-high">
             <th className="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">

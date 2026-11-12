@@ -1,9 +1,5 @@
 import { cn } from '@/utils/lib/util';
-import { useAuth } from '@/contexts/AuthContext';
 import { formatPrice } from '@/utils/format';
-
-// Vai trò đăng nhập -> mã vai trò dùng trong cấu hình nút bên dưới (0: Admin, 1: Lễ tân, 2: Quản lý)
-const ROLE_CODE = { ADMIN: 0, RECEPTIONIST: 1, MANAGER: 2 };
 
 /**
  * RoomCard - Thẻ phòng trên sơ đồ phòng (UC-ROM-005)
@@ -11,9 +7,6 @@ const ROLE_CODE = { ADMIN: 0, RECEPTIONIST: 1, MANAGER: 2 };
  * cam (đang dọn dẹp), xám (đang bảo trì).
  */
 const RoomCard = ({ room, onAction }) => {
-  const { user } = useAuth();
-  const userRole = ROLE_CODE[user?.role];
-
   const getStatusConfig = (status) => {
     const configs = {
       available: {
@@ -21,8 +14,8 @@ const RoomCard = ({ room, onAction }) => {
         color: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-400',
         icon: 'check_circle',
         actions: [
-          { id: 'view', label: 'Xem chi tiết', icon: 'visibility', variant: 'secondary', roles: [0, 1, 2] },
-          { id: 'book', label: 'Đặt phòng ngay', icon: 'add_circle', variant: 'primary', roles: [0, 1, 2] }
+          { id: 'view', label: 'Xem chi tiết', icon: 'visibility', variant: 'secondary' },
+          { id: 'book', label: 'Đặt phòng ngay', icon: 'add_circle', variant: 'primary' }
         ]
       },
       reserved: {
@@ -30,10 +23,10 @@ const RoomCard = ({ room, onAction }) => {
         color: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400',
         icon: 'event',
         actions: [
-          { id: 'view', label: 'Xem chi tiết', icon: 'visibility', variant: 'secondary', roles: [0, 1, 2] },
+          { id: 'view', label: 'Xem chi tiết', icon: 'visibility', variant: 'secondary' },
           // Chỉ hiện khi lượt đặt tóm tắt đã đến giờ nhận phòng
-          { id: 'checkin', label: 'Nhận phòng', icon: 'login', variant: 'primary', roles: [1], when: (r) => r.canCheckIn !== false },
-          { id: 'cancel', label: 'Hủy đặt', icon: 'cancel', variant: 'error', roles: [0, 2] }
+          { id: 'checkin', label: 'Nhận phòng', icon: 'login', variant: 'primary', when: (r) => r.canCheckIn !== false },
+          { id: 'cancel', label: 'Hủy đặt', icon: 'cancel', variant: 'error' }
         ]
       },
       occupied: {
@@ -41,9 +34,9 @@ const RoomCard = ({ room, onAction }) => {
         color: 'bg-error/20 text-error',
         icon: 'person',
         actions: [
-          { id: 'view', label: 'Xem chi tiết', icon: 'visibility', variant: 'secondary', roles: [0, 1, 2] },
-          { id: 'service', label: 'Thêm dịch vụ', icon: 'room_service', variant: 'tertiary', roles: [1] },
-          { id: 'checkout', label: 'Trả phòng', icon: 'logout', variant: 'primary', roles: [1] }
+          { id: 'view', label: 'Xem chi tiết', icon: 'visibility', variant: 'secondary' },
+          { id: 'service', label: 'Thêm dịch vụ', icon: 'room_service', variant: 'tertiary' },
+          { id: 'checkout', label: 'Trả phòng', icon: 'logout', variant: 'primary' }
         ]
       },
       cleaning: {
@@ -51,8 +44,8 @@ const RoomCard = ({ room, onAction }) => {
         color: 'bg-orange-500/20 text-orange-700 dark:text-orange-400',
         icon: 'cleaning_services',
         actions: [
-          { id: 'view', label: 'Xem chi tiết', icon: 'visibility', variant: 'secondary', roles: [0, 1, 2] },
-          { id: 'ready', label: 'Đã vệ sinh xong', icon: 'done_all', variant: 'primary', roles: [0, 1] }
+          { id: 'view', label: 'Xem chi tiết', icon: 'visibility', variant: 'secondary' },
+          { id: 'ready', label: 'Đã vệ sinh xong', icon: 'done_all', variant: 'primary' }
         ]
       },
       maintenance: {
@@ -60,8 +53,8 @@ const RoomCard = ({ room, onAction }) => {
         color: 'bg-outline/20 text-on-surface-variant',
         icon: 'engineering',
         actions: [
-          { id: 'view', label: 'Xem chi tiết', icon: 'visibility', variant: 'secondary', roles: [0, 1, 2] },
-          { id: 'complete', label: 'Đã sửa chữa xong', icon: 'done', variant: 'primary', roles: [0, 2] }
+          { id: 'view', label: 'Xem chi tiết', icon: 'visibility', variant: 'secondary' },
+          { id: 'complete', label: 'Đã sửa chữa xong', icon: 'done', variant: 'primary' }
         ]
       }
     };
@@ -80,14 +73,8 @@ const RoomCard = ({ room, onAction }) => {
     return variants[variant] || variants.secondary;
   };
 
-  // Lọc nút theo quyền của người dùng và điều kiện hiển thị của từng nút
-  const getFilteredActions = (actions) => {
-    return actions.filter(action => {
-      if (action.when && !action.when(room)) return false;
-      if (!action.roles || action.roles.length === 0) return true;
-      return action.roles.includes(userRole);
-    });
-  };
+  // Mọi vai trò thấy đủ nút; quyền được kiểm tra khi bấm (không có quyền thì báo chung, không mở form con)
+  const getFilteredActions = (actions) => actions.filter(action => !action.when || action.when(room));
 
   const matched = room.matchedBooking;
   const showMatched = matched && matched.bookingDetailId !== room.bookingDetailId;

@@ -43,7 +43,7 @@ const DateRangeFilter = ({ onFilterChange, currentFilter }) => {
       </h3>
 
       {/* Filter Type Selection */}
-      <div className="flex gap-space-sm mb-space-lg">
+      <div className="flex flex-wrap gap-space-sm mb-space-lg">
         <button
           onClick={() => setFilterType('month')}
           className={cn(

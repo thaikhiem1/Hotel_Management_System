@@ -2,29 +2,28 @@ import { useState, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/utils/lib/util";
 import ResizeHandle from "./ResizeHandle";
-import logo from "@/assets/ronaldo_02.jpg";
-import avatar from "@/assets/ronaldo_10.webp";
-import { resolveAvatarUrl } from "@/utils/avatar";
 import { useAuth } from "@/contexts/AuthContext";
-import { MANAGEMENT_ROLES, ROLE_LABELS } from "@/utils/auth";
-const Sidebar = ({ onWidthChange }) => {
+import { viewRoles } from "@/utils/permissions";
+import {
+  SIDEBAR_MAX_WIDTH,
+  SIDEBAR_MIN_WIDTH,
+  getInitialSidebarWidth,
+  saveSidebarWidth,
+} from "@/utils/sidebarWidth";
+const Sidebar = ({ onWidthChange, isDesktop = true, isOpen = false, onClose }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
   // Load saved width from localStorage or use default
-  const [sidebarWidth, setSidebarWidth] = useState(() => {
-    const savedWidth = localStorage.getItem("sidebarWidth");
-    return savedWidth ? parseInt(savedWidth) : 384;
-  });
+  const [sidebarWidth, setSidebarWidth] = useState(getInitialSidebarWidth);
 
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef(null);
 
-  const MIN_WIDTH = 280; // Minimum sidebar width
-  const MAX_WIDTH = 600; // Maximum sidebar width
+  const MIN_WIDTH = SIDEBAR_MIN_WIDTH;
+  const MAX_WIDTH = SIDEBAR_MAX_WIDTH;
 
   const { user, logout } = useAuth();
-  const employee = user?.employee;
 
   const handleLogout = () => {
     logout();
@@ -46,7 +45,7 @@ const Sidebar = ({ onWidthChange }) => {
       if (newWidth >= MIN_WIDTH && newWidth <= MAX_WIDTH) {
         setSidebarWidth(newWidth);
         // Save to localStorage
-        localStorage.setItem("sidebarWidth", newWidth.toString());
+        saveSidebarWidth(newWidth);
         if (onWidthChange) {
           onWidthChange(newWidth);
         }
@@ -139,19 +138,19 @@ const Sidebar = ({ onWidthChange }) => {
           path: "/employees",
           label: "Quản lý nhân viên",
           icon: "group",
-          roles: MANAGEMENT_ROLES,
+          roles: viewRoles("employees"),
         },
         {
           path: "/accounts",
           label: "Quản lý tài khoản",
           icon: "manage_accounts",
-          roles: MANAGEMENT_ROLES,
+          roles: viewRoles("accounts"),
         },
         {
           path: "/reports",
           label: "Báo cáo & Thống kê",
           icon: "insights",
-          roles: MANAGEMENT_ROLES,
+          roles: viewRoles("reports"),
         },
       ],
     },
@@ -172,21 +171,35 @@ const Sidebar = ({ onWidthChange }) => {
   return (
     <aside
       ref={sidebarRef}
-      style={{ width: `${sidebarWidth}px` }}
-      className="fixed left-0 top-0 bottom-0 bg-surface-container-lowest z-50 flex flex-col shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]"
+      style={isDesktop ? { width: `${sidebarWidth}px` } : undefined}
+      className={cn(
+        "fixed left-0 top-0 bottom-0 bg-surface-container-lowest z-50 flex flex-col shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]",
+        !isDesktop &&
+          "w-72 max-w-[85vw] transition-transform duration-300 " + (isOpen ? "translate-x-0" : "-translate-x-full"),
+      )}
     >
       {/* Header with Logo */}
-      <div className="h-20 px-gutter-lg flex items-center gap-space-md bg-surface-container-low">
-        <img
-          alt="Grand Palace Hotel Logo"
-          className="h-8 w-auto object-contain"
-          src={logo}
-        />
-        <div className="flex flex-col">
-          <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">
+      <div className="h-20 shrink-0 px-space-md lg:px-space-lg flex items-center gap-space-md text-white bg-gradient-to-r from-[#4f3a0c] via-[#7a5c16] to-[#a87f25] border-b-2 border-[#e2c36d]/70 shadow-[0_6px_20px_-6px_rgba(79,58,12,0.55)]">
+        <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-white/15 border border-white/30">
+          <span className="material-symbols-outlined text-[#ffe9a8] text-[28px]">hotel</span>
+        </div>
+        <div className="flex flex-col leading-tight min-w-0 flex-1">
+          <span className="font-headline-sm text-headline-sm font-bold text-white tracking-wide truncate">
+            Grand Palace
+          </span>
+          <span className="font-label-sm text-label-sm text-[#ffe9a8] uppercase tracking-widest truncate">
             Luxury Operations System
           </span>
         </div>
+        {!isDesktop && (
+          <button
+            onClick={onClose}
+            aria-label="Đóng menu"
+            className="p-space-sm rounded-lg text-white/90 hover:bg-white/15 transition-colors"
+          >
+            <span className="material-symbols-outlined text-[24px]">close</span>
+          </button>
+        )}
       </div>
       {/* Navigation Menu */}
       <nav className="flex-1 overflow-y-auto px-space-md py-space-sm space-y-space-xs">
@@ -201,6 +214,7 @@ const Sidebar = ({ onWidthChange }) => {
               <Link
                 key={item.path}
                 to={item.path}
+                onClick={isDesktop ? undefined : onClose}
                 className={cn(
                   "flex items-center px-space-md py-space-sm rounded-lg font-label-lg text-label-lg transition-all",
                   isActive(item.path)
@@ -221,25 +235,6 @@ const Sidebar = ({ onWidthChange }) => {
       {/* Footer with Logout */}
       <div className="p-space-md bg-surface-container-low border-t border-surface-container-high">
         <div className="space-y-space-sm">
-          {/* User Info Card */}
-          <div className="p-space-md rounded-lg bg-surface-container-high">
-            <div className="flex items-center gap-space-sm mb-space-sm">
-              <img
-                alt="User Avatar"
-                className="w-10 h-10 rounded-full object-cover"
-                src={employee?.avatar ? resolveAvatarUrl(employee.avatar) : avatar}
-              />
-              <div className="flex-1 min-w-0">
-                <p className="font-label-lg text-label-lg text-on-surface font-semibold truncate">
-                  {employee?.fullName || user?.username}
-                </p>
-                <p className="font-label-sm text-label-sm text-primary uppercase tracking-wider">
-                  {ROLE_LABELS[user?.role] || employee?.position}
-                </p>
-              </div>
-            </div>
-          </div>
-
           {/* Logout Button */}
           <button
             onClick={handleLogout}
@@ -256,7 +251,7 @@ const Sidebar = ({ onWidthChange }) => {
       </div>
 
       {/* Resize Handle */}
-      <ResizeHandle isResizing={isResizing} onMouseDown={startResizing} />
+      {isDesktop && <ResizeHandle isResizing={isResizing} onMouseDown={startResizing} />}
     </aside>
   );
 };

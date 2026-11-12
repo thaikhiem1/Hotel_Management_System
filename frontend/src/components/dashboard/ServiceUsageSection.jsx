@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
 import { stayAPI } from '@/services/api';
 import { formatDateTime } from '@/utils/format';
 import { getErrorMessage } from '@/utils/notification';
@@ -8,7 +7,7 @@ const vnd = (amount) => `${Number(amount || 0).toLocaleString('vi-VN')}đ`;
 
 /**
  * ServiceUsageSection - Dịch vụ khách đã sử dụng trong lượt lưu trú hiện tại (UC-SVC-005)
- * Tải danh sách thật từ máy chủ; chỉ lễ tân mới có nút "Thêm dịch vụ".
+ * Tải danh sách thật từ máy chủ; nút "Thêm dịch vụ" hiện cho mọi vai trò, quyền được kiểm tra khi bấm.
  *
  * Props:
  * - bookingDetailId: mã lượt lưu trú (chi tiết đặt phòng)
@@ -16,7 +15,6 @@ const vnd = (amount) => `${Number(amount || 0).toLocaleString('vi-VN')}đ`;
  * - onAdd: mở hộp thoại thêm dịch vụ
  */
 const ServiceUsageSection = ({ bookingDetailId, version = 0, onAdd }) => {
-  const { hasRole } = useAuth();
   const [state, setState] = useState({ loading: true, error: null, data: null });
 
   useEffect(() => {
@@ -47,7 +45,7 @@ const ServiceUsageSection = ({ bookingDetailId, version = 0, onAdd }) => {
           <span className="material-symbols-outlined text-primary text-[28px]">room_service</span>
           <h3 className="font-title-lg text-title-lg font-bold text-on-surface">Dịch vụ đã sử dụng</h3>
         </div>
-        {hasRole('RECEPTIONIST') && (
+        {onAdd && (
           <button
             onClick={onAdd}
             className="flex items-center gap-space-sm px-space-lg py-space-md rounded-lg bg-primary hover:bg-primary/90 text-on-primary font-label-md text-label-md font-semibold transition-colors"

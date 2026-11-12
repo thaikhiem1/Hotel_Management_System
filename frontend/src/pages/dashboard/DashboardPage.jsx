@@ -16,6 +16,7 @@ import { employeeAPI, roomMapAPI, roomTypeAPI, stayAPI } from '@/services/api';
 import { formatDateTime } from '@/utils/format';
 import { handleApiError, showSuccess, showWarning } from '@/utils/notification';
 import { toCheckInStay, toRoomCard, UI_STATUS_TO_DISPLAY } from '@/utils/rentalMappers';
+import { usePermission } from '@/utils/usePermission';
 import { mockHoaDon } from '@/services/mockData';
 
 /**
@@ -57,6 +58,10 @@ const EMPTY_MESSAGES = {
 };
 
 const DashboardPage = () => {
+  const { check: checkStayWrite } = usePermission('stays');
+  const { check: checkRoomWrite } = usePermission('rooms');
+  const { canView: canViewRevenue } = usePermission('revenue');
+  const { canView: canViewStaff } = usePermission('employees');
   // Điều kiện đang nhập (chưa áp dụng) và điều kiện đã áp dụng
   const [draft, setDraft] = useState(EMPTY_FILTERS);
   const [applied, setApplied] = useState(EMPTY_FILTERS);
@@ -122,7 +127,7 @@ const DashboardPage = () => {
     (async () => {
       const [types, staff] = await Promise.allSettled([
         roomTypeAPI.getAll({ page: 0, size: 1 }),
-        employeeAPI.getAll({ page: 0, size: 1 })
+        canViewStaff ? employeeAPI.getAll({ page: 0, size: 1 }) : Promise.reject(new Error('no-access'))
       ]);
       if (cancelled) return;
       setExtraStats({
@@ -133,7 +138,7 @@ const DashboardPage = () => {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [canViewStaff]);
 
   const data = mapState.data;
   const rooms = data ? data.rooms.content.map(toRoomCard) : [];
@@ -255,6 +260,11 @@ const DashboardPage = () => {
 
   // ---- Thao tác trên thẻ phòng
   const handleRoomAction = (actionId, room) => {
+    // Xem chi tiết thì ai cũng được; các thao tác còn lại cần quyền (báo chung nếu không có quyền, không mở form con)
+    if (actionId !== 'view') {
+      const allowed = actionId === 'ready' || actionId === 'complete' ? checkRoomWrite() : checkStayWrite();
+      if (!allowed) return;
+    }
     switch (actionId) {
       case 'view':
         setSelectedRoom(room);
@@ -333,24 +343,11 @@ const DashboardPage = () => {
   return (
     <div className="w-full space-y-space-lg">
       {/* Page Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-space-md">
         <div>
           <p className="ml-6 text-lg font-body-lg text-body-lg text-on-surface-variant font-medium">
             Tổng quan hoạt động và tình trạng phòng khách sạn
           </p>
-        </div>
-        <div className="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg bg-surface-container-low">
-          <span className="material-symbols-outlined text-primary text-[20px]">
-            schedule
-          </span>
-          <span className="font-label-lg text-label-lg text-on-surface">
-            {new Date().toLocaleDateString('vi-VN', {
-              weekday: 'long',
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric'
-            })}
-          </span>
         </div>
       </div>
 
@@ -395,6 +392,7 @@ const DashboardPage = () => {
           subValue="Loại phòng chuẩn"
           colorClass="text-secondary"
         />
+        {canViewRevenue && (
         <StatCard
           icon="payments"
           label="Doanh thu"
@@ -402,6 +400,8 @@ const DashboardPage = () => {
           subValue="VNĐ hôm nay (dữ liệu mẫu)"
           colorClass="text-tertiary"
         />
+        )}
+        {canViewStaff && (
         <StatCard
           icon="group"
           label="Nhân sự"
@@ -409,6 +409,7 @@ const DashboardPage = () => {
           subValue="Nhân viên trong hệ thống"
           colorClass="text-on-surface"
         />
+        )}
       </div>
 
       {/* Tab trạng thái hiển thị */}
@@ -471,6 +472,7 @@ const DashboardPage = () => {
         }}
         servicesVersion={servicesVersion}
         onOpenAddService={(room) => {
+          if (!checkStayWrite()) return;
           setSelectedRoom(room);
           setIsAddServiceModalOpen(true);
         }}

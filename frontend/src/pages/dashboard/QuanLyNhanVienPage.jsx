@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { usePermission } from "@/utils/usePermission";
 
 import { Pagination } from "@/components/shared";
 import {
@@ -12,6 +13,7 @@ import { employeeAPI } from "@/services/api";
 import { showSuccess, handleApiError } from "@/utils/notification";
 
 const QuanLyNhanVienPage = () => {
+  const { check: checkWrite } = usePermission("employees");
   const [employees, setEmployees] = useState([]);
 
   const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
@@ -143,6 +145,7 @@ const QuanLyNhanVienPage = () => {
   }, [employees, totalElements]);
 
   const handleAddNew = () => {
+    if (!checkWrite()) return;
     setDialogMode("add");
     setSelectedEmployee(null);
     setIsProfileDialogOpen(true);
@@ -155,6 +158,7 @@ const QuanLyNhanVienPage = () => {
   };
 
   const handleSubmitForm = async (formData, submissionMode = dialogMode) => {
+    if (!checkWrite()) return;
     setIsLoading(true);
 
     try {
@@ -204,7 +208,7 @@ const QuanLyNhanVienPage = () => {
 
   return (
     <div className="w-full space-y-space-lg">
-      <div className="flex items-start justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-space-md">
         <div>
           <h1 className="text-lg font-headline-lg text-headline-lg text-on-surface">
             Quản lý nhân viên
@@ -397,7 +401,7 @@ const QuanLyNhanVienPage = () => {
         </select>
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-space-md">
         <p className="font-body-md text-body-md text-on-surface-variant">
           Hiển thị{" "}
           <span className="font-semibold text-on-surface">

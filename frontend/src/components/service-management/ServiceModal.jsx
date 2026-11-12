@@ -191,7 +191,7 @@ const ServiceModal = ({
             </div>
 
             {/* Đơn giá & Đơn vị */}
-            <div className="grid grid-cols-2 gap-space-md">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
               <div>
                 <label className="block font-label-lg text-on-surface mb-space-sm">
                   Đơn giá (VNĐ) <span className="text-error">*</span>
@@ -286,7 +286,7 @@ const ServiceModal = ({
         </form>
 
         {/* Footer */}
-        <div className="flex-shrink-0 bg-surface-container-low px-space-xl py-space-lg border-t border-outline-variant flex gap-space-md justify-end">
+        <div className="flex-shrink-0 bg-surface-container-low px-space-xl py-space-lg border-t border-outline-variant flex flex-wrap gap-space-md justify-end">
           <button
             type="button"
             onClick={handleClose}

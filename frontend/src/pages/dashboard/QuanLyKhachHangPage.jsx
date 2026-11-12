@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { usePermission } from "@/utils/usePermission";
 import { CustomerTable, CustomerFormDialog } from '@/components/customer-management';
 import { GenericDeleteDialog, Pagination } from '@/components/shared';
 import { showSuccess, handleApiError } from '@/utils/notification';
@@ -6,6 +7,7 @@ import { customerAPI } from '@/services/api';
 import { cn } from '@/utils/lib/util';
 
 const QuanLyKhachHangPage = () => {
+  const { check: checkWrite } = usePermission("customers");
   // State quản lý dữ liệu khách hàng
   const [customers, setCustomers] = useState([]);
   
@@ -89,6 +91,7 @@ const QuanLyKhachHangPage = () => {
    * Mở dialog thêm khách hàng mới
    */
   const handleAddNew = () => {
+    if (!checkWrite()) return;
     setEditMode('add');
     setSelectedCustomer(null);
     setIsFormDialogOpen(true);
@@ -98,6 +101,7 @@ const QuanLyKhachHangPage = () => {
    * Mở dialog sửa khách hàng
    */
   const handleEdit = (customer) => {
+    if (!checkWrite()) return;
     setEditMode('edit');
     setSelectedCustomer(customer);
     setIsFormDialogOpen(true);
@@ -107,6 +111,7 @@ const QuanLyKhachHangPage = () => {
    * Mở dialog xác nhận xóa
    */
   const handleDelete = (customer) => {
+    if (!checkWrite()) return;
     setSelectedCustomer(customer);
     setIsDeleteDialogOpen(true);
   };
@@ -211,7 +216,7 @@ const QuanLyKhachHangPage = () => {
   return (
     <div className="w-full space-y-space-lg">
       {/* Page Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-space-md">
         <div>
           <h1 className="text-lg font-headline-lg text-headline-lg text-on-surface">
             Quản lý khách hàng
@@ -402,7 +407,7 @@ const QuanLyKhachHangPage = () => {
       </div>
 
       {/* Results Count */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-space-md">
         <p className="font-body-md text-body-md text-on-surface-variant">
           Hiển thị <span className="font-semibold text-on-surface">{paginatedCustomers.length}</span> / {totalElements} khách hàng
           {totalPages > 1 && (

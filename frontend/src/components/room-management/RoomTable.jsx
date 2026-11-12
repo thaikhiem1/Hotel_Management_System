@@ -71,7 +71,7 @@ const RoomTable = ({ rooms, onEdit, onDelete, isLoading }) => {
   const getformatMaP = (room_id) => `P${String(room_id).padStart(3, 0)}`;
   return (
     <div className="w-full overflow-x-auto bg-surface-container-low rounded-lg border border-outline-variant">
-      <table className="w-full">
+      <table className="w-full min-w-[720px]">
         <thead className="bg-surface-container-high border-b border-outline-variant">
           <tr>
             <th className="px-space-md py-space-sm text-left font-label-md text-label-md text-on-surface">

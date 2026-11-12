@@ -12,7 +12,7 @@ const ToastContainer = ({ toasts, onRemoveToast }) => {
   }
 
   return (
-    <div className="fixed bottom-space-lg right-space-lg z-[9999] flex flex-col-reverse gap-space-sm pointer-events-none">
+    <div className="fixed bottom-space-md right-space-md left-space-md sm:left-auto sm:bottom-space-lg sm:right-space-lg z-[9999] items-end flex flex-col-reverse gap-space-sm pointer-events-none">
       {toasts.map((toast) => (
         <div key={toast.id} className="pointer-events-auto">
           <Toast

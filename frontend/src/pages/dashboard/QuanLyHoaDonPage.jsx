@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { usePermission } from '@/utils/usePermission';
 import { InvoiceCard, InvoiceDetailModal } from '@/components/invoice';
 import { cn } from '@/utils/lib/util';
 
@@ -15,6 +16,7 @@ import { cn } from '@/utils/lib/util';
  * - In hóa đơn
  */
 const QuanLyHoaDonPage = () => {
+  const { check: checkWrite } = usePermission('stays');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all'); // 'all', 'PAID', 'UNPAID'
   const [dateFilter, setDateFilter] = useState('all'); // 'all', 'today', 'week', 'month'
@@ -259,6 +261,7 @@ const QuanLyHoaDonPage = () => {
     }, 600);
   };
 const handlePayment = (invoice) => {
+  if (!checkWrite()) return;
   setIsLoading(true);
 
   setTimeout(() => {
@@ -288,7 +291,7 @@ const handlePayment = (invoice) => {
   return (
     <div className="w-full space-y-space-lg">
       {/* Page Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-space-md">
         <div>
           <h1 className="font-headline-lg text-headline-lg font-bold text-on-surface mb-space-xs">
             Quản lý Hóa đơn
@@ -434,7 +437,7 @@ const handlePayment = (invoice) => {
       </div>
 
       {/* Results Info */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-space-md">
         <p className="font-body-md text-body-md text-on-surface-variant">
           Hiển thị <span className="font-semibold text-primary">{filteredInvoices.length}</span> hóa đơn
         </p>

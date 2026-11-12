@@ -9,6 +9,7 @@ import { rentalReceiptAPI } from '@/services/api';
 import { formatCurrency, formatReceiptCode } from '@/utils/format';
 import { handleApiError, showSuccess, showWarning } from '@/utils/notification';
 import { toPhieuThue } from '@/utils/rentalMappers';
+import { usePermission } from '@/utils/usePermission';
 
 // ========== Helpers: chuyển đổi data DB → data UI ==========
 
@@ -35,6 +36,7 @@ const PAGE_SIZE = 50;
 // ===================== PAGE COMPONENT =====================
 
 const LapPhieuThuePage = () => {
+  const { check: checkWrite } = usePermission('stays');
   const [phieuThueList, setPhieuThueList] = useState([]);
   const [filters, setFilters] = useState({
     search: '',
@@ -137,7 +139,7 @@ const LapPhieuThuePage = () => {
         </div>
         <button
           type="button"
-          onClick={() => setShowCreateDialog(true)}
+          onClick={() => checkWrite() && setShowCreateDialog(true)}
           className="flex items-center gap-space-sm px-space-lg py-space-md rounded-lg bg-primary-container hover:bg-primary text-on-primary-container hover:text-on-primary font-label-lg text-label-lg font-semibold transition-colors shadow-md cursor-pointer"
         >
           <span className="material-symbols-outlined text-[20px]">

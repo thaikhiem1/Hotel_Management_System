@@ -150,7 +150,7 @@ const QuanLyTaiKhoanPage = () => {
     <div className="flex flex-col h-full bg-surface">
       {/* Header */}
       <div className="flex-shrink-0 p-space-lg border-b border-outline-variant bg-surface-container-low">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-space-md">
           <div className="flex items-center gap-space-md">
             <span className="material-symbols-outlined text-primary text-[32px]">
               manage_accounts
@@ -181,7 +181,7 @@ const QuanLyTaiKhoanPage = () => {
         </div>
 
         {/* Stats và Filter */}
-        <div className="flex items-center justify-between gap-space-lg mt-space-md">
+        <div className="flex flex-wrap items-center justify-between gap-space-md mt-space-md">
           <div className="flex items-center gap-space-xs px-space-md py-space-xs rounded-lg bg-primary-container/30">
             <span className="material-symbols-outlined text-primary text-[20px]">
               group

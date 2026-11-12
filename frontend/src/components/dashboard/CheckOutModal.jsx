@@ -242,7 +242,7 @@ const CheckOutForm = ({ stay, onClose, onCompleted, onRefresh }) => {
         </div>
 
         <div className="overflow-x-auto rounded-lg border border-outline-variant">
-          <table className="w-full">
+          <table className="w-full min-w-[520px]">
             <thead className="bg-surface-container-low">
               <tr className="text-on-surface font-label-md text-label-md">
                 <th className="px-space-md py-space-sm text-left">Khoản mục</th>

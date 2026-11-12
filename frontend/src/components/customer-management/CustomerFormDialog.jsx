@@ -326,7 +326,7 @@ const CustomerFormDialog = ({
             </div>
           </div>
           {/* Action Buttons */}
-          <div className="flex items-center justify-end gap-space-md pt-space-md border-t border-outline-variant">
+          <div className="flex flex-wrap items-center justify-end gap-space-md pt-space-md border-t border-outline-variant">
             <button
               type="button"
               onClick={onClose}

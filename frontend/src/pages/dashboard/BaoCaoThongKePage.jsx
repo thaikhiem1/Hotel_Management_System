@@ -135,7 +135,7 @@ const BaoCaoThongKePage = () => {
   return (
     <div className="w-full space-y-space-lg">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-space-md">
         <div>
           <h1 className="font-headline-xl text-headline-xl text-on-surface font-bold mb-space-xs">
             Báo cáo & Thống kê
@@ -235,7 +235,7 @@ const BaoCaoThongKePage = () => {
         <div className="lg:col-span-2 space-y-space-lg">
           {/* Revenue Chart */}
           <div className="p-space-lg rounded-lg bg-surface border-2 border-outline-variant shadow-lg">
-            <div className="flex items-center justify-between mb-space-md">
+            <div className="flex flex-wrap items-center justify-between gap-space-md mb-space-md">
               <h2 className="font-title-xl font-semibold text-on-surface flex items-center gap-space-sm">
                 <span className="material-symbols-outlined text-primary">show_chart</span>
                 Biểu đồ doanh thu
@@ -300,7 +300,7 @@ const BaoCaoThongKePage = () => {
             </h2>
             
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full min-w-[720px]">
                 <thead className="bg-surface-container">
                   <tr>
                     <th className="px-space-lg py-space-md text-left font-label-lg text-on-surface uppercase tracking-wide">

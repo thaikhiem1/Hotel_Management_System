@@ -8,7 +8,7 @@ import { DEFAULT_AVATAR } from '@/utils/avatar';
  * UserProfileMenu - Component hiển thị menu dropdown profile user
  * Hiển thị avatar, tên, chức vụ và các options (Profile, Settings, Logout)
  */
-const UserProfileMenu = ({ currentUser, onOpenProfile }) => {
+const UserProfileMenu = ({ currentUser, onOpenProfile, onBrand = false }) => {
   const navigate = useNavigate();
   const { logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
@@ -79,9 +79,11 @@ const UserProfileMenu = ({ currentUser, onOpenProfile }) => {
         onClick={handleToggle}
         className={cn(
           'flex items-center gap-space-sm p-space-xs rounded-lg',
-          'hover:bg-surface-container-high transition-all duration-200',
-          'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
-          isOpen && 'bg-surface-container-high'
+          'transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2',
+          onBrand
+            ? 'hover:bg-white/15 focus:ring-white/60 focus:ring-offset-[#7a5c16]'
+            : 'hover:bg-surface-container-high focus:ring-primary',
+          isOpen && (onBrand ? 'bg-white/15' : 'bg-surface-container-high')
         )}
       >
         {/* Avatar */}
@@ -89,24 +91,24 @@ const UserProfileMenu = ({ currentUser, onOpenProfile }) => {
           <img
             src={user.avatar || DEFAULT_AVATAR}
             alt={user.tenNV}
-            className="w-10 h-10 rounded-full object-cover ring-2 ring-primary/20"
+            className={cn('w-10 h-10 rounded-full object-cover ring-2', onBrand ? 'ring-white/70' : 'ring-primary/20')}
             onError={(e) => {
               e.currentTarget.onerror = null;
               e.currentTarget.src = DEFAULT_AVATAR;
             }}
           />
           {/* Online indicator */}
-          <div className="absolute bottom-0 right-0 w-3 h-3 bg-tertiary rounded-full border-2 border-surface" />
+          <div className="absolute bottom-0 right-0 w-3 h-3 bg-tertiary rounded-full border-2 border-[#7a5c16]" />
         </div>
 
         {/* User Info - Hidden on mobile */}
         <div className="hidden md:flex flex-col items-start min-w-0">
-          <span className="font-label-md text-label-md text-on-surface font-semibold truncate max-w-[150px]">
+          <span className={cn('font-label-md text-label-md font-semibold truncate max-w-[150px]', onBrand ? 'text-white' : 'text-on-surface')}>
             {user.tenNV}
           </span>
           <span className={cn(
             'font-label-sm text-label-sm uppercase tracking-wide',
-            getPositionColor(user.chucVu)
+            onBrand ? 'text-[#ffe9a8]' : getPositionColor(user.chucVu)
           )}>
             {user.chucVu}
           </span>
@@ -114,7 +116,8 @@ const UserProfileMenu = ({ currentUser, onOpenProfile }) => {
 
         {/* Dropdown Icon */}
         <span className={cn(
-          'material-symbols-outlined text-[20px] text-on-surface-variant transition-transform',
+          'material-symbols-outlined text-[20px] transition-transform',
+          onBrand ? 'text-white/80' : 'text-on-surface-variant',
           isOpen && 'rotate-180'
         )}>
           expand_more
@@ -125,7 +128,7 @@ const UserProfileMenu = ({ currentUser, onOpenProfile }) => {
       {isOpen && (
         <div className={cn(
           'absolute top-full right-0 mt-space-xs',
-          'w-72 rounded-xl shadow-2xl',
+          'w-72 max-w-[calc(100vw-1.5rem)] rounded-xl shadow-2xl',
           'bg-surface-container-low border border-outline-variant',
           'overflow-hidden',
           'animate-in fade-in slide-in-from-top-2 duration-200',

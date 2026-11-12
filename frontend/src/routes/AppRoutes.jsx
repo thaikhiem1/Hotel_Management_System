@@ -4,7 +4,7 @@ import LoginPage from "@/pages/LoginPage";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
 
 import ProtectedRoute from "@/routes/ProtectedRoute";
-import { MANAGEMENT_ROLES } from "@/utils/auth";
+import { viewRoles } from "@/utils/permissions";
 
 // Dashboard Layout
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -51,11 +51,15 @@ function AppRoutes() {
           <Route path="/services" element={<QuanLyDichVuPage />} />
           <Route path="/profile" element={<HoSoCaNhanPage />} />
 
-          {/* Chỉ ADMIN / MANAGER */}
-          <Route element={<ProtectedRoute roles={MANAGEMENT_ROLES} />}>
+          {/* Nhân viên, báo cáo thống kê: ADMIN / MANAGER */}
+          <Route element={<ProtectedRoute roles={viewRoles("employees")} />}>
             <Route path="/employees" element={<QuanLyNhanVienPage />} />
-            <Route path="/accounts" element={<QuanLyTaiKhoanPage />} />
             <Route path="/reports" element={<BaoCaoThongKePage />} />
+          </Route>
+
+          {/* Tài khoản: chỉ ADMIN */}
+          <Route element={<ProtectedRoute roles={viewRoles("accounts")} />}>
+            <Route path="/accounts" element={<QuanLyTaiKhoanPage />} />
           </Route>
         </Route>
       </Route>

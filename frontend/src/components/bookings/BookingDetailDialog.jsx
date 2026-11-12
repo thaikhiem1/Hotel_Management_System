@@ -66,7 +66,7 @@ const BookingDetailDialog = ({
       />
 
       {/* Dialog */}
-      <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-lg bg-surface-container-low shadow-2xl">
+      <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[calc(100%-1rem)] max-w-3xl max-h-[90vh] overflow-y-auto rounded-lg bg-surface-container-low shadow-2xl">
         {/* Header */}
         <div className="sticky top-0 flex items-center justify-between p-space-lg border-b border-surface-container-high bg-surface-container-low z-10">
           <div>

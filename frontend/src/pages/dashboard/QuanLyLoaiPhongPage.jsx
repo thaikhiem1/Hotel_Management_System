@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { usePermission } from "@/utils/usePermission";
 import RoomTypeTable from '@/components/room-type-management/RoomTypeTable';
 import { Pagination } from "@/components/shared";
 import RoomTypeFormDialog from '@/components/room-type-management/RoomTypeFormDialog';
@@ -8,6 +9,7 @@ import { showSuccess, handleApiError } from '@/utils/notification';
 import { formatCurrency } from '@/utils/format';
 
 const QuanLyLoaiPhongPage = () => {
+  const { check: checkWrite } = usePermission("roomTypes");
   // State quản lý dữ liệu loại phòng từ API
   const [roomTypes, setRoomTypes] = useState([]);
   
@@ -78,18 +80,21 @@ const QuanLyLoaiPhongPage = () => {
   }, [roomTypes, totalElements]);
 
   const handleAddNew = () => {
+    if (!checkWrite()) return;
     setEditMode('add');
     setSelectedRoomType(null);
     setIsFormDialogOpen(true);
   };
 
   const handleEdit = (roomTypeData) => {
+    if (!checkWrite()) return;
     setEditMode('edit');
     setSelectedRoomType(roomTypeData);
     setIsFormDialogOpen(true);
   };
 
   const handleDelete = (roomTypeData) => {
+    if (!checkWrite()) return;
     setSelectedRoomType(roomTypeData);
     setIsDeleteDialogOpen(true);
   };
@@ -161,7 +166,7 @@ const QuanLyLoaiPhongPage = () => {
   return (
     <div className="w-full space-y-space-lg">
       {/* Page Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-space-md">
         <div>
           <h1 className="text-lg font-headline-lg text-headline-lg text-on-surface">
             Quản lý loại phòng

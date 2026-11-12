@@ -85,7 +85,7 @@ const Toast = ({
     <div
       className={cn(
         'relative flex items-start gap-space-sm p-space-md rounded-xl shadow-2xl',
-        'border-l-4 min-w-[320px] max-w-[420px]',
+        'border-l-4 w-full sm:w-auto sm:min-w-[320px] max-w-[420px]',
         config.bg,
         'transition-all duration-300 ease-out',
         isVisible && !isExiting 
