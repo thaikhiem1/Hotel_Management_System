@@ -1,4 +1,5 @@
 import { formatCurrency } from "@/utils/format";
+import { ROOM_STATUS_META, getRoomStatusLabel } from "@/utils/roomStatus";
 
 const RoomTable = ({ rooms, onEdit, onDelete, isLoading }) => {
   /**
@@ -8,39 +9,29 @@ const RoomTable = ({ rooms, onEdit, onDelete, isLoading }) => {
    * Lấy badge trạng thái phòng
    */
   const getStatusBadge = (room) => {
-    if (room.room_status === "AVAILABLE") {
-      return (
-        <span
-          className="inline-flex items-center gap-space-xs px-space-sm py-space-xs
-                       rounded-full bg-tertiary/20 text-tertiary font-label-sm text-label-sm"
-        >
-          <span className="material-symbols-outlined text-[16px]">
-            check_circle
-          </span>
-          <span>Trống</span>
-        </span>
-      );
-    } else if (room.room_status === "UNDER_MAINTENANCE") {
-      return (
-        <span
-          className="inline-flex items-center gap-space-xs px-space-sm py-space-xs
-                       rounded-full bg-error/20 text-error font-label-sm text-label-sm"
-        >
-          <span className="material-symbols-outlined text-[16px]">
-            engineering
-          </span>
-          <span>Đang sửa chữa</span>
-        </span>
-      );
-    }
+    const meta = ROOM_STATUS_META[room.room_status];
+    const badge = meta?.badge ?? "bg-surface-container-high text-on-surface-variant";
     return (
-      <span
-        className="inline-flex items-center gap-space-xs px-space-sm py-space-xs
-                     rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm"
-      >
-        <span className="material-symbols-outlined text-[16px]">help</span>
-        <span>Không xác định</span>
-      </span>
+      <div className="flex flex-col items-center gap-space-xs">
+        <span
+          className={`inline-flex items-center gap-space-xs px-space-sm py-space-xs rounded-full font-label-sm text-label-sm ${badge}`}
+        >
+          <span className="material-symbols-outlined text-[16px]">{meta?.icon ?? "help"}</span>
+          <span>{getRoomStatusLabel(room.room_status)}</span>
+        </span>
+        {room.has_active_stay && (
+          <span className="inline-flex items-center gap-space-xs font-label-sm text-label-sm text-primary">
+            <span className="material-symbols-outlined text-[14px]">person</span>
+            <span>Đang có khách</span>
+          </span>
+        )}
+        {!room.has_active_stay && room.has_upcoming_booking && (
+          <span className="inline-flex items-center gap-space-xs font-label-sm text-label-sm text-on-surface-variant">
+            <span className="material-symbols-outlined text-[14px]">event</span>
+            <span>Có lượt đặt sắp tới</span>
+          </span>
+        )}
+      </div>
     );
   };
 
@@ -172,9 +163,10 @@ const RoomTable = ({ rooms, onEdit, onDelete, isLoading }) => {
                   {/* Nút Sửa - TODO: AUTHORIZATION - Chỉ Admin và Quản lý */}
                   <button
                     onClick={() => onEdit(room)}
+                    disabled={room.has_active_stay}
                     className="p-space-xs rounded-lg hover:bg-primary/10 text-primary
-                             transition-colors duration-150 group"
-                    title="Chỉnh sửa"
+                             transition-colors duration-150 group disabled:opacity-40 disabled:cursor-not-allowed"
+                    title={room.has_active_stay ? "Phòng đang có khách nên không thể cập nhật" : "Chỉnh sửa"}
                   >
                     <span className="material-symbols-outlined text-[20px]">edit</span>
                   </button>
@@ -182,9 +174,10 @@ const RoomTable = ({ rooms, onEdit, onDelete, isLoading }) => {
                   {/* Nút Xóa - TODO: AUTHORIZATION - Chỉ Admin */}
                   <button
                     onClick={() => onDelete(room)}
+                    disabled={room.has_active_stay}
                     className="p-space-xs rounded-lg hover:bg-error/10 text-error
-                             transition-colors duration-150 group"
-                    title="Xóa"
+                             transition-colors duration-150 group disabled:opacity-40 disabled:cursor-not-allowed"
+                    title={room.has_active_stay ? "Phòng đang có khách nên không thể xóa" : "Xóa"}
                   >
                     <span className="material-symbols-outlined text-[20px]">delete</span>
                   </button>

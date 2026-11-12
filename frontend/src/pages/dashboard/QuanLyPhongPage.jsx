@@ -46,6 +46,8 @@ const QuanLyPhongPage = () => {
         hourly_rate: item.hourly_rate,
         room_status: item.room_status,
         note: item.note,
+        has_active_stay: item.has_active_stay ?? false,
+        has_upcoming_booking: item.has_upcoming_booking ?? false,
       }));
       setRooms(mappedData);
       console.log("Loaded rooms :", mappedData.length);
@@ -192,7 +194,7 @@ const QuanLyPhongPage = () => {
       </div>
 
       {/* Thống kê tổng quan */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-space-md">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md">
         <div className="px-space-lg py-space-md rounded-lg bg-surface-container-low border border-outline-variant">
           <div className="flex items-center gap-space-sm">
             <span className="material-symbols-outlined text-primary text-[24px]">
@@ -220,6 +222,22 @@ const QuanLyPhongPage = () => {
               </p>
               <p className="font-headline-md text-headline-md text-on-surface">
                 {rooms.filter((r) => r.room_status === "AVAILABLE").length}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="px-space-lg py-space-md rounded-lg bg-surface-container-low border border-outline-variant">
+          <div className="flex items-center gap-space-sm">
+            <span className="material-symbols-outlined text-secondary text-[24px]">
+              cleaning_services
+            </span>
+            <div>
+              <p className="text-lg font-label-sm text-label-sm text-on-surface-variant">
+                Đang dọn dẹp
+              </p>
+              <p className="font-headline-md text-headline-md text-on-surface">
+                {rooms.filter((r) => r.room_status === "CLEANING").length}
               </p>
             </div>
           </div>

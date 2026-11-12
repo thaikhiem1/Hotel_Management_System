@@ -1,4 +1,5 @@
 import GenericDeleteDialog from "@/components/shared/GenericDeleteDialog";
+import { getRoomStatusLabel } from "@/utils/roomStatus";
 
 const DeleteConfirmDialog = ({
   isOpen,
@@ -15,7 +16,7 @@ const DeleteConfirmDialog = ({
     { label: "Loại phòng", value: roomData.room_type_name || "N/A", highlight: false },
     {
       label: "Trạng thái",
-      value: roomData.room_status === "AVAILABLE" ? "Trống" : "Đang sửa chữa",
+      value: getRoomStatusLabel(roomData.room_status),
       highlight: false,
     },
   ];

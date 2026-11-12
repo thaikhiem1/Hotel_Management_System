@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { ROOM_STATUS_META, ROOM_STATUS_ORDER, getStatusBlockReason } from "@/utils/roomStatus";
 
 const RoomFormDialog = ({
   isOpen,
@@ -212,7 +213,7 @@ useEffect(() => {
               name="room_type_id"
               value={formData.room_type_id}
               onChange={handleChange}
-              disabled={isLoading}
+              disabled={isLoading || (editMode === "edit" && Boolean(roomData?.has_upcoming_booking))}
               className={`w-full px-space-md py-space-sm rounded-lg border
                        bg-surface-container font-body-md text-body-md text-on-surface
                        focus:outline-none focus:ring-2 focus:ring-primary
@@ -250,59 +251,50 @@ useEffect(() => {
                 <span>Trạng thái phòng</span>
                 <span className="text-error">*</span>
               </label>
-              <div className="flex gap-space-md">
-                {/* Trống */}
-                <label
-                  className="flex items-center gap-space-sm px-space-md py-space-sm
-                                rounded-lg border border-outline-variant cursor-pointer
-                                hover:bg-surface-container-high transition-colors
-                                has-[:checked]:border-primary has-[:checked]:bg-primary/10"
-                >
-                  <input
-                    type="radio"
-                    name="room_status"
-                    value="AVAILABLE"
-                    checked={formData.room_status === "AVAILABLE"}
-                    onChange={handleChange}
-                    disabled={isLoading}
-                    className="w-4 h-4 text-primary focus:ring-2 focus:ring-primary"
-                  />
-                  <div className="flex items-center gap-space-xs">
-                    <span className="material-symbols-outlined text-tertiary text-[20px]">
-                      check_circle
-                    </span>
-                    <span className="font-body-md text-body-md text-on-surface">
-                      Trống
-                    </span>
-                  </div>
-                </label>
-
-                {/* Đang sửa chữa */}
-                <label
-                  className="flex items-center gap-space-sm px-space-md py-space-sm
-                                rounded-lg border border-outline-variant cursor-pointer
-                                hover:bg-surface-container-high transition-colors
-                                has-[:checked]:border-error has-[:checked]:bg-error/10"
-                >
-                  <input
-                    type="radio"
-                    name="room_status"
-                    value="UNDER_MAINTENANCE"
-                    checked={formData.room_status === "UNDER_MAINTENANCE"}
-                    onChange={handleChange}
-                    disabled={isLoading}
-                    className="w-4 h-4 text-error focus:ring-2 focus:ring-error"
-                  />
-                  <div className="flex items-center gap-space-xs">
-                    <span className="material-symbols-outlined text-error text-[20px]">
-                      engineering
-                    </span>
-                    <span className="font-body-md text-body-md text-on-surface">
-                      Đang sửa chữa
-                    </span>
-                  </div>
-                </label>
+              <div className="flex flex-wrap gap-space-md">
+                {ROOM_STATUS_ORDER.map((status) => {
+                  const meta = ROOM_STATUS_META[status];
+                  const blockReason = getStatusBlockReason(roomData, status);
+                  return (
+                    <label
+                      key={status}
+                      title={blockReason ?? undefined}
+                      className={`flex items-center gap-space-sm px-space-md py-space-sm
+                                rounded-lg border border-outline-variant transition-colors
+                                has-[:checked]:border-primary has-[:checked]:bg-primary/10
+                                ${blockReason ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:bg-surface-container-high"}`}
+                    >
+                      <input
+                        type="radio"
+                        name="room_status"
+                        value={status}
+                        checked={formData.room_status === status}
+                        onChange={handleChange}
+                        disabled={isLoading || Boolean(blockReason)}
+                        className="w-4 h-4 text-primary focus:ring-2 focus:ring-primary"
+                      />
+                      <div className="flex items-center gap-space-xs">
+                        <span className={`material-symbols-outlined ${meta.accent} text-[20px]`}>
+                          {meta.icon}
+                        </span>
+                        <span className="font-body-md text-body-md text-on-surface">
+                          {meta.label}
+                        </span>
+                      </div>
+                    </label>
+                  );
+                })}
               </div>
+              {roomData?.room_status === "CLEANING" && (
+                <p className="font-body-sm text-body-sm text-on-surface-variant">
+                  Chọn "Trống" khi đã dọn dẹp xong để phòng có thể nhận khách trở lại.
+                </p>
+              )}
+              {roomData?.has_upcoming_booking && (
+                <p className="font-body-sm text-body-sm text-on-surface-variant">
+                  Phòng có lượt đặt sắp tới nên không thể chuyển sang sửa chữa hoặc đổi loại phòng.
+                </p>
+              )}
             </div>
           )}
 
