@@ -256,6 +256,21 @@ public class GlobalExceptionHandler {
     /**
      * Giá dịch vụ đã đổi so với số tiền người dùng xác nhận -> 409 kèm chi phí mới để xác nhận lại
      */
+    @ExceptionHandler(CheckOutAmountChangedException.class)
+    public ResponseEntity<ErrorResponse> handleCheckOutAmountChanged(
+            CheckOutAmountChangedException ex,
+            WebRequest request) {
+        ErrorResponse body = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.CONFLICT.value())
+                .error("Conflict")
+                .message(ex.getMessage())
+                .path(request.getDescription(false).replace("uri=", ""))
+                .data(ex.getNewEstimate())
+                .build();
+        return new ResponseEntity<>(body, HttpStatus.CONFLICT);
+    }
+
     @ExceptionHandler(ServiceUsagePriceChangedException.class)
     public ResponseEntity<ErrorResponse> handleServiceUsagePriceChanged(
             ServiceUsagePriceChangedException ex,

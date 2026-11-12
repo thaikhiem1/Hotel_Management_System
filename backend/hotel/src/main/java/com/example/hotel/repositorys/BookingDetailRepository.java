@@ -42,6 +42,10 @@ public interface BookingDetailRepository extends JpaRepository<booking_details, 
     @Query("select b.rentalReceipt.rentalReceiptId from booking_details b where b.bookingDetailId = :id")
     Optional<Integer> findReceiptIdById(@Param("id") Integer id);
 
+    /** Trạng thái của mọi chi tiết thuộc một phiếu thuê, để xác định lại trạng thái phiếu sau khi trả phòng */
+    @Query("select b.bookingStatus from booking_details b where b.rentalReceipt.rentalReceiptId = :receiptId")
+    List<BookingStatus> findStatusesByReceiptId(@Param("receiptId") Integer receiptId);
+
     /** Chi tiết kèm phòng, loại phòng, phiếu thuê và khách hàng cho nghiệp vụ nhận phòng/trả phòng */
     @Query("""
             select b from booking_details b

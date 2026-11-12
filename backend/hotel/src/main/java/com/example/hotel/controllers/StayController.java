@@ -1,9 +1,12 @@
 package com.example.hotel.controllers;
 
 import com.example.hotel.models.dto.request.CheckInRequest;
+import com.example.hotel.models.dto.request.CheckOutRequest;
 import com.example.hotel.models.dto.response.ApiResponse;
 import com.example.hotel.models.dto.response.CheckInContextResponse;
 import com.example.hotel.models.dto.response.CheckInResponse;
+import com.example.hotel.models.dto.response.CheckOutContextResponse;
+import com.example.hotel.models.dto.response.CheckOutResponse;
 import com.example.hotel.services.IStayService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Lưu trú theo chi tiết đặt phòng. Hiện có nhận phòng (UC-REN-004); chỉ RECEPTIONIST sử dụng.
+ * Lưu trú theo chi tiết đặt phòng. Có nhận phòng (UC-REN-004) và trả phòng (UC-REN-007); chỉ RECEPTIONIST sử dụng.
  */
 @RestController
 @RequestMapping("/api/booking-details")
@@ -38,5 +41,20 @@ public class StayController {
             @PathVariable Integer id, @Valid @RequestBody CheckInRequest request) {
         return ResponseEntity.ok(ApiResponse.success(
                 stayService.checkIn(id, request), "Nhận phòng thành công"));
+    }
+
+    /** GET /api/booking-details/{id}/check-out - kiểm tra lượt lưu trú và lấy chi phí tạm tính để mở biểu mẫu Check-out */
+    @GetMapping("/{id}/check-out")
+    public ResponseEntity<ApiResponse<CheckOutContextResponse>> getCheckOutContext(@PathVariable Integer id) {
+        return ResponseEntity.ok(ApiResponse.success(
+                stayService.getCheckOutContext(id), "Lấy thông tin trả phòng thành công"));
+    }
+
+    /** POST /api/booking-details/{id}/check-out - body { expectedTotalAmount } (không bắt buộc) */
+    @PostMapping("/{id}/check-out")
+    public ResponseEntity<ApiResponse<CheckOutResponse>> checkOut(
+            @PathVariable Integer id, @RequestBody(required = false) CheckOutRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(
+                stayService.checkOut(id, request == null ? new CheckOutRequest() : request), "Trả phòng thành công"));
     }
 }
