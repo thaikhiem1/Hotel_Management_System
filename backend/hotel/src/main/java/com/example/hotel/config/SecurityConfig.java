@@ -85,6 +85,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/customers/**", "/api/rental-receipts/**")
                         .hasAnyRole(OPERATION_ROLES)
 
+                        // Hóa đơn: mọi vai trò xem, RECEPTIONIST và MANAGER thanh toán
+                        .requestMatchers(HttpMethod.GET, "/api/invoices/**").authenticated()
+                        .requestMatchers("/api/invoices/**").hasAnyRole(OPERATION_ROLES)
+
                         // Xem dịch vụ khách đã sử dụng của một lượt lưu trú: mọi vai trò
                         .requestMatchers(HttpMethod.GET, "/api/booking-details/*/services")
                         .authenticated()

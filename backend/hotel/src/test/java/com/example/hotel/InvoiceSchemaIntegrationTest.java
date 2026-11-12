@@ -191,6 +191,8 @@ class InvoiceSchemaIntegrationTest {
 
         saved.setInvoiceStatus(InvoiceStatus.PAID);
         saved.setPaidAt(now);
+        saved.setPaymentMethod(com.example.hotel.Enums.PaymentMethod.CASH);
+        saved.setPaidBy(employee);
         invoiceRepository.saveAndFlush(saved);
         assertEquals(InvoiceStatus.PAID, invoiceRepository.findById(saved.getInvoiceId()).orElseThrow().getInvoiceStatus());
     }

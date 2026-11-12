@@ -1,6 +1,7 @@
 package com.example.hotel.models.entities;
 
 import com.example.hotel.Enums.InvoiceStatus;
+import com.example.hotel.Enums.PaymentMethod;
 import com.example.hotel.Enums.PricingMethod;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -70,6 +71,15 @@ public class invoices {
 
     @Column(name = "paid_at")
     private LocalDateTime paidAt;
+
+    /** Phương thức và nhân viên thu tiền, chỉ có khi đã thanh toán (V8) */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_method", length = 20)
+    private PaymentMethod paymentMethod;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "paid_by")
+    private employees paidBy;
 
     @Version
     @Column(name = "version", nullable = false)
