@@ -42,7 +42,7 @@ const RoomCard = ({ room, onAction }) => {
         icon: 'person',
         actions: [
           { id: 'view', label: 'Xem chi tiết', icon: 'visibility', variant: 'secondary', roles: [0, 1, 2] },
-          { id: 'service', label: 'Thêm dịch vụ', icon: 'room_service', variant: 'tertiary', roles: [0, 1] },
+          { id: 'service', label: 'Thêm dịch vụ', icon: 'room_service', variant: 'tertiary', roles: [1] },
           { id: 'checkout', label: 'Trả phòng', icon: 'logout', variant: 'primary', roles: [0, 1] }
         ]
       },

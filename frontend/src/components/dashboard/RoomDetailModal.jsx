@@ -1,3 +1,4 @@
+import ServiceUsageSection from './ServiceUsageSection';
 
 /**
  * RoomDetailModal - Modal hiển thị chi tiết đầy đủ của phòng
@@ -8,13 +9,10 @@
  * - isOpen: Trạng thái mở/đóng modal
  * - onClose: Callback khi đóng modal
  * - onOpenAddService: Callback khi mở modal thêm dịch vụ
+ * - servicesVersion: tăng lên sau khi ghi nhận dịch vụ để tải lại danh sách dịch vụ đã sử dụng
  */
-const RoomDetailModal = ({ room, isOpen, onClose, onOpenAddService }) => {
+const RoomDetailModal = ({ room, isOpen, onClose, onOpenAddService, servicesVersion = 0 }) => {
   if (!isOpen || !room) return null;
-
-  // Dịch vụ đã sử dụng: chưa có API ghi nhận dịch vụ (UC-SVC-005) nên danh sách trống
-  // cho đến khi nối API: GET /api/rental-details/{bookingDetailId}/services
-  const usedServices = room.services ?? [];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
@@ -151,90 +149,17 @@ const RoomDetailModal = ({ room, isOpen, onClose, onOpenAddService }) => {
             )}
           </section>
 
-          {/* Danh sách dịch vụ đã sử dụng - chỉ hiển thị khi phòng đang thuê */}
+          {/* Dịch vụ khách đã sử dụng - chỉ hiển thị khi phòng đang có khách */}
           {room.status === 'occupied' && (
-            <section className="space-y-space-md">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-space-sm">
-                  <span className="material-symbols-outlined text-primary text-[28px]">
-                    room_service
-                  </span>
-                  <h3 className="font-title-lg text-title-lg font-bold text-on-surface">
-                    Dịch vụ đã sử dụng
-                  </h3>
-                </div>
-                {/* TODO: Kiểm tra quyền lễ tân/quản lý trước khi hiển thị nút */}
-                {/* Authorization: Role 0 (Admin) hoặc 1 (Lễ tân) */}
-                <button
-                  onClick={() => {
-                    onClose(); // Đóng modal chi tiết
-                    if (onOpenAddService) {
-                      onOpenAddService(room); // Mở modal thêm dịch vụ
-                    }
-                  }}
-                  className="flex items-center gap-space-sm px-space-lg py-space-md rounded-lg bg-primary hover:bg-primary/90 text-on-primary font-label-md text-label-md font-semibold transition-colors"
-                >
-                  <span className="material-symbols-outlined text-[20px]">add</span>
-                  <span>Thêm dịch vụ</span>
-                </button>
-              </div>
-
-              {usedServices.length === 0 ? (
-                <div className="p-space-xl rounded-lg bg-surface-container-low border border-outline-variant text-center">
-                  <span className="material-symbols-outlined text-[48px] text-on-surface-variant/30 mb-space-md block">
-                    receipt_long
-                  </span>
-                  <p className="font-body-lg text-on-surface-variant">
-                    Chưa có dịch vụ nào được sử dụng
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-space-sm">
-                  {usedServices.map((service) => (
-                    <div
-                      key={service.id}
-                      className="p-space-lg rounded-lg bg-surface-container-low border border-outline-variant hover:shadow-md transition-shadow"
-                    >
-                      <div className="flex items-start justify-between mb-space-sm">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-space-sm mb-space-xs">
-                            <span className="material-symbols-outlined text-primary text-[20px]">
-                              receipt
-                            </span>
-                            <h4 className="font-title-md text-title-md font-semibold text-on-surface">
-                              {service.name}
-                            </h4>
-                          </div>
-                          <p className="font-body-sm text-body-sm text-on-surface-variant ml-7">
-                            Thời gian: {service.addedAt}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-body-sm text-body-sm text-on-surface-variant mb-space-xs">
-                            {service.quantity} {service.unit} × {service.price.toLocaleString('vi-VN')}đ
-                          </p>
-                          <p className="font-title-lg text-title-lg font-bold text-primary">
-                            {service.total.toLocaleString('vi-VN')}đ
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-
-                  {/* Tổng cộng dịch vụ */}
-                  <div className="p-space-lg rounded-lg bg-primary-container border-2 border-primary">
-                    <div className="flex items-center justify-between">
-                      <span className="font-title-lg text-title-lg font-bold text-on-primary-container">
-                        Tổng tiền dịch vụ:
-                      </span>
-                      <span className="font-headline-lg text-headline-lg font-bold text-primary">
-                        {usedServices.reduce((sum, s) => sum + s.total, 0).toLocaleString('vi-VN')}đ
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </section>
+            <ServiceUsageSection
+              key={room.bookingDetailId}
+              bookingDetailId={room.bookingDetailId}
+              version={servicesVersion}
+              onAdd={() => {
+                onClose(); // Đóng modal chi tiết rồi mở modal thêm dịch vụ
+                if (onOpenAddService) onOpenAddService(room);
+              }}
+            />
           )}
 
           {/* Ghi chú cho phòng đã đặt */}

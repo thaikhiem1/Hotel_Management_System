@@ -157,6 +157,17 @@ export const stayAPI = {
   /** UC-REN-004 bước 5-9: POST /api/booking-details/{id}/check-in - { actualGuests }; giờ nhận phòng do máy chủ ghi */
   checkIn: (bookingDetailId, { actualGuests }) =>
     unwrap(apiClient.post(`/booking-details/${bookingDetailId}/check-in`, { actualGuests })),
+
+  /** UC-SVC-005: GET /api/booking-details/{id}/services - dịch vụ khách đã sử dụng kèm tổng tiền */
+  getServiceUsages: (bookingDetailId) => unwrap(apiClient.get(`/booking-details/${bookingDetailId}/services`)),
+
+  /** UC-SVC-005 bước 6-11: kiểm tra và tính chi phí. lines: [{ serviceId, quantity }] */
+  estimateServices: (bookingDetailId, lines) =>
+    unwrap(apiClient.post(`/booking-details/${bookingDetailId}/services/estimate`, { lines })),
+
+  /** UC-SVC-005 bước 12-15: ghi nhận dịch vụ; expectedTotalAmount là tổng tiền đã xem để máy chủ phát hiện giá đổi */
+  recordServices: (bookingDetailId, { lines, expectedTotalAmount }) =>
+    unwrap(apiClient.post(`/booking-details/${bookingDetailId}/services`, { lines, expectedTotalAmount })),
 };
 
 // SƠ ĐỒ PHÒNG (Room Map) - UC-ROM-005, UC-ROM-006
@@ -175,7 +186,12 @@ export const serviceCategoryAPI = createCrudApi("/service-categories", {
 });
 
 // DỊCH VỤ (Service)
-export const serviceAPI = createCrudApi("/services");
+const serviceCrud = createCrudApi("/services");
+export const serviceAPI = {
+  ...serviceCrud,
+  /** GET /api/services?activeOnly=true - chỉ dịch vụ đang được phép cung cấp (dùng khi ghi nhận dịch vụ khách sử dụng) */
+  getActive: () => unwrap(apiClient.get("/services", { params: { activeOnly: true } })),
+};
 
 // TÀI KHOẢN (Account)
 const accountCrud = createCrudApi("/accounts");

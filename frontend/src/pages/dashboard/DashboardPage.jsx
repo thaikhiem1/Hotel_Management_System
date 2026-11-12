@@ -68,6 +68,7 @@ const DashboardPage = () => {
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isAddServiceModalOpen, setIsAddServiceModalOpen] = useState(false);
+  const [servicesVersion, setServicesVersion] = useState(0); // tăng sau mỗi lần ghi nhận dịch vụ
   const [bookingRoom, setBookingRoom] = useState(null); // phòng đang đặt (UC-REN-001 từ sơ đồ phòng)
   const [checkInStay, setCheckInStay] = useState(null); // dữ liệu biểu mẫu nhận phòng (UC-REN-004)
   const [isOpeningCheckIn, setIsOpeningCheckIn] = useState(false);
@@ -242,6 +243,10 @@ const DashboardPage = () => {
         break;
 
       case 'service':
+        if (!room.bookingDetailId) {
+          showWarning('Không thể thêm dịch vụ', 'Phòng chưa có khách đang lưu trú.');
+          break;
+        }
         setSelectedRoom(room);
         setIsAddServiceModalOpen(true);
         break;
@@ -263,10 +268,15 @@ const DashboardPage = () => {
     }
   };
 
-  const handleAddService = (room, services) => {
-    // TODO: API thêm dịch vụ cho phòng (UC-SVC-005)
-    const totalAmount = services.reduce((sum, s) => sum + (s.price * s.quantity), 0);
-    alert(`Đã thêm ${services.length} dịch vụ cho phòng ${room.name}\nTổng: ${totalAmount.toLocaleString('vi-VN')}đ`);
+  // UC-SVC-005: ghi nhận dịch vụ thành công -> đóng form, tải lại danh sách dịch vụ đã dùng
+  const handleServicesRecorded = (result) => {
+    const roomName = selectedRoom?.name ?? '';
+    setIsAddServiceModalOpen(false);
+    setServicesVersion((v) => v + 1);
+    showSuccess(
+      'Ghi nhận dịch vụ thành công',
+      `Phòng ${roomName} - tổng ${Number(result.totalAmount || 0).toLocaleString('vi-VN')}đ`
+    );
   };
 
   const handleBookingCreated = (receipt) => {
@@ -432,20 +442,21 @@ const DashboardPage = () => {
           setIsDetailModalOpen(false);
           setSelectedRoom(null);
         }}
+        servicesVersion={servicesVersion}
         onOpenAddService={(room) => {
           setSelectedRoom(room);
           setIsAddServiceModalOpen(true);
         }}
       />
 
-      {/* Add Service Modal (dữ liệu mẫu, chưa nối API dịch vụ) */}
+      {/* Ghi nhận dịch vụ khách sử dụng - UC-SVC-005 */}
       <AddServiceModal
         room={selectedRoom}
         isOpen={isAddServiceModalOpen}
         onClose={() => {
           setIsAddServiceModalOpen(false);
         }}
-        onSubmit={handleAddService}
+        onRecorded={handleServicesRecorded}
       />
 
       {/* Nhận phòng - UC-REN-004 */}

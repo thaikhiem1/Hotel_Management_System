@@ -5,6 +5,7 @@ export { default as RoomGrid } from './RoomGrid';
 export { default as RoomCard } from './RoomCard';
 export { default as RoomDetailModal } from './RoomDetailModal';
 export { default as AddServiceModal } from './AddServiceModal';
+export { default as ServiceUsageSection } from './ServiceUsageSection';
 export { default as CheckInModal } from './CheckInModal';
 export { default as CheckOutModal } from './CheckOutModal';
 export { default as RoomMapFilters } from './RoomMapFilters';
