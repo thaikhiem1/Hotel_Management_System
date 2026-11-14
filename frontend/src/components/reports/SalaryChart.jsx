@@ -12,7 +12,7 @@ import {
 import { getChartColors } from '@/utils/chartColors';
 
 /**
- * SalaryChart - Biểu đồ lương nhân viên
+ * SalaryChart - Biểu đồ lương hằng tháng theo từng nhân viên
  * Hỗ trợ dark mode và light mode
  */
 const SalaryChart = ({ data, isDarkMode = false }) => {
@@ -34,11 +34,11 @@ const SalaryChart = ({ data, isDarkMode = false }) => {
           {payload.map((entry, index) => (
             <div key={index}>
               <p className="font-body-sm" style={{ color: entry.color }}>
-                Lương: {entry.value.toLocaleString('vi-VN')}đ
+                Lương/tháng: {entry.value.toLocaleString('vi-VN')}đ
               </p>
-              {entry.payload.soNhanVien && (
+              {entry.payload.chucVu && (
                 <p className="font-body-sm text-on-surface-variant">
-                  Số NV: {entry.payload.soNhanVien}
+                  Chức vụ: {entry.payload.chucVu}
                 </p>
               )}
             </div>
@@ -72,7 +72,7 @@ const SalaryChart = ({ data, isDarkMode = false }) => {
         <Legend wrapperStyle={{ fontSize: '14px', fontWeight: 600 }} />
         <Bar
           dataKey="tongLuong"
-          name="Tổng lương"
+          name="Lương hằng tháng"
           radius={[8, 8, 0, 0]}
         >
           {data.map((entry, index) => (

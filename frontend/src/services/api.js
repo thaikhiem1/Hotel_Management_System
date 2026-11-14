@@ -193,6 +193,12 @@ export const invoiceAPI = {
   pay: (id, paymentMethod) => unwrap(apiClient.post(`/invoices/${id}/pay`, { paymentMethod })),
 };
 
+// BÁO CÁO & THỐNG KÊ: chỉ ADMIN và MANAGER
+export const reportAPI = {
+  /** GET /api/reports/overview - { year, month? }: có month thì theo ngày của tháng, không có thì theo tháng của năm */
+  getOverview: (params = {}) => unwrap(apiClient.get("/reports/overview", { params: compactParams(params) })),
+};
+
 // SƠ ĐỒ PHÒNG (Room Map) - UC-ROM-005, UC-ROM-006
 export const roomMapAPI = {
   /**
