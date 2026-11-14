@@ -85,6 +85,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/customers/**", "/api/rental-receipts/**")
                         .hasAnyRole(OPERATION_ROLES)
 
+                        // Báo cáo và thống kê: chỉ ADMIN và MANAGER xem và lọc
+                        .requestMatchers("/api/reports/**").hasAnyRole(MANAGEMENT_ROLES)
+
                         // Hóa đơn: mọi vai trò xem, RECEPTIONIST và MANAGER thanh toán
                         .requestMatchers(HttpMethod.GET, "/api/invoices/**").authenticated()
                         .requestMatchers("/api/invoices/**").hasAnyRole(OPERATION_ROLES)

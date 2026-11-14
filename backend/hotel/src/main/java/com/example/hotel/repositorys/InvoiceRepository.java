@@ -1,6 +1,7 @@
 package com.example.hotel.repositorys;
 
 import com.example.hotel.Enums.InvoiceStatus;
+import com.example.hotel.models.dto.response.RevenuePointResponse;
 import com.example.hotel.models.entities.invoices;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -61,6 +63,20 @@ public interface InvoiceRepository extends JpaRepository<invoices, Integer>, Jpa
     @Query("select count(i) from invoices i " +
             "where i.invoiceStatus = com.example.hotel.Enums.InvoiceStatus.PAID and i.paidAt >= :from and i.paidAt < :to")
     long countPaidBetween(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+
+    /** Doanh thu theo ngày trong khoảng [from, to): chỉ có các ngày phát sinh thanh toán */
+    @Query("select new com.example.hotel.models.dto.response.RevenuePointResponse(" +
+            "extract(day from i.paidAt), count(i), coalesce(sum(i.totalAmount), 0)) from invoices i " +
+            "where i.invoiceStatus = com.example.hotel.Enums.InvoiceStatus.PAID and i.paidAt >= :from and i.paidAt < :to " +
+            "group by extract(day from i.paidAt) order by extract(day from i.paidAt)")
+    List<RevenuePointResponse> revenueByDay(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+
+    /** Doanh thu theo tháng trong khoảng [from, to): chỉ có các tháng phát sinh thanh toán */
+    @Query("select new com.example.hotel.models.dto.response.RevenuePointResponse(" +
+            "extract(month from i.paidAt), count(i), coalesce(sum(i.totalAmount), 0)) from invoices i " +
+            "where i.invoiceStatus = com.example.hotel.Enums.InvoiceStatus.PAID and i.paidAt >= :from and i.paidAt < :to " +
+            "group by extract(month from i.paidAt) order by extract(month from i.paidAt)")
+    List<RevenuePointResponse> revenueByMonth(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
 
     @Query("select coalesce(sum(i.totalAmount), 0) from invoices i where i.invoiceStatus = :status")
     BigDecimal sumTotalByStatus(@Param("status") InvoiceStatus status);
