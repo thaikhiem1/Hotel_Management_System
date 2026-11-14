@@ -17,6 +17,7 @@ import { formatDateTime } from '@/utils/format';
 import { handleApiError, showSuccess, showWarning } from '@/utils/notification';
 import { toCheckInStay, toRoomCard, UI_STATUS_TO_DISPLAY } from '@/utils/rentalMappers';
 import { usePermission } from '@/utils/usePermission';
+import { CancelBookingDetailDialog } from '@/components/bookings';
 
 /**
  * Trang chủ - Sơ đồ phòng trực quan (UC-ROM-005) và lọc danh sách phòng (UC-ROM-006)
@@ -73,6 +74,7 @@ const DashboardPage = () => {
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isAddServiceModalOpen, setIsAddServiceModalOpen] = useState(false);
+  const [cancelTarget, setCancelTarget] = useState(null); // phòng đã đặt đang hủy (UC-REN-002)
   const [servicesVersion, setServicesVersion] = useState(0); // tăng sau mỗi lần ghi nhận dịch vụ
   const [bookingRoom, setBookingRoom] = useState(null); // phòng đang đặt (UC-REN-001 từ sơ đồ phòng)
   const [checkInStay, setCheckInStay] = useState(null); // dữ liệu biểu mẫu nhận phòng (UC-REN-004)
@@ -292,6 +294,22 @@ const DashboardPage = () => {
         break;
 
       case 'cancel':
+        // UC-REN-002: hủy lượt đã đặt của phòng
+        if (!room.bookingDetailId || !room.receiptId) {
+          showWarning('Không thể hủy', 'Phòng chưa có lượt đặt để hủy.');
+          break;
+        }
+        setCancelTarget({
+          receiptId: room.receiptId,
+          detailId: room.bookingDetailId,
+          receiptCode: room.receiptCode,
+          roomCode: room.name,
+          customerName: room.guestName,
+          checkIn: room.checkInTime,
+          checkOut: room.checkOutTime
+        });
+        break;
+
       case 'ready':
       case 'complete':
         // Các thao tác này cần API phía máy chủ (UC-ROM-005 A1/A2) chưa có
@@ -301,6 +319,13 @@ const DashboardPage = () => {
       default:
         break;
     }
+  };
+
+  // UC-REN-002: hủy lượt đặt thành công -> làm mới sơ đồ phòng
+  const handleBookingCancelled = (response) => {
+    setCancelTarget(null);
+    showSuccess(response.message || 'Hủy phòng thành công', `Phiếu ${response.data.receiptCode}`);
+    handleRefresh();
   };
 
   // UC-SVC-005: ghi nhận dịch vụ thành công -> đóng form, tải lại danh sách dịch vụ đã dùng
@@ -484,6 +509,14 @@ const DashboardPage = () => {
           setIsAddServiceModalOpen(false);
         }}
         onRecorded={handleServicesRecorded}
+      />
+
+      {/* Hủy lượt đặt phòng - UC-REN-002 */}
+      <CancelBookingDetailDialog
+        target={cancelTarget}
+        onClose={() => setCancelTarget(null)}
+        onCancelled={handleBookingCancelled}
+        onRefresh={handleRefresh}
       />
 
       {/* Trả phòng - UC-REN-007 */}

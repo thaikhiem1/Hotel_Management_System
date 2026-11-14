@@ -17,7 +17,8 @@ const BookingFilters = ({ filters, onFilterChange }) => {
     { value: 'all', label: 'Tất cả trạng thái' },
     { value: 'DA_DAT', label: 'Đã đặt' },
     { value: 'DANG_THUE', label: 'Đang thuê' },
-    { value: 'DANG_DON_DEP', label: 'Đang dọn dẹp' }
+    { value: 'DANG_DON_DEP', label: 'Đang dọn dẹp' },
+    { value: 'DA_HUY', label: 'Đã hủy' }
   ];
 
   return (

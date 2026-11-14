@@ -3,10 +3,11 @@ import {
   BookingFilters,
   BookingTable,
   BookingDetailDialog,
+  CancelBookingDetailDialog,
   CreateBookingDialog
 } from '@/components/bookings';
 import { rentalReceiptAPI } from '@/services/api';
-import { formatCurrency, formatReceiptCode } from '@/utils/format';
+import { formatCurrency, formatDateTime, formatReceiptCode } from '@/utils/format';
 import { handleApiError, showSuccess, showWarning } from '@/utils/notification';
 import { toPhieuThue } from '@/utils/rentalMappers';
 import { usePermission } from '@/utils/usePermission';
@@ -14,9 +15,10 @@ import { usePermission } from '@/utils/usePermission';
 // ========== Helpers: chuyển đổi data DB → data UI ==========
 
 /**
- * Tính tổng ThanhTien của tất cả CTDP trong phiếu thuê
+ * Tính tổng ThanhTien của các CTDP còn hiệu lực (không tính phòng đã hủy) trong phiếu thuê
  */
-const tinhTongTien = (chiTiet = []) => chiTiet.reduce((sum, ct) => sum + (ct.ThanhTien || 0), 0);
+const tinhTongTien = (chiTiet = []) =>
+  chiTiet.filter((ct) => ct.TrangThaiDatPhong !== 3).reduce((sum, ct) => sum + (ct.ThanhTien || 0), 0);
 
 /**
  * Lấy trạng thái hiển thị của phiếu thuê dựa trên CTDP
@@ -25,6 +27,7 @@ const tinhTongTien = (chiTiet = []) => chiTiet.reduce((sum, ct) => sum + (ct.Tha
  */
 const layTrangThaiPhieuThue = (chiTiet = []) => {
   if (!chiTiet || chiTiet.length === 0) return 'DA_DAT';
+  if (chiTiet.every(ct => ct.TrangThaiDatPhong === 3)) return 'DA_HUY';
   if (chiTiet.some(ct => ct.TrangThaiDatPhong === 1)) return 'DANG_THUE';
   if (chiTiet.some(ct => ct.TrangThaiDatPhong === 2)) return 'DANG_DON_DEP';
   return 'DA_DAT';
@@ -47,6 +50,7 @@ const LapPhieuThuePage = () => {
   const [selectedPhieuThue, setSelectedPhieuThue] = useState(null);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [cancelTarget, setCancelTarget] = useState(null); // chi tiết đặt phòng đang hủy (UC-REN-002)
 
   // Tải danh sách phiếu thuê từ máy chủ khi mở trang
   useEffect(() => {
@@ -107,12 +111,48 @@ const LapPhieuThuePage = () => {
     setShowDetailDialog(true);
   };
 
-  // Hủy phiếu / bỏ phòng khỏi phiếu: chưa có API phía máy chủ (UC-REN-002, UC-REN-003)
+  // Hủy toàn bộ phiếu thuê: chưa có API phía máy chủ (UC-REN-003)
   const notSupportedYet = () => {
     showWarning(
       'Chưa hỗ trợ',
-      'Hủy phiếu thuê và bỏ phòng khỏi phiếu sẽ được bổ sung cùng API tương ứng.'
+      'Hủy toàn bộ phiếu thuê sẽ được bổ sung cùng API tương ứng. Có thể hủy từng phòng chưa nhận trong chi tiết phiếu.'
     );
+  };
+
+  // UC-REN-002: mở form hủy một phòng chưa nhận (không có quyền thì báo chung, không mở form)
+  const handleCancelRoom = (phieuThue, ct) => {
+    if (!checkWrite()) return;
+    setCancelTarget({
+      receiptId: phieuThue.IdPT,
+      detailId: ct.IdCTDP,
+      receiptCode: phieuThue.receiptCode || formatReceiptCode(phieuThue.IdPT),
+      roomCode: ct.phong?.MaPH,
+      customerName: phieuThue.khachHang?.TenKH,
+      checkIn: formatDateTime(ct.NgayCheckIn),
+      checkOut: formatDateTime(ct.NgayCheckOut),
+      amount: ct.ThanhTien
+    });
+  };
+
+  // Hủy thành công: cập nhật phiếu thuê trong danh sách và trong hộp thoại chi tiết đang mở
+  const handleRoomCancelled = (response) => {
+    const updated = toPhieuThue(response.data);
+    setPhieuThueList(prev => prev.map(pt => (pt.IdPT === updated.IdPT ? updated : pt)));
+    setSelectedPhieuThue(prev => (prev && prev.IdPT === updated.IdPT ? updated : prev));
+    setCancelTarget(null);
+    showSuccess(response.message || 'Hủy phòng thành công', `Tổng chi phí dự kiến mới: ${formatCurrency(response.data.estimatedTotalAmount)}`);
+  };
+
+  // Tải lại danh sách khi phòng đã được xử lý ở nơi khác
+  const reloadReceipts = async () => {
+    try {
+      const response = await rentalReceiptAPI.getAll({ page: 0, size: PAGE_SIZE });
+      setPhieuThueList(response.data.content.map(toPhieuThue));
+      setShowDetailDialog(false);
+      setSelectedPhieuThue(null);
+    } catch (error) {
+      handleApiError(error);
+    }
   };
 
   // Phiếu thuê vừa được máy chủ lưu thành công (UC-REN-001)
@@ -187,9 +227,17 @@ const LapPhieuThuePage = () => {
           setSelectedPhieuThue(null);
         }}
         onCancel={notSupportedYet}
-        onRemoveRoom={notSupportedYet}
+        onCancelRoom={handleCancelRoom}
         tinhTongTien={tinhTongTien}
         layTrangThaiPhieuThue={layTrangThaiPhieuThue}
+      />
+
+      {/* Hủy chi tiết đặt phòng - UC-REN-002 */}
+      <CancelBookingDetailDialog
+        target={cancelTarget}
+        onClose={() => setCancelTarget(null)}
+        onCancelled={handleRoomCancelled}
+        onRefresh={reloadReceipts}
       />
 
       {/* Create Dialog - khách hàng, phòng khả dụng và chi phí lấy từ API */}

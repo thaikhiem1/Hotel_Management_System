@@ -43,6 +43,8 @@ export const toPhieuThue = (r) => ({
   IdNV: r.employeeId,
   tenNV: r.employeeName,
   TrangThai: r.receiptStatus,
+  cancelledAt: r.cancelledAt,
+  cancelReason: r.cancelReason,
   khachHang: toKhachHang(r.customer),
   chiTiet: r.details.map((d) => ({
     IdCTDP: d.bookingDetailId,
@@ -55,6 +57,9 @@ export const toPhieuThue = (r) => ({
     TrangThaiDatPhong: BOOKING_STATUS_CODE[d.bookingStatus] ?? 0,
     DonGia: d.unitPrice,
     ThanhTien: d.estimatedAmount,
+    cancelledAt: d.cancelledAt,
+    cancelledBy: d.cancelledBy,
+    cancelReason: d.cancelReason,
     phong: {
       IdPH: d.roomId,
       MaPH: d.roomCode,
@@ -109,6 +114,7 @@ export const UI_STATUS_TO_DISPLAY = Object.fromEntries(
 const toBookingInfo = (b) =>
   b && {
     bookingDetailId: b.bookingDetailId,
+    rentalReceiptId: b.rentalReceiptId,
     receiptCode: b.receiptCode,
     customerName: b.customerName,
     customerPhone: b.customerPhone,
@@ -139,6 +145,7 @@ export const toRoomCard = (item) => {
     checkInTime: booking?.checkInTime,
     checkOutTime: booking?.checkOutTime,
     bookingDetailId: booking?.bookingDetailId,
+    receiptId: booking?.rentalReceiptId,
     maintenanceReason: item.displayStatus === "MAINTENANCE" ? item.note : undefined,
     reservationCount: item.reservationCount,
     canCheckIn: item.canCheckIn,

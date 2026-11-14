@@ -137,6 +137,10 @@ export const rentalReceiptAPI = {
 
   getById: (id) => unwrap(apiClient.get(`/rental-receipts/${id}`)),
 
+  /** UC-REN-002: POST /api/rental-receipts/{receiptId}/details/{detailId}/cancel - { reason } bắt buộc; trả phiếu thuê sau khi cập nhật */
+  cancelDetail: (receiptId, detailId, reason) =>
+    unwrap(apiClient.post(`/rental-receipts/${receiptId}/details/${detailId}/cancel`, { reason })),
+
   /** UC-REN-009: GET /api/rental-receipts/available-rooms?checkIn&checkOut (ISO yyyy-MM-ddTHH:mm:ss) */
   getAvailableRooms: ({ checkIn, checkOut }) =>
     unwrap(apiClient.get("/rental-receipts/available-rooms", { params: { checkIn, checkOut } })),

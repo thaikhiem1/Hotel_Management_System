@@ -14,15 +14,15 @@ import { formatDateTime, formatDate, formatCurrency, formatReceiptCode } from '@
  * Tính năng:
  *   - Bỏ thao tác chỉnh sửa
  *   - Hiển thị format ngày kèm giờ
- *   - Khi phiếu có từ 2 phòng trở lên: có nút xóa phòng bất kỳ và tự động cập nhật lại tổng tiền
- *   - Khi phiếu chỉ có 1 phòng: hủy là xóa cả phiếu thuê
+ *   - Mỗi phòng đang ở trạng thái "Đã đặt" có nút "Hủy phòng" (UC-REN-002); hủy phòng cuối cùng thì phiếu cũng đã hủy
+ *   - Phòng đã hủy hiển thị thời điểm, nhân viên và lý do hủy
  */
 const BookingDetailDialog = ({
   phieuThue,
   isOpen,
   onClose,
   onCancel,
-  onRemoveRoom,
+  onCancelRoom,
   tinhTongTien,
   layTrangThaiPhieuThue
 }) => {
@@ -48,14 +48,7 @@ const BookingDetailDialog = ({
   const { khachHang, chiTiet = [] } = phieuThue;
   const trangThai = layTrangThaiPhieuThue ? layTrangThaiPhieuThue(chiTiet) : 'DA_DAT';
   const tongTien = tinhTongTien ? tinhTongTien(chiTiet) : 0;
-  const hasMultipleRooms = chiTiet.length >= 2;
-
-  const handleRemoveSingleRoom = (ct) => {
-    const maPhong = ct.phong?.MaPH || `ID ${ct.IdPH}`;
-    if (onRemoveRoom) {
-      onRemoveRoom(phieuThue.IdPT, ct.IdCTDP, maPhong);
-    }
-  };
+  const activeRooms = chiTiet.filter((ct) => ct.TrangThaiDatPhong !== 3).length;
 
   return (
     <>
@@ -190,15 +183,9 @@ const BookingDetailDialog = ({
                 <h3 className="font-label-lg text-label-lg text-on-surface-variant uppercase tracking-wider">
                   Danh sách phòng ({chiTiet.length} phòng)
                 </h3>
-                {hasMultipleRooms ? (
-                  <p className="font-body-sm text-body-sm text-primary mt-space-xs">
-                    Phiếu có {chiTiet.length} phòng: Bạn có thể nhấn nút &quot;Xóa phòng&quot; ở từng phòng để loại bỏ phòng đó và cập nhật lại tiền.
-                  </p>
-                ) : (
-                  <p className="font-body-sm text-body-sm text-on-surface-variant mt-space-xs">
-                    Phiếu thuê gồm 1 phòng: Để hủy, vui lòng chọn &quot;Hủy phiếu thuê&quot; phía dưới.
-                  </p>
-                )}
+                <p className="font-body-sm text-body-sm text-primary mt-space-xs">
+                  Phòng chưa nhận có nút &quot;Hủy phòng&quot;: phòng bị hủy sẽ được giải phóng và tổng tiền của phiếu được tính lại.
+                </p>
               </div>
             </div>
 
@@ -224,18 +211,18 @@ const BookingDetailDialog = ({
                         <StatusBadge status={ct.TrangThaiDatPhong} />
                       </div>
 
-                      {/* Nút xóa phòng riêng lẻ khi phiếu có từ 2 phòng trở lên */}
-                      {hasMultipleRooms && (
+                      {/* Hủy từng phòng chưa nhận (UC-REN-002) */}
+                      {ct.TrangThaiDatPhong === 0 && onCancelRoom && (
                         <button
                           type="button"
-                          onClick={() => handleRemoveSingleRoom(ct)}
+                          onClick={() => onCancelRoom(phieuThue, ct)}
                           className="flex items-center gap-space-xs px-space-sm py-space-xs rounded-lg bg-error/10 hover:bg-error/20 text-error font-label-sm text-label-sm font-semibold transition-colors"
-                          title={`Xóa phòng ${ct.phong?.MaPH} khỏi phiếu thuê`}
+                          title={`Hủy phòng ${ct.phong?.MaPH}${activeRooms === 1 ? ' (phòng cuối cùng: phiếu thuê cũng sẽ bị hủy)' : ''}`}
                         >
                           <span className="material-symbols-outlined text-[16px]">
-                            delete
+                            event_busy
                           </span>
-                          <span>Xóa phòng</span>
+                          <span>Hủy phòng</span>
                         </button>
                       )}
                     </div>
@@ -291,6 +278,15 @@ const BookingDetailDialog = ({
                       </div>
                     </div>
 
+                    {/* Lịch sử hủy */}
+                    {ct.TrangThaiDatPhong === 3 && (
+                      <p className="mt-space-sm p-space-sm rounded-lg bg-error/10 text-error font-body-sm text-body-sm">
+                        Đã hủy lúc {formatDateTime(ct.cancelledAt)}
+                        {ct.cancelledBy ? ` bởi ${ct.cancelledBy}` : ''}
+                        {ct.cancelReason ? ` - Lý do: ${ct.cancelReason}` : ''}
+                      </p>
+                    )}
+
                     {/* Ghi chú phòng nếu có */}
                     {ct.phong?.GhiChu && (
                       <p className="mt-space-xs font-body-sm text-body-sm text-on-surface-variant italic text-[11px]">
@@ -311,7 +307,7 @@ const BookingDetailDialog = ({
                   Tổng tiền phiếu thuê
                 </span>
                 <span className="font-body-sm text-body-sm text-on-surface-variant">
-                  {chiTiet.length} phòng đang được thuê trong phiếu này
+                  {activeRooms} phòng còn hiệu lực trong phiếu này
                 </span>
               </div>
               <span className="font-headline-lg text-headline-lg text-primary font-bold">

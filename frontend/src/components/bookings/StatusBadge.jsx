@@ -32,6 +32,11 @@ const StatusBadge = ({ status }) => {
       className: 'bg-amber-500/20 text-amber-600 dark:text-amber-400',
       icon: 'cleaning_services'
     },
+    DA_HUY: {
+      label: 'Đã hủy',
+      className: 'bg-error/15 text-error',
+      icon: 'event_busy'
+    },
     // Trạng thái từng CTDP (số nguyên từ DB)
     0: {
       label: 'Đã đặt',
@@ -47,6 +52,11 @@ const StatusBadge = ({ status }) => {
       label: 'Đang dọn dẹp',
       className: 'bg-amber-500/20 text-amber-600 dark:text-amber-400',
       icon: 'cleaning_services'
+    },
+    3: {
+      label: 'Đã hủy',
+      className: 'bg-error/15 text-error',
+      icon: 'event_busy'
     }
   };
 
