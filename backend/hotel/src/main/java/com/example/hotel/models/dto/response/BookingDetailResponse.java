@@ -23,4 +23,8 @@ public class BookingDetailResponse {
     private Integer estimatedUnits;
     private BigDecimal estimatedAmount;
     private BookingStatus bookingStatus;
+    /** Lịch sử hủy (UC-REN-002): chỉ có khi chi tiết đã bị hủy */
+    private LocalDateTime cancelledAt;
+    private String cancelledBy;
+    private String cancelReason;
 }

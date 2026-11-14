@@ -20,4 +20,7 @@ public class RentalReceiptResponse {
     private String employeeName;
     private BigDecimal estimatedTotalAmount;
     private List<BookingDetailResponse> details;
+    /** Lịch sử hủy toàn phiếu (khi mọi chi tiết đều đã hủy): chỉ có khi phiếu đã hủy */
+    private LocalDateTime cancelledAt;
+    private String cancelReason;
 }

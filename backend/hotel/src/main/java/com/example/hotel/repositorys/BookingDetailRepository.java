@@ -41,6 +41,10 @@ public interface BookingDetailRepository extends JpaRepository<booking_details, 
     @Query("select distinct b.room.roomId from booking_details b where b.bookingStatus = :status")
     List<Integer> findRoomIdsByStatus(@Param("status") BookingStatus status);
 
+    /** Mã các phòng của mọi chi tiết thuộc một phiếu thuê, để khóa phòng trước khi hủy toàn bộ phiếu */
+    @Query("select distinct b.room.roomId from booking_details b where b.rentalReceipt.rentalReceiptId = :receiptId")
+    List<Integer> findRoomIdsByReceiptId(@Param("receiptId") Integer receiptId);
+
     /** Mã phòng của chi tiết, để khóa phòng trước khi đọc lại trạng thái chi tiết */
     @Query("select b.room.roomId from booking_details b where b.bookingDetailId = :id")
     Optional<Integer> findRoomIdById(@Param("id") Integer id);

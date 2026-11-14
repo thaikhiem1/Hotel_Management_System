@@ -2,11 +2,13 @@ package com.example.hotel.services.impl;
 
 import com.example.hotel.Enums.BookingStatus;
 import com.example.hotel.Enums.PricingMethod;
+import com.example.hotel.Enums.ReceiptStatus;
 import com.example.hotel.Enums.RoomStatus;
 import com.example.hotel.exception.BusinessValidationException;
 import com.example.hotel.exception.PriceChangedException;
 import com.example.hotel.exception.ResourceNotFoundException;
 import com.example.hotel.exception.RoomUnavailableException;
+import com.example.hotel.models.dto.request.CancelBookingDetailRequest;
 import com.example.hotel.models.dto.request.RentalDetailRequest;
 import com.example.hotel.models.dto.request.RentalEstimateRequest;
 import com.example.hotel.models.dto.request.RentalReceiptCreateRequest;
@@ -43,7 +45,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.sql.SQLException;
+import java.time.Clock;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -69,6 +73,12 @@ public class RentalReceiptService implements IRentalReceiptService {
      */
     private static final Set<BookingStatus> BLOCKING = EnumSet.of(BookingStatus.RESERVED, BookingStatus.CHECKED_IN);
 
+    private static final String CANCEL_NOT_FOUND_MESSAGE = "Không tìm thấy phiếu thuê hoặc chi tiết đặt phòng.";
+    private static final String RECEIPT_NOT_FOUND_MESSAGE = "Không tìm thấy phiếu thuê.";
+    private static final String CANCEL_RECEIPT_INVALID_MESSAGE =
+            "Phiếu thuê không hợp lệ, đã được xử lý hoặc đã có phòng nhận. Chỉ hủy được các phòng chưa nhận từng phòng một.";
+    private static final String CANCEL_INVALID_MESSAGE = "Chi tiết đặt phòng không hợp lệ hoặc đã được xử lý.";
+
     private static final String ROOM_UNAVAILABLE_MESSAGE = "Phòng không còn khả dụng trong khoảng thời gian đã chọn. Vui lòng tra cứu lại.";
 
     private final RoomRepository roomRepository;
@@ -76,6 +86,7 @@ public class RentalReceiptService implements IRentalReceiptService {
     private final EmployeeRepository employeeRepository;
     private final RentalReceiptRepository rentalReceiptRepository;
     private final BookingDetailRepository bookingDetailRepository;
+    private final Clock clock;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -208,6 +219,125 @@ public class RentalReceiptService implements IRentalReceiptService {
                 .map(this::toResponse)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Không tìm thấy phiếu thuê với ID: " + rentalReceiptId));
+    }
+
+    // ------------------------------------------------------------------ UC-REN-002: hủy chi tiết đặt phòng
+
+    @Override
+    @Transactional
+    public RentalReceiptResponse cancelDetail(Integer rentalReceiptId, Integer bookingDetailId,
+            CancelBookingDetailRequest request) {
+        // E3: chi tiết phải tồn tại và thuộc đúng phiếu thuê
+        Integer actualReceiptId = bookingDetailRepository.findReceiptIdById(bookingDetailId)
+                .orElseThrow(() -> new ResourceNotFoundException(CANCEL_NOT_FOUND_MESSAGE));
+        if (!actualReceiptId.equals(rentalReceiptId)) {
+            throw new ResourceNotFoundException(CANCEL_NOT_FOUND_MESSAGE);
+        }
+        Integer roomId = bookingDetailRepository.findRoomIdById(bookingDetailId)
+                .orElseThrow(() -> new ResourceNotFoundException(CANCEL_NOT_FOUND_MESSAGE));
+
+        // BR-REN-002-08: khóa phòng rồi phiếu thuê (cùng thứ tự với nhận phòng, trả phòng) trước khi kiểm tra lại trạng thái
+        roomRepository.findAllByIdForUpdate(List.of(roomId));
+        rental_receipts receipt = rentalReceiptRepository.findByIdForUpdate(rentalReceiptId)
+                .orElseThrow(() -> new ResourceNotFoundException(CANCEL_NOT_FOUND_MESSAGE));
+        booking_details detail = receipt.getBookingDetails().stream()
+                .filter(d -> d.getBookingDetailId().equals(bookingDetailId))
+                .findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException(CANCEL_NOT_FOUND_MESSAGE));
+
+        // BR-REN-002-01 / E1: chỉ hủy được chi tiết đang ở trạng thái "Đã đặt"
+        if (detail.getBookingStatus() != BookingStatus.RESERVED) {
+            throw new BusinessValidationException(CANCEL_INVALID_MESSAGE, Map.of());
+        }
+
+        // BR-REN-002-02, 03: lý do bắt buộc; thời điểm và nhân viên hủy do hệ thống xác định
+        String reason = request.getReason().trim();
+        employees employee = resolveCurrentEmployee();
+        LocalDateTime now = LocalDateTime.now(clock).truncatedTo(ChronoUnit.MICROS);
+        detail.setBookingStatus(BookingStatus.CANCELLED);
+        detail.setCancelledAt(now);
+        detail.setCancelledBy(employee);
+        detail.setCancelReason(reason);
+
+        try {
+            bookingDetailRepository.saveAndFlush(detail);
+            // BR-REN-002-05: tổng chi phí dự kiến do DB tính lại khi chi tiết đổi trạng thái; đọc lại và xác định trạng thái phiếu
+            entityManager.refresh(receipt);
+            applyReceiptStatusAfterCancel(receipt, now, employee, reason);
+            rentalReceiptRepository.saveAndFlush(receipt);
+        } catch (DataIntegrityViolationException e) {
+            throw translate(e);
+        }
+        return toResponse(receipt);
+    }
+
+    // ------------------------------------------------------------------ UC-REN-003: hủy toàn bộ phiếu thuê
+
+    @Override
+    @Transactional
+    public RentalReceiptResponse cancelReceipt(Integer rentalReceiptId, CancelBookingDetailRequest request) {
+        // Khóa mọi phòng của phiếu (theo thứ tự mã phòng) rồi khóa phiếu, cùng thứ tự với các thao tác ghi khác
+        List<Integer> roomIds = bookingDetailRepository.findRoomIdsByReceiptId(rentalReceiptId);
+        if (roomIds.isEmpty()) {
+            throw new ResourceNotFoundException(RECEIPT_NOT_FOUND_MESSAGE);
+        }
+        roomRepository.findAllByIdForUpdate(roomIds);
+        rental_receipts receipt = rentalReceiptRepository.findByIdForUpdate(rentalReceiptId)
+                .orElseThrow(() -> new ResourceNotFoundException(RECEIPT_NOT_FOUND_MESSAGE));
+
+        // Phiếu đã hủy, hoặc đã có phòng nhận/trả thì không hủy toàn bộ được (hủy từng phòng chưa nhận ở UC-REN-002)
+        boolean started = receipt.getBookingDetails().stream().anyMatch(d ->
+                d.getBookingStatus() == BookingStatus.CHECKED_IN || d.getBookingStatus() == BookingStatus.CHECKED_OUT);
+        if (receipt.getReceiptStatus() != ReceiptStatus.DA_XAC_NHAN || started) {
+            throw new BusinessValidationException(CANCEL_RECEIPT_INVALID_MESSAGE, Map.of());
+        }
+
+        String reason = request.getReason().trim();
+        employees employee = resolveCurrentEmployee();
+        LocalDateTime now = LocalDateTime.now(clock).truncatedTo(ChronoUnit.MICROS);
+
+        // Mọi chi tiết còn "Đã đặt" bị hủy cùng lúc; chi tiết đã hủy trước đó giữ nguyên lịch sử hủy riêng
+        for (booking_details d : receipt.getBookingDetails()) {
+            if (d.getBookingStatus() == BookingStatus.RESERVED) {
+                d.setBookingStatus(BookingStatus.CANCELLED);
+                d.setCancelledAt(now);
+                d.setCancelledBy(employee);
+                d.setCancelReason(reason);
+            }
+        }
+        try {
+            bookingDetailRepository.saveAllAndFlush(receipt.getBookingDetails());
+            entityManager.refresh(receipt); // tổng chi phí do DB tính lại (về 0)
+            receipt.setReceiptStatus(ReceiptStatus.DA_HUY);
+            receipt.setCancelledAt(now);
+            receipt.setCancelledBy(employee);
+            receipt.setCancelReason(reason);
+            rentalReceiptRepository.saveAndFlush(receipt);
+        } catch (DataIntegrityViolationException e) {
+            throw translate(e);
+        }
+        return toResponse(receipt);
+    }
+
+    /**
+     * BR-REN-002-06: còn lượt đang lưu trú thì giữ "Đang lưu trú"; còn chi tiết đã đặt thì "Đã xác nhận";
+     * chỉ còn chi tiết đã kết thúc thì "Đã trả phòng"; mọi chi tiết đều đã hủy thì phiếu cũng "Đã hủy" kèm lịch sử hủy.
+     */
+    private void applyReceiptStatusAfterCancel(rental_receipts receipt, LocalDateTime now, employees employee, String reason) {
+        Set<BookingStatus> statuses = EnumSet.noneOf(BookingStatus.class);
+        receipt.getBookingDetails().forEach(d -> statuses.add(d.getBookingStatus()));
+        if (statuses.contains(BookingStatus.CHECKED_IN)) {
+            receipt.setReceiptStatus(ReceiptStatus.DANG_LUU_TRU);
+        } else if (statuses.contains(BookingStatus.RESERVED)) {
+            receipt.setReceiptStatus(ReceiptStatus.DA_XAC_NHAN);
+        } else if (statuses.contains(BookingStatus.CHECKED_OUT)) {
+            receipt.setReceiptStatus(ReceiptStatus.DA_TRA_PHONG);
+        } else {
+            receipt.setReceiptStatus(ReceiptStatus.DA_HUY);
+            receipt.setCancelledAt(now);
+            receipt.setCancelledBy(employee);
+            receipt.setCancelReason(reason);
+        }
     }
 
     // ------------------------------------------------------------------ nội bộ
@@ -362,7 +492,10 @@ public class RentalReceiptService implements IRentalReceiptService {
                         d.getUnitPrice(),
                         d.getEstimatedUnits(),
                         d.getEstimatedAmount(),
-                        d.getBookingStatus()))
+                        d.getBookingStatus(),
+                        d.getCancelledAt(),
+                        d.getCancelledBy() == null ? null : d.getCancelledBy().getFullName(),
+                        d.getCancelReason()))
                 .toList();
         return new RentalReceiptResponse(
                 r.getRentalReceiptId(),
@@ -374,6 +507,8 @@ public class RentalReceiptService implements IRentalReceiptService {
                 r.getEmployee().getEmployeeId(),
                 r.getEmployee().getFullName(),
                 r.getEstimatedTotalAmount(),
-                details);
+                details,
+                r.getCancelledAt(),
+                r.getCancelReason());
     }
 }

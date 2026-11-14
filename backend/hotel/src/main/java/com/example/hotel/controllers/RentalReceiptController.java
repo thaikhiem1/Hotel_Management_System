@@ -1,5 +1,7 @@
 package com.example.hotel.controllers;
 
+import com.example.hotel.Enums.ReceiptStatus;
+import com.example.hotel.models.dto.request.CancelBookingDetailRequest;
 import com.example.hotel.models.dto.request.RentalEstimateRequest;
 import com.example.hotel.models.dto.request.RentalReceiptCreateRequest;
 import com.example.hotel.models.dto.response.ApiResponse;
@@ -48,6 +50,32 @@ public class RentalReceiptController {
                 ? "Không tìm thấy phòng khả dụng trong khoảng thời gian đã chọn."
                 : "Tra cứu phòng khả dụng thành công";
         return ResponseEntity.ok(ApiResponse.success(rooms, message));
+    }
+
+    /**
+     * UC-REN-002: POST /api/rental-receipts/{receiptId}/details/{detailId}/cancel - body { reason }
+     */
+    @PostMapping("/{receiptId}/details/{detailId}/cancel")
+    public ResponseEntity<ApiResponse<RentalReceiptResponse>> cancelDetail(
+            @PathVariable Integer receiptId,
+            @PathVariable Integer detailId,
+            @Valid @RequestBody CancelBookingDetailRequest request) {
+        RentalReceiptResponse response = rentalReceiptService.cancelDetail(receiptId, detailId, request);
+        String message = response.getReceiptStatus() == ReceiptStatus.DA_HUY
+                ? "Phiếu thuê đã được hủy do không còn phòng nào"
+                : "Hủy phòng thành công";
+        return ResponseEntity.ok(ApiResponse.success(response, message));
+    }
+
+    /**
+     * UC-REN-003: POST /api/rental-receipts/{receiptId}/cancel - body { reason }
+     */
+    @PostMapping("/{receiptId}/cancel")
+    public ResponseEntity<ApiResponse<RentalReceiptResponse>> cancelReceipt(
+            @PathVariable Integer receiptId,
+            @Valid @RequestBody CancelBookingDetailRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(
+                rentalReceiptService.cancelReceipt(receiptId, request), "Hủy phiếu thuê thành công"));
     }
 
     /**

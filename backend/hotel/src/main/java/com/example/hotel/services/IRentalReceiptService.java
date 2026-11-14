@@ -1,5 +1,6 @@
 package com.example.hotel.services;
 
+import com.example.hotel.models.dto.request.CancelBookingDetailRequest;
 import com.example.hotel.models.dto.request.RentalEstimateRequest;
 import com.example.hotel.models.dto.request.RentalReceiptCreateRequest;
 import com.example.hotel.models.dto.response.AvailableRoomResponse;
@@ -21,6 +22,18 @@ public interface IRentalReceiptService {
 
     /** UC-REN-001: tạo phiếu thuê cùng các chi tiết đặt phòng trong một transaction. */
     RentalReceiptResponse create(RentalReceiptCreateRequest request);
+
+    /**
+     * UC-REN-002: hủy một chi tiết đặt phòng chưa nhận phòng, tính lại chi phí và trạng thái phiếu thuê.
+     * Mọi chi tiết đều đã hủy thì phiếu thuê cũng chuyển sang đã hủy.
+     */
+    RentalReceiptResponse cancelDetail(Integer rentalReceiptId, Integer bookingDetailId, CancelBookingDetailRequest request);
+
+    /**
+     * UC-REN-003: hủy toàn bộ phiếu thuê. Chỉ hủy được khi chưa có phòng nào nhận hoặc đã trả; mọi chi tiết còn "Đã đặt"
+     * được hủy cùng lúc với cùng lý do, phiếu chuyển sang đã hủy.
+     */
+    RentalReceiptResponse cancelReceipt(Integer rentalReceiptId, CancelBookingDetailRequest request);
 
     RentalReceiptResponse getById(Integer rentalReceiptId);
 
